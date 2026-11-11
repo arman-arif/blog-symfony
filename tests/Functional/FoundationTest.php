@@ -13,6 +13,6 @@ final class FoundationTest extends WebTestCase
         $client = self::createClient();
         $client->request('GET', '/');
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'curious minds');
+        self::assertSelectorTextContains('h1', 'Stay curious.');
     }
 }

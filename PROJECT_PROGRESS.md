@@ -6,7 +6,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 |---|---|---|---|---|
 | 0 | M0 | Project Inspection & Setup | Completed | Symfony 8.1; standalone CSS build and full QA verified |
 | 1 | M1.1 | Design System & Components | Completed | Mock UI only; local fonts/artwork, keyboard and responsive checks |
-| 1 | M1.2 | Public Layout & Homepage | Pending | |
+| 1 | M1.2 | Public Layout & Homepage | Completed | Mock UI; responsive homepage, working navigation and all card variants |
 | 1 | M1.3 | Blog Listing & Details | Pending | |
 | 1 | M1.4 | Other Public Pages & Errors | Pending | |
 | 1 | M1.5 | Admin Shell & Dashboard | Pending | |
@@ -48,3 +48,11 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Tests: QA passed, fixture contract assertions and HTTP component-state checks; production styleguide access is explicitly tested as 404.
 - Browser checks: light/dark mode; modal opening/Escape; keyboard arrow-tab selection; no page overflow at 360/768/1024/1440; zero console errors/warnings. Reviewed the full styleguide screenshot.
 - Known issues: broader page-level accessibility and all state matrices remain the M1.8 audit, not a completed claim for the whole UI. Composer audit briefly used its local advisory cache after a network timeout; rerun before deployment.
+
+### 2026-11-12 — M1.2 public shell and homepage
+- Built sticky public navigation, category dropdown, mobile drawer, search dialog, footer and validated preview-only newsletter forms.
+- Homepage includes featured/latest/popular/trending, taxonomy sections, recommended reads, author highlights and newsletter. Added four reusable article-card variants and locally served, dimensioned lazy images.
+- Established read-only preview routes for linked journal/article/legal destinations so there are no broken homepage links; advanced listing/detail and static-page work remain M1.3/M1.4.
+- Verification: `composer qa` green (5 tests / 304 assertions), including an HTTP crawl of every internal homepage link, image attributes and mock fixture contracts. Composer audit fetched successfully on the final run.
+- Browser: inspected the complete homepage; fixed an initial 360px header overflow with 44px icon buttons. Retested 360/768/1024/1440 with no overflow or broken images, mobile drawer/Escape and zero console messages.
+- No email delivery, database content, tracking, reader-account persistence or CMS business logic is claimed.
