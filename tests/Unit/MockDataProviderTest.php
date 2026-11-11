@@ -28,5 +28,12 @@ final class MockDataProviderTest extends TestCase
         }
         self::assertCount(36, array_unique($slugs));
         self::assertCount(1, $data->comments()[0]['replies']);
+        self::assertCount(5, $data->pages());
+        foreach ($data->pages() as $slug => $page) {
+            self::assertSame($slug, $page['slug']);
+            self::assertArrayHasKey('content', $page);
+            self::assertIsArray($page['sections']);
+            self::assertInstanceOf(\DateTimeImmutable::class, $page['updatedAt']);
+        }
     }
 }

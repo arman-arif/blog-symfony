@@ -120,6 +120,44 @@ final class MockDataProvider
         ]), $this->authors(), range(0, 5));
     }
 
+    /** @return array<string, array<string, mixed>> */
+    public function pages(): array
+    {
+        $pages = [
+            'about' => ['title' => 'A journal for the things that matter.', 'eyebrow' => 'Our story', 'description' => 'Independent voices. Thoughtful ideas. A little more room for curiosity.', 'sections' => [
+                ['title' => 'Why Fieldnotes exists', 'text' => 'We started with a simple belief: the internet can be a place to slow down, not just scroll faster. Fieldnotes brings together writers, makers and observers who pay attention to the small things that shape a meaningful life.'],
+                ['title' => 'Different perspectives, shared curiosity', 'text' => 'From design and technology to culture and the natural world, we look for stories that offer a fresh way of seeing. We value clear writing, careful research and the honest admission that there is always more to learn.'],
+                ['title' => 'Made with care', 'text' => 'Our editorial principles are simple: credit the people behind the work, distinguish opinion from evidence and leave readers with something useful to carry into their day. Sponsored material will always be clearly disclosed.'],
+            ]],
+            'contact' => ['title' => 'Let’s start a conversation.', 'eyebrow' => 'Get in touch', 'description' => 'A story idea, a thoughtful question, a new collaboration. We’d love to hear it.', 'sections' => []],
+            'privacy' => ['title' => 'Your privacy matters.', 'eyebrow' => 'Privacy policy / preview edition', 'description' => 'A plain-language explanation of what this demonstration does — and does not — collect.', 'sections' => [
+                ['title' => 'Preview submissions', 'text' => 'Contact, comment and newsletter forms currently validate in your browser only. No submitted email address or message is sent to a server or stored in a database. Comments you add disappear when you reload the page.'],
+                ['title' => 'Local preferences', 'text' => 'Your browser may store your light/dark preference, consent choice and preview likes/bookmarks locally. These preferences are not transmitted as analytics. You can clear them through your browser’s site-data controls.'],
+                ['title' => 'Third-party destinations', 'text' => 'Following social links or explicitly loading an optional video connects your browser to that provider. Their privacy policies apply. Fonts, illustrations, styles and interface scripts are hosted locally.'],
+                ['title' => 'Before production', 'text' => 'Account registration, email delivery, analytics and moderation require a reviewed production privacy notice, retention policy and suitable consent controls before they are enabled. This preview is not a promise that those services are already available.'],
+            ]],
+            'terms' => ['title' => 'A thoughtful space, shared responsibly.', 'eyebrow' => 'Terms & conditions / preview edition', 'description' => 'Guidelines for reading, sharing and contributing to this editorial demonstration.', 'sections' => [
+                ['title' => 'An implementation preview', 'text' => 'Fieldnotes is currently a development demonstration with fictional editorial records. It is not yet a production publishing, payment or membership service. Nothing in this preview creates a paid subscription or service agreement.'],
+                ['title' => 'Sharing and attribution', 'text' => 'Please share links to stories rather than republishing complete articles. Original site illustrations and editorial text belong to their creators; bundled fonts retain their SIL Open Font License.'],
+                ['title' => 'A constructive conversation', 'text' => 'Contributions should be relevant, respectful and free of personal attacks, unlawful material or undisclosed promotion. Moderation and reporting functionality will be connected during backend development.'],
+                ['title' => 'Editorial transparency', 'text' => 'Opinion is not professional medical, legal or financial advice. Material relationships and sponsorship will be disclosed. Final production terms must be reviewed for the operator’s jurisdiction before launch.'],
+            ]],
+            'cookies' => ['title' => 'A clear note about cookies.', 'eyebrow' => 'Cookie policy / preview edition', 'description' => 'You should know what is running in your browser, and have a meaningful choice.', 'sections' => [
+                ['title' => 'Essential site preferences', 'text' => 'This preview uses local browser storage for display preferences and your consent choice. No advertising or analytics tracking is active. Authentication session cookies will be documented when the identity module is implemented.'],
+                ['title' => 'Optional services', 'text' => 'Optional analytics and advertising remain disabled even if you allow them in the preview consent panel. External videos load only when you explicitly choose to load a film; social-sharing links open only when clicked.'],
+                ['title' => 'Change your mind', 'text' => 'Use the cookie-preferences control below or in the footer to revise your consent. You can also remove local preferences through your browser’s settings. A production cookie inventory and retention schedule will accompany any new tracking integration.'],
+            ]],
+        ];
+        foreach (array_keys($pages) as $id => $slug) {
+            $pages[$slug] = array_merge([
+                'id' => $id + 1, 'slug' => $slug, 'content' => '',
+                'createdAt' => new \DateTimeImmutable('2026-10-01'), 'updatedAt' => new \DateTimeImmutable('2026-11-11'),
+            ], $pages[$slug]);
+        }
+
+        return $pages;
+    }
+
     private function slug(string $value): string
     {
         return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($value)) ?? '', '-');

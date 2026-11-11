@@ -8,7 +8,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 1 | M1.1 | Design System & Components | Completed | Mock UI only; local fonts/artwork, keyboard and responsive checks |
 | 1 | M1.2 | Public Layout & Homepage | Completed | Mock UI; responsive homepage, working navigation and all card variants |
 | 1 | M1.3 | Blog Listing & Details | Completed | Mock-only discovery and article reading interactions verified |
-| 1 | M1.4 | Other Public Pages & Errors | Pending | |
+| 1 | M1.4 | Other Public Pages & Errors | Completed | Mock public archives, search, policies, contact, consent and branded errors verified |
 | 1 | M1.5 | Admin Shell & Dashboard | Pending | |
 | 1 | M1.6 | Article Management & Editor UI | Pending | |
 | 1 | M1.7a | Admin Content Pages | Pending | |
@@ -64,3 +64,13 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Browser checks: listing and article at 360/768/1024/1440 with no overflow; TOC generates five entries; progress updates while scrolling; like state and an actual local reply work; zero console messages.
 - Handoff note: the structured fixture content include intentionally avoids raw HTML. In M7, replace that one include with the **M5-sanitized** entity content output. No unsafe provider HTML is rendered.
 - Verification: full `composer qa` passes with 17 tests / 344 assertions, including tag/combined filters, oldest sorting, preserved pagination filters, public visibility and comment state coverage.
+
+### 2026-11-12 — M1.4 public pages and errors
+- Added contributor, category and topic indexes and linked detail archives, including an empty child-category state. Search has its own route, preserves filters/pagination and safely escapes query text.
+- Expanded About, Contact, Privacy, Terms and Cookie Policy with realistic preview-specific copy. Contact supports required/email/minimum-length validation, inline errors, first-invalid focus and an explicit local-only success notification.
+- Added local consent choices, persistent dismissal and preferences controls on the policy page/footer. Optional analytics and advertising stay disabled regardless of the selected choice.
+- Added branded 404, 500, generic-error and maintenance templates. Error previews are dev/test only; maintenance returns 503 with `Retry-After: 3600` and is unavailable in production.
+- Introduced the shared `PreviewForm` safeguard for contact, newsletter and comments: controls stay disabled without JavaScript and are enabled only after submission prevention is registered. Retested local comment creation and newsletter validation after the refactor; no contact-submission network requests occurred.
+- Verification: `composer qa` passed with 47 tests / 578 assertions, PHPStan level 6, all lint/style checks, standalone Tailwind compilation, clean dependency audit and PHP-only tooling check. Tests cover every new page/status, archive counts, empty collections, linked destinations, escaped search, preview-form fallback and production preview restrictions.
+- Browser: 68 page/viewport checks across 360/768/1024/1440 passed with no overflow or runtime errors. Inspected contact desktop, contributor dark mode, mobile categories and mobile 404; confirmed all eight category illustrations load on scroll. Consent accepts both choices, persists after reload and reopens from both controls; contact validation and JavaScript-disabled public-form fallback passed. Browser resource errors for deliberately requested 404/500/503 responses are expected, not script failures.
+- Handoff: static-page sections are escaped structured preview content; switch the content loop to M5-sanitized `page.content` during integration. Policies still require production/legal review. Full UI accessibility/state audit remains M1.8; administration screens and all backend functionality remain pending.

@@ -11,8 +11,11 @@
 | Media | id, url (storage-resolved), filename, originalName, alt, caption, mimeType, width, height, size, createdAt |
 | Comment | id, content, guestName, status, createdAt, parent?, replies[] (thread projection) |
 | Role | id, name, description, permissions[], userCount (query projection) |
+| Page | id, slug, title, content (sanitized HTML later), createdAt, updatedAt; description/eyebrow/sections[] are the structured preview presentation projection |
 | SeoMetadata | title, description, focusKeyword, canonicalUrl?, noindex |
 
 The provider contains 30 published and six non-public articles, eight categories including two children, 25 tags, six authors, threaded comments, six media illustrations and five roles. Status/visibility filters must be explicit when constructing public previews. Public article content is rendered through structured Twig in M1; unsanitized provider content is never marked raw.
 
 When introducing entities in M3, preserve these property names. Aggregate/query projections can be DTOs rather than persistent columns. In M7 swap the preview provider for published query services; never leak draft content. UI-only preview submissions explicitly validate without persisting or sending email.
+
+M1.4 static pages use escaped `sections[].title` / `sections[].text` rather than raw HTML. Replace that content loop with the M5-sanitized `page.content` output at integration. Consent choices and theme preferences stay in local storage; optional tracking remains disabled. Public forms use the shared `PreviewForm` component: its fieldset is enabled only after the submit-prevention handler is attached, and stays disabled if JavaScript is unavailable.

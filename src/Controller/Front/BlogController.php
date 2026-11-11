@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class BlogController extends AbstractController
 {
     #[Route('/blog', name: 'front_blog', methods: ['GET'])]
+    #[Route('/search', name: 'front_search', methods: ['GET'])]
     public function index(Request $request, MockCatalog $catalog): Response
     {
         $filters = [];
@@ -24,9 +25,12 @@ final class BlogController extends AbstractController
         $pages = max(1, (int) ceil(count($all) / 9));
         $page = max(1, min($pages, $request->query->getInt('page', 1)));
 
-        return $this->render('front/blog/index.html.twig', array_merge($catalog->layout(), [
+        $isSearch = 'front_search' === $request->attributes->get('_route');
+
+        return $this->render($isSearch ? 'front/search/index.html.twig' : 'front/blog/index.html.twig', array_merge($catalog->layout(), [
             'articles' => array_slice($all, ($page - 1) * 9, 9), 'total' => count($all),
             'page' => $page, 'pages' => $pages, 'filters' => $filters,
+            'listingRoute' => $isSearch ? 'front_search' : 'front_blog',
         ]));
     }
 

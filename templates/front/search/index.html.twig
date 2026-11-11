@@ -1,0 +1,3 @@
+{% extends 'front/blog/index.html.twig' %}
+{% block title %}Search{% if filters.q %}: {{ filters.q }}{% endif %} · Fieldnotes{% endblock %}
+{% block listing_heading %}<p class="eyebrow mt-8">Search the journal</p><h1 class="mt-4 font-display text-display">Follow a new thread.</h1><p class="mt-5 max-w-xl text-muted">{% if filters.q %}Results for “{{ filters.q }}”.{% else %}What are you curious about? Search a topic, a story or a phrase.{% endif %}</p>{% endblock %}

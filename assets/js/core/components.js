@@ -9,6 +9,7 @@ const loaders = {
   validate: () => import('../components/form-validate.js'),
   listing: () => import('../components/listing.js'),
   reader: () => import('../components/reader.js'),
+  consent: () => import('../components/consent.js'),
 };
 const initialized = new WeakMap();
 export async function enhance(root) {

@@ -58,4 +58,22 @@ final readonly class MockCatalog
 
         return null;
     }
+
+    /** @return array<string, mixed>|null */
+    public function collection(string $kind, string $slug): ?array
+    {
+        $items = match ($kind) {
+            'author' => $this->data->authors(),
+            'category' => $this->data->categories(),
+            'tag' => $this->data->tags(),
+            default => [],
+        };
+        foreach ($items as $item) {
+            if ($item['slug'] === $slug) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
 }

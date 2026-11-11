@@ -1,0 +1,8 @@
+{% props successMessage = 'Form validated in preview. Nothing was saved or sent.', fieldsClass = 'space-y-5', legend = 'Local-only form preview' %}
+<form data-component="validate" data-success-message="{{ successMessage }}" {{ attributes }}>
+    <noscript><p class="mb-6 text-sm text-muted">Enable JavaScript to try this local-only preview. The controls stay disabled so no data can be sent to the server.</p></noscript>
+    <fieldset disabled data-preview-fields class="min-w-0 {{ fieldsClass }}">
+        <legend class="sr-only">{{ legend }}</legend>
+        {% block content %}{% endblock %}
+    </fieldset>
+</form>

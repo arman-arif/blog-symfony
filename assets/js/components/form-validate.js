@@ -17,4 +17,5 @@ export default function validate(form) {
     form.dispatchEvent(new CustomEvent('preview:valid', { bubbles: true }));
   });
   form.addEventListener('input', (event) => { if (event.target.getAttribute('aria-invalid') === 'true') check(event.target); });
+  form.querySelectorAll('[data-preview-fields]').forEach(fieldset => { fieldset.disabled = false; });
 }

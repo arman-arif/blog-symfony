@@ -1,0 +1,11 @@
+<div class="my-8"><twig:Alert tone="info" title="Contact preview">This form demonstrates validation only. No message is delivered.</twig:Alert></div>
+<twig:PreviewForm class="card p-6 sm:p-8" fieldsClass="space-y-6" legend="Contact message preview" successMessage="Your message is valid. This preview does not send it to the editorial team.">
+        <div class="grid gap-6 sm:grid-cols-2">
+            <twig:Field id="contact-name" label="Your name" required><twig:Input id="contact-name" required maxlength="100" autocomplete="name"/></twig:Field>
+            <twig:Field id="contact-email" label="Your email" required><twig:Input id="contact-email" type="email" required autocomplete="email"/></twig:Field>
+        </div>
+        <twig:Field id="contact-topic" label="What’s on your mind?" required><twig:Select id="contact-topic" required placeholder="Choose a topic" options="{{ {story: 'Pitch a story', feedback: 'Share feedback', partnership: 'Explore a partnership', other: 'Something else'} }}"/></twig:Field>
+        <twig:Field id="contact-message" label="Your message" help="A little context helps us understand your idea." required><twig:Textarea id="contact-message" required minlength="20" maxlength="5000" placeholder="Tell us more…"/></twig:Field>
+        <twig:Button type="submit">Validate message<twig:Icon name="arrow"/></twig:Button>
+</twig:PreviewForm>
+<div class="mt-8 grid gap-6 sm:grid-cols-2"><div><h2 class="text-sm font-semibold">Editorial enquiries</h2><p class="mt-2 text-sm text-muted">hello@fieldnotes.example</p></div><div><h2 class="text-sm font-semibold">A considered reply</h2><p class="mt-2 text-sm text-muted">Our real contact details and response times will be configured before launch.</p></div></div>
