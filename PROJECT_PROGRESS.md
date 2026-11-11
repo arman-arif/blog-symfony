@@ -7,7 +7,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 0 | M0 | Project Inspection & Setup | Completed | Symfony 8.1; standalone CSS build and full QA verified |
 | 1 | M1.1 | Design System & Components | Completed | Mock UI only; local fonts/artwork, keyboard and responsive checks |
 | 1 | M1.2 | Public Layout & Homepage | Completed | Mock UI; responsive homepage, working navigation and all card variants |
-| 1 | M1.3 | Blog Listing & Details | Pending | |
+| 1 | M1.3 | Blog Listing & Details | Completed | Mock-only discovery and article reading interactions verified |
 | 1 | M1.4 | Other Public Pages & Errors | Pending | |
 | 1 | M1.5 | Admin Shell & Dashboard | Pending | |
 | 1 | M1.6 | Article Management & Editor UI | Pending | |
@@ -56,3 +56,11 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Verification: `composer qa` green (5 tests / 304 assertions), including an HTTP crawl of every internal homepage link, image attributes and mock fixture contracts. Composer audit fetched successfully on the final run.
 - Browser: inspected the complete homepage; fixed an initial 360px header overflow with 44px icon buttons. Retested 360/768/1024/1440 with no overflow or broken images, mobile drawer/Escape and zero console messages.
 - No email delivery, database content, tracking, reader-account persistence or CMS business logic is claimed.
+
+### 2026-11-12 — M1.3 discovery and reading
+- Listing supports combined search/category/tag/author query filters, newest/popular/oldest sorting, bounded pagination preserving filters, grid/list enhancement and distinct no-match/empty-collection states.
+- Article view includes semantic rich content samples (headings, lists, quote, code, table, illustration and optional embed), generated sticky TOC, scroll progress, copy/share actions, local preview like/bookmark toggles, tags, biography, related and previous/next stories.
+- Approved threaded mock comments support reply context, client validation and safely text-rendered local preview replies; closed-comment articles show a distinct state. Draft/scheduled/unpublished mock articles return 404 publicly.
+- Browser checks: listing and article at 360/768/1024/1440 with no overflow; TOC generates five entries; progress updates while scrolling; like state and an actual local reply work; zero console messages.
+- Handoff note: the structured fixture content include intentionally avoids raw HTML. In M7, replace that one include with the **M5-sanitized** entity content output. No unsafe provider HTML is rendered.
+- Verification: full `composer qa` passes with 17 tests / 344 assertions, including tag/combined filters, oldest sorting, preserved pagination filters, public visibility and comment state coverage.

@@ -60,4 +60,8 @@
   .prose pre { @apply bg-ink text-canvas; }
   .prose table { @apply block overflow-x-auto; }
   .prose img { @apply rounded-card; }
+  .article-results[data-view=list] { @apply grid-cols-1; }
+  .article-results[data-view=list] > article { @apply grid grid-cols-[6rem_1fr] gap-5 sm:grid-cols-[14rem_1fr]; }
+  .article-results[data-view=list] > article > div { @apply pt-0; }
+  [data-engagement][aria-pressed=true] { @apply border-brand bg-brand/10 text-brand; }
 }

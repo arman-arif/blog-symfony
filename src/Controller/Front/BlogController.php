@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Front;
 
 use App\Mock\MockCatalog;
+use App\Mock\MockDataProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,10 +31,17 @@ final class BlogController extends AbstractController
     }
 
     #[Route('/blog/{slug}', name: 'front_article', methods: ['GET'])]
-    public function show(string $slug, MockCatalog $catalog): Response
+    public function show(string $slug, MockCatalog $catalog, MockDataProvider $data): Response
     {
         $article = $catalog->article($slug) ?? throw $this->createNotFoundException();
+        $articles = $catalog->articles();
+        $position = array_search($slug, array_column($articles, 'slug'), true);
 
-        return $this->render('front/article/index.html.twig', array_merge($catalog->layout(), ['article' => $article]));
+        return $this->render('front/article/index.html.twig', array_merge($catalog->layout(), [
+            'article' => $article, 'comments' => $data->comments(),
+            'related' => array_slice(array_values(array_filter($catalog->articles(['category' => $article['categories'][0]['slug']]), static fn (array $other): bool => $other['slug'] !== $slug)), 0, 3),
+            'previous' => false !== $position && $position > 0 ? $articles[$position - 1] : null,
+            'next' => false !== $position ? ($articles[$position + 1] ?? null) : null,
+        ]));
     }
 }

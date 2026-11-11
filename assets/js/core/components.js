@@ -7,6 +7,8 @@ const loaders = {
   confirm: () => import('../components/confirm.js'),
   theme: () => import('../components/theme-toggle.js'),
   validate: () => import('../components/form-validate.js'),
+  listing: () => import('../components/listing.js'),
+  reader: () => import('../components/reader.js'),
 };
 const initialized = new WeakMap();
 export async function enhance(root) {
