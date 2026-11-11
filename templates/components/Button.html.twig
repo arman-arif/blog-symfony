@@ -1,0 +1,9 @@
+{% props variant = 'primary', size = 'md', href = null, loading = false, disabled = false, type = 'button' %}
+{% set variants = {primary: 'btn-primary', secondary: 'btn-secondary', ghost: 'btn-ghost', danger: 'btn-danger'} %}
+{% set sizes = {sm: 'btn-sm', md: '', lg: 'btn-lg'} %}
+{% set classes = 'btn ' ~ variants[variant] ~ ' ' ~ sizes[size] %}
+{% if href %}<a href="{{ href }}" {{ attributes.defaults({class: classes}) }}>{% block content %}{% endblock %}</a>
+{% else %}<button type="{{ type }}" {{ attributes.defaults({class: classes}) }} {% if disabled or loading %}disabled{% endif %} {% if loading %}aria-busy="true"{% endif %}>
+    {% if loading %}<span class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true"></span>{% endif %}
+    {{ block('content') }}
+</button>{% endif %}

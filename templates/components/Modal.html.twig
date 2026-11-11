@@ -1,0 +1,5 @@
+{% props id, title, drawer = false %}
+<dialog id="{{ id }}" aria-labelledby="{{ id }}-title" {{ attributes.defaults({class: drawer ? 'dialog drawer' : 'dialog', 'data-component': drawer ? 'drawer' : 'modal'}) }}>
+<div class="flex items-center justify-between border-b border-line p-5"><h2 id="{{ id }}-title" class="text-lg font-semibold">{{ title }}</h2><twig:Button variant="ghost" data-dialog-close aria-label="Close dialog"><twig:Icon name="close"/></twig:Button></div>
+<div class="p-6">{% block content %}{% endblock %}</div>
+</dialog>

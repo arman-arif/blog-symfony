@@ -1,0 +1,2 @@
+{% props lines = 3 %}
+<div role="status" aria-label="Loading content" {{ attributes.defaults({class: 'card space-y-4 p-6'}) }}><div class="skeleton h-36"></div>{% for line in 1..lines %}<div class="skeleton h-4 {{ loop.last ? 'w-2/3' : 'w-full' }}"></div>{% endfor %}<span class="sr-only">Loading…</span></div>

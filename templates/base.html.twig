@@ -4,8 +4,10 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}Welcome!{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+        <meta name="description" content="{% block description %}Thoughtful stories on design, technology and living well. Independent ideas for curious minds.{% endblock %}">
+        <link rel="icon" href="{{ asset('icons/favicon.svg') }}" type="image/svg+xml">
         {% block stylesheets %}
+            <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
         {% endblock %}
 
         {% block javascripts %}
@@ -14,6 +16,8 @@
 
     </head>
     <body>
+        <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-5 focus:top-5 focus:z-50 focus:rounded-control focus:bg-surface focus:p-4">Skip to content</a>
         {% block body %}{% endblock %}
+        {% include 'partials/feedback.html.twig' %}
     </body>
 </html>

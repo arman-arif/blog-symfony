@@ -1,0 +1,2 @@
+{% props title = 'Nothing here yet', description = 'Try changing your filters or check back soon.', icon = 'search' %}
+<div {{ attributes.defaults({class: 'card flex flex-col items-center px-6 py-14 text-center'}) }}><span class="mb-4 rounded-full bg-brand/10 p-4 text-brand"><twig:Icon name="{{ icon }}" size="28"/></span><h2 class="text-xl font-semibold">{{ title }}</h2><p class="mt-2 max-w-md text-sm text-muted">{{ description }}</p><div class="mt-5">{% block content %}{% endblock %}</div></div>

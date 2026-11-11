@@ -1,0 +1,6 @@
+{% props page = 1, pages = 1, route, query = {} %}
+{% if pages > 1 %}<nav aria-label="Pagination" class="flex flex-wrap items-center justify-center gap-2 py-8" {{ attributes }}>
+{% if page > 1 %}<twig:Button variant="secondary" href="{{ path(route, query|merge({page: page - 1})) }}">Previous</twig:Button>{% endif %}
+{% for number in 1..pages %}<a class="btn {{ page == number ? 'btn-primary' : 'btn-secondary' }}" href="{{ path(route, query|merge({page: number})) }}" {% if page == number %}aria-current="page"{% endif %}>{{ number }}</a>{% endfor %}
+{% if page < pages %}<twig:Button variant="secondary" href="{{ path(route, query|merge({page: page + 1})) }}">Next</twig:Button>{% endif %}
+</nav>{% endif %}

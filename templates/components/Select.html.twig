@@ -1,0 +1,5 @@
+{% props id, name = null, options = {}, value = '', placeholder = null %}
+<select id="{{ id }}" name="{{ name ?? id }}" aria-describedby="{{ id }}-help {{ id }}-error" {{ attributes.defaults({class: 'field-control'}) }}>
+{% if placeholder %}<option value="">{{ placeholder }}</option>{% endif %}
+{% for key, label in options %}<option value="{{ key }}" {% if key == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select>

@@ -5,7 +5,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | Phase | Milestone | Module | Status | Notes |
 |---|---|---|---|---|
 | 0 | M0 | Project Inspection & Setup | Completed | Symfony 8.1; standalone CSS build and full QA verified |
-| 1 | M1.1 | Design System & Components | Pending | |
+| 1 | M1.1 | Design System & Components | Completed | Mock UI only; local fonts/artwork, keyboard and responsive checks |
 | 1 | M1.2 | Public Layout & Homepage | Pending | |
 | 1 | M1.3 | Blog Listing & Details | Pending | |
 | 1 | M1.4 | Other Public Pages & Errors | Pending | |
@@ -40,3 +40,11 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Verification: `composer qa` passed (container/Twig/YAML lint, Tailwind build, PHPStan level 6, CS Fixer, PHPUnit: 1 test / 3 assertions, Composer audit, tooling check). HTTP welcome page returned 200 through PHP's server.
 - Tailwind init requires interactive input; supplied its explicit no-managed-binary / version-3 answers via stdin, then pinned 3.4.17. The bundled Browserslist age warning is harmless; its suggested package-manager command was not run.
 - Port 8000 was already occupied; the verification server uses loopback port 8088 without touching the existing process. Importmap CDN polyfills are disabled; the supported browser baseline has native import maps.
+
+### 2026-11-12 — M1.1 design system
+- Implemented runtime color tokens, serif/sans variable fonts with bundled licenses, light/dark palettes and reusable Twig primitives (controls, fields, cards, tables, badges, alerts, overlays, navigation, skeletons and empty states).
+- Added lazy-loaded vanilla enhancement, native modal focus containment/Escape, keyboard dropdowns/tabs, persistent theme preference, dismissible live notifications and preview validation/confirmations.
+- Documented the data contract; fixtures provide 36 articles (30 public), 8 categories, 25 tags, 6 authors/users, threaded comments, 6 original local illustrations and 5 roles. No business persistence has been introduced.
+- Tests: QA passed, fixture contract assertions and HTTP component-state checks; production styleguide access is explicitly tested as 404.
+- Browser checks: light/dark mode; modal opening/Escape; keyboard arrow-tab selection; no page overflow at 360/768/1024/1440; zero console errors/warnings. Reviewed the full styleguide screenshot.
+- Known issues: broader page-level accessibility and all state matrices remain the M1.8 audit, not a completed claim for the whole UI. Composer audit briefly used its local advisory cache after a network timeout; rerun before deployment.

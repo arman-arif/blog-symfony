@@ -1,0 +1,3 @@
+{% props tone = 'neutral' %}
+{% set tones = {neutral: 'badge-neutral', success: 'badge-success', warning: 'badge-warning', danger: 'badge-danger', info: 'badge-info'} %}
+<span {{ attributes.defaults({class: 'badge ' ~ tones[tone]}) }}>{% block content %}{% endblock %}</span>

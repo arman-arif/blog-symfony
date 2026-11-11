@@ -1,0 +1,2 @@
+{% props id, name = null, type = 'text', value = '', invalid = false %}
+<input id="{{ id }}" name="{{ name ?? id }}" type="{{ type }}" value="{{ value }}" aria-invalid="{{ invalid ? 'true' : 'false' }}" aria-describedby="{{ id }}-help {{ id }}-error" {{ attributes.defaults({class: 'field-control'}) }}>

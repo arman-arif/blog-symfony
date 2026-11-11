@@ -1,0 +1,5 @@
+{% props tone = 'info', title = null %}
+{% set tones = {info: 'badge-info', success: 'badge-success', warning: 'badge-warning', danger: 'badge-danger'} %}
+<div role="{{ tone == 'danger' ? 'alert' : 'status' }}" {{ attributes.defaults({class: 'alert ' ~ tones[tone]}) }}>
+<twig:Icon name="{{ tone == 'success' ? 'check' : 'alert' }}"/><div>{% if title %}<p class="font-semibold">{{ title }}</p>{% endif %}{% block content %}{% endblock %}</div>
+</div>

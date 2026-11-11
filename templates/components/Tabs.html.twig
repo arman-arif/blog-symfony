@@ -1,0 +1,4 @@
+{% props id, tabs %}
+<div data-component="tabs" {{ attributes }}><div class="flex overflow-x-auto border-b border-line" role="tablist" aria-label="{{ id|replace({'-': ' '}) }}">
+{% for key, label in tabs %}<button type="button" role="tab" id="{{ id }}-{{ key }}-tab" class="tab" aria-selected="{{ loop.first ? 'true' : 'false' }}" aria-controls="{{ id }}-{{ key }}" tabindex="{{ loop.first ? '0' : '-1' }}">{{ label }}</button>{% endfor %}
+</div>{% block content %}{% endblock %}</div>

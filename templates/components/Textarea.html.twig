@@ -1,0 +1,2 @@
+{% props id, name = null, value = '', invalid = false %}
+<textarea id="{{ id }}" name="{{ name ?? id }}" aria-invalid="{{ invalid ? 'true' : 'false' }}" aria-describedby="{{ id }}-help {{ id }}-error" {{ attributes.defaults({class: 'field-control', rows: 5}) }}>{{ value }}</textarea>

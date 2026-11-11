@@ -1,0 +1,2 @@
+{% props caption, columns %}
+<div {{ attributes.defaults({class: 'table-shell'}) }}><table class="data-table"><caption class="sr-only">{{ caption }}</caption><thead><tr>{% for label in columns %}<th scope="col">{{ label }}</th>{% endfor %}</tr></thead><tbody>{% block content %}{% endblock %}</tbody></table></div>

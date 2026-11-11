@@ -1,0 +1,5 @@
+{% props id, label %}
+<div class="relative inline-block" data-component="dropdown" {{ attributes }}>
+<twig:Button variant="secondary" data-dropdown-trigger aria-expanded="false" aria-controls="{{ id }}">{{ label }}<twig:Icon name="chevron"/></twig:Button>
+<div id="{{ id }}" class="dropdown-panel" data-dropdown-panel hidden>{% block content %}{% endblock %}</div>
+</div>
