@@ -103,7 +103,8 @@ Cron is a fallback, not a replacement for a supervised worker at scale.
 
 1. `composer install --no-dev --optimize-autoloader`
 2. `doctrine:migrations:migrate`
-3. `tailwind:build --minify`
+3. `app:security:sync-permissions`
+4. `tailwind:build --minify`
 4. `asset-map:compile`
 5. `cache:clear` + `cache:warmup`
 6. optional worker restart (`--restart-workers`)

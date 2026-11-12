@@ -68,6 +68,8 @@ Deploy with:
 sudo -u fieldnotes ./deploy.sh --restart-workers
 ```
 
+Create the first administrator once with `bin/console app:user:create-admin` (no demo fixtures required).
+
 ## Architecture
 
 - **Domain services** own business rules; repositories own queries; voters enforce permission codes; controllers stay thin.
@@ -93,7 +95,7 @@ The permission matrix is data-driven and editable at `/admin/permissions`.
 ## Verification
 
 - `composer qa` green from the verified workspace.
-- 220 tests / 20,415 assertions; Service line coverage 90.6%, Security 81.3%.
+- 221 tests / 20,420 assertions; Service line coverage 90.6%, Security 81.3%.
 - PHPStan max level for `src/Service` and `src/Security`; level 6 for the full tree.
 - Database migrations and the full test suite verified on **MySQL 8.4** and MariaDB 12.3.
 

@@ -27,7 +27,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 12 | M12 | Monetization | Completed | Ads, sponsorship/affiliate handling and extension interfaces verified |
 | 13 | M13 | Website Settings | Completed | Persisted settings, appearance, menus, maintenance and full admin completion verified |
 | 14 | M14 | Security & Performance | Completed | CSP/headers, password policy, encrypted TOTP, caching and query budgets verified |
-| 15 | M15 | Testing | Completed | 220 tests, coverage targets, route/permission/query sweeps and QA pipeline green |
+| 15 | M15 | Testing | Completed | 221 tests, coverage targets, route/permission/query sweeps and QA pipeline green |
 | 16 | M16 | Deployment & Documentation | Completed | README, install/deploy/operations docs, server/worker configs and MySQL 8.4 parity verified |
 
 ## Phase 1 review gate
@@ -242,5 +242,5 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Rewrote `README.md` with features, requirements, quick start, architecture, roles, QA evidence and a documentation map; removed the stale “implementation in progress” claim.
 - Added `docs/installation.md` (clean Ubuntu/Debian, packages, DB, environment, assets, smoke test), `docs/deployment.md` (Nginx/Apache, PHP-FPM, systemd workers, cron fallback, deploy/rollback) and `docs/operations.md` (backups/restore, permissions, cache, queues, upgrades, incident checks) plus `deploy.sh`.
 - Added production samples: `deploy/nginx.conf`, `deploy/apache-vhost.conf`, `deploy/php-fpm/fieldnotes.conf`, `deploy/systemd/fieldnotes-worker@.service` and `deploy/systemd/fieldnotes-scheduler.service`. Web configs deny PHP execution in uploads and expose only `public/`; the deploy script performs install → migrations → Tailwind → AssetMapper → cache warmup → optional worker restart.
-- MySQL 8.4 parity uncovered a portability bug: the initial redirect table used a 2048-char utf8mb4 unique index, rejected by MySQL 8/InnoDB. The initial migration now creates `VARCHAR(512)` (later redirect migration remains safe). A fresh MySQL 8.4 database migrated successfully and the full 220-test suite passed.
+- MySQL 8.4 parity uncovered a portability bug: the initial redirect table used a 2048-char utf8mb4 unique index, rejected by MySQL 8/InnoDB. The initial migration now creates `VARCHAR(512)` (later redirect migration remains safe). A fresh MySQL 8.4 database migrated successfully and the full 221-test suite passed.
 - Documented the operator runbook and MySQL 8.4/MariaDB 12.3 verification. All milestones M0–M16 are now complete.

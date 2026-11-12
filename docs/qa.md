@@ -3,7 +3,7 @@
 ## Test and static-analysis status
 
 - `composer qa` passes: composer validation, container/Twig/YAML lint, Tailwind build, PHPStan (level 6 across `src`/`tests`), max-level PHPStan for `src/Service`/`src/Security`, PHP-CS-Fixer dry run, PHPUnit, `composer audit` and the tooling check.
-- PHPUnit: **220 tests / 20,415 assertions**.
+- PHPUnit: **221 tests / 20,420 assertions**.
 - PHPStan max level is clean on the business/security layer via `phpstan-max.neon`; the full codebase (including intentionally dynamic test container access) remains at level 6.
 
 ## Coverage

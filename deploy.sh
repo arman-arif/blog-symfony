@@ -35,6 +35,7 @@ run() {
 
 run "$COMPOSER_BIN" install --no-dev --optimize-autoloader --no-interaction
 run "$PHP_BIN" bin/console doctrine:migrations:migrate --no-interaction
+run "$PHP_BIN" bin/console app:security:sync-permissions
 run "$PHP_BIN" bin/console tailwind:build --minify
 run "$PHP_BIN" bin/console asset-map:compile
 run "$PHP_BIN" bin/console cache:clear

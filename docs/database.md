@@ -1,6 +1,6 @@
 # Database design
 
-Target: **MySQL 8.4** with `utf8mb4`. M16 verified a fresh MySQL 8.4 migration run and the full test suite (220 tests / 20,415 assertions); MariaDB 12.3 remains the local development service. Schema changes are applied only through Doctrine migrations.
+Target: **MySQL 8.4** with `utf8mb4`. M16 verified a fresh MySQL 8.4 migration run and the full test suite (221 tests / 20,420 assertions); MariaDB 12.3 remains the local development service. Schema changes are applied only through Doctrine migrations.
 
 ## Migration groups
 

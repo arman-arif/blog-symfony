@@ -10,6 +10,8 @@ use App\Repository\PageRepository;
 use App\Repository\RoleRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Tester\CommandTester;
 
 final class AdminManagementTest extends FrontTestCase
 {
@@ -127,6 +129,24 @@ final class AdminManagementTest extends FrontTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('main', 'last Super Administrator');
         self::assertSame(1, self::getContainer()->get(UserRepository::class)->countSuperAdmins());
+    }
+
+    public function testBootstrapAdminCommandCreatesAVerifiedSuperAdminAndRejectsWeakPasswords(): void
+    {
+        self::createClient();
+        $this->seed();
+        $application = new Application(self::$kernel);
+        $command = $application->find('app:user:create-admin');
+        $tester = new CommandTester($command);
+        $tester->execute(['--email' => 'bootstrap@example.test', '--name' => 'Bootstrap Admin', '--password' => 'short']);
+        self::assertSame(1, $tester->getStatusCode());
+
+        $tester->execute(['--email' => 'bootstrap@example.test', '--name' => 'Bootstrap Admin', '--password' => 'bootstrap-admin-password']);
+        self::assertSame(0, $tester->getStatusCode());
+        $user = self::getContainer()->get(UserRepository::class)->findOneByEmail('bootstrap@example.test');
+        self::assertInstanceOf(User::class, $user);
+        self::assertTrue($user->isVerified());
+        self::assertTrue($user->hasRoleCode('ROLE_SUPER_ADMIN'));
     }
 
     public function testRolesPermissionsAndActivityAreReal(): void

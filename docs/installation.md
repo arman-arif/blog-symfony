@@ -101,7 +101,13 @@ sudo -u fieldnotes APP_ENV=prod php bin/console cache:warmup
 
 TailwindBundle downloads the pinned standalone CLI into `var/tailwind`; no Node is installed. AssetMapper compiles the ES-module import map into `public/assets/`.
 
-Create the first administrator. The demo fixtures are **development only**. Use a one-off console command/`doctrine:fixtures:load` only on a private staging host, then change the password. For production, create a user through a controlled bootstrap (for example `bin/console app:security:sync-permissions` followed by an SQL/console provisioning step) and verify email/2FA.
+Create the first administrator without loading demo fixtures:
+
+```bash
+sudo -u fieldnotes APP_ENV=prod php bin/console app:user:create-admin
+```
+
+Provide the email, display name and a strong 12+ character password at the prompts. The account is verified and assigned `ROLE_SUPER_ADMIN`. The demo fixtures remain **development only**; never load them on a public production database.
 
 ## 6. Web server and workers
 
@@ -125,6 +131,6 @@ Check `/admin` login, send a test email from **Settings → Email/SMTP**, save a
 ## 8. Verification performed on this project
 
 - Migrations `up` from a fresh MySQL 8.4 database.
-- Full PHPUnit suite on MySQL 8.4 (220 tests / 20,415 assertions) and MariaDB 12.3.
+- Full PHPUnit suite on MySQL 8.4 (221 tests / 20,420 assertions) and MariaDB 12.3.
 - `composer qa`, CSP/header checks, route crawler and query budgets.
 - See [`qa.md`](qa.md) and [`security.md`](security.md).
