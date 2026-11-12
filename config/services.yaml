@@ -19,5 +19,8 @@ services:
     App\:
         resource: '../src/'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    # A runtime-selected adapter needs a factory; cache pools replace the namespace argument.
+    app.optional_redis_adapter:
+        class: Symfony\Component\Cache\Adapter\AdapterInterface
+        factory: ['@App\Infrastructure\Cache\OptionalRedisCacheFactory', 'create']
+        arguments: ['fieldnotes', 600]

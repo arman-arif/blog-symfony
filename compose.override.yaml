@@ -1,0 +1,8 @@
+
+services:
+  mailer:
+    image: axllent/mailpit:v1.28
+    profiles: [mail]
+    ports:
+      - "127.0.0.1:10258:1025"
+      - "127.0.0.1:8025:8025"

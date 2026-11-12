@@ -1,0 +1,37 @@
+
+name: fieldnotes
+
+# Local development only. Credentials are generated into ignored var/development.env.
+services:
+  database:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: fieldnotes
+      MYSQL_USER: fieldnotes
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Run php tools/setup-development.php first}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run php tools/setup-development.php first}
+    ports:
+      - "127.0.0.1:33068:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -h 127.0.0.1 -u root -e 'SELECT 1' >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    volumes:
+      - database_data:/var/lib/mysql
+      - ./docker/mysql/10-test-database.sql:/docker-entrypoint-initdb.d/10-test-database.sql:ro
+
+  redis:
+    image: redis:8-alpine
+    profiles: [redis]
+    ports:
+      - "127.0.0.1:63798:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  database_data:

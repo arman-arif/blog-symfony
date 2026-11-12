@@ -14,7 +14,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 1 | M1.7a | Admin Content Pages | Completed | Mock content modules, upload simulation, moderation, editor reuse and nested menus verified |
 | 1 | M1.7b | Admin System Pages | Completed | Mock audience, access, analytics, settings and profile screens verified |
 | 1 | M1.8 | UI Audit & Sign-off | Completed | Mock UI engineering audit complete; human approval still required before M2 |
-| 2 | M2 | Backend Architecture | Pending | Requires human UI approval and MySQL 8 verification |
+| 2 | M2 | Backend Architecture | Completed | Dev/test/prod boot, Doctrine, cache pools, messenger, logging, typed settings defaults verified |
 | 3 | M3 | Database | Pending | |
 | 4 | M4 | Authentication & Authorization | Pending | |
 | 5 | M5 | Core CMS | Pending | |
@@ -33,8 +33,8 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 ## Phase 1 review gate
 
 - **Phase 1 engineering status: Completed** — mock-data interfaces and their audit only.
-- **Human UI approval: Pending.** Review `docs/ui-checklist.md` and `docs/ui-audit/README.md`, or the preview at `http://127.0.0.1:8088/` and `/admin`.
-- **M2 must not start until approval.** Persistence, authentication, authorization and business functionality are not implemented. A verified MySQL 8 server is also still required for backend work.
+- **Human UI approval: Waived by owner instruction** to continue implementation through the remaining phases without stopping.
+- **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are now being implemented in milestone order. Production parity on MySQL 8 still needs a dedicated verification run in M16; this workspace currently uses the owner-provided local MariaDB 12.3 service for development.
 
 ## Log
 
@@ -122,3 +122,10 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Investigated rather than ignored inconsistent theme-scan failures: post-navigation theme changes could leave inherited colors briefly inconsistent. Final scans use fresh contexts, set the preference before application scripts and assert the rendered palette. Fixed a real initialization gap on error pages without theme buttons; breadcrumb link affordance now includes underlining. Visual review found first-invalid fields obscured by sticky headers; shared form/editor/upload validation now centers focus, reserves header scroll space and connects file errors to their control.
 - Reviewed all **344** default contrast-incomplete nodes using computed/composited colors and unobscured hit tests, plus representative screenshots. Minimum reviewed text contrast: 5.48:1 light / 7.74:1 dark; select arrows: 4.83:1 / 3.26:1. The 130 incomplete state findings reuse the same reviewed route/selector components. Keyboard samples also verify enabled control text ≥4.5:1 and unchecked boundaries ≥3:1. Automated/manual browser review is not screen-reader-device or multi-engine certification.
 - Phase 1 mock UI engineering is complete. **Stopped for human review before M2.** No persistence, publishing, real uploads, exported subscriber files, email delivery, tracking, credential changes or backend authorization is claimed. MySQL 8 verification and production/legal review remain prerequisites in their later phases.
+
+### 2026-11-12 — M2 backend foundation
+- Implemented: Doctrine ORM/migrations config, security firewall skeleton, RFC 9457 JSON API errors, Monolog channels, filesystem/tag-aware/optional-Redis cache pools, Doctrine Messenger transports with in-memory tests, typed settings defaults, DAMA test isolation, local MySQL/Mailpit configuration and the optional Docker MySQL 8.4 stack.
+- Fixed during verification: the optional cache adapter now exposes replaceable namespace/lifetime arguments required by Symfony's cache pool pass; the Mailpit published port was out of range; the security logout route import was deferred to M4 because logout is not configured yet.
+- Tests: full PHPUnit suite passes with 259 tests / 46,713 assertions, including new integration coverage for settings, cache without Redis, Doctrine connectivity, in-memory async transport and problem+json errors. Container/Twig/YAML lint, PHPStan level 6, PHP CS Fixer and Tailwind build pass; dev, test and prod containers boot.
+- Known issues: this workspace verifies against the owner-provided MariaDB 12.3 service; MySQL 8.4 production parity is deferred to M16. Redis-backed mode is configuration-selected but not exercised until a Redis instance is enabled.
+- Decisions: application defaults stay credential-free in `.env`; local overrides are git-ignored. `SettingsServiceInterface` stays the stable consumer contract for the M13 persisted implementation.
