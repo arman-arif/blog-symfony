@@ -94,3 +94,11 @@ The article, category and tag administration screens are now server-backed; rema
 - **Subscriptions:** CSRF/rate-limited opt-in with opaque confirmation/unsubscribe tokens, double opt-in setting, confirmation/welcome emails and List-Unsubscribe headers.
 - **Admin:** real subscriber management with status actions and CSV export, plus campaign editor, test sends, history and delivery stats.
 - **Delivery:** campaigns are batched through Messenger (50 recipients per message), rendered with inline CSS, and scheduled sends run every minute through the Symfony Scheduler. Failures are recorded per recipient without aborting the batch.
+
+## M11 analytics and reporting
+
+- **Rollups:** raw `ArticleView` rows are aggregated into idempotent `article_daily_stat` values hourly by Symfony Scheduler; raw views are pruned after 30 days. `app:analytics:rollup` provides manual control.
+- **Reads:** dashboard and analytics endpoints query daily stats only, using indexed date/group queries; report results are tag-cached for 10 minutes with invalidation from content, comment, engagement, subscription and rollup changes.
+- **Dashboard:** real stat cards, 7-day views, category share, recent articles/comments/activity and workflow counts.
+- **Reporting:** date-range charts and top-article/author/category/tag tables plus CSV export, gated by `analytics.view`.
+- **Measured:** 100k raw views → 39 ms production response / 92 ms load on the local MariaDB benchmark.

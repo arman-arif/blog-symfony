@@ -220,7 +220,7 @@ final readonly class ArticleService
 
     private function invalidatePublicCache(): void
     {
-        $this->publicCache->invalidateTags(['articles', 'homepage', 'sitemap', 'redirects']);
+        $this->publicCache->invalidateTags(['articles', 'homepage', 'sitemap', 'redirects', 'analytics']);
     }
 
     private function createSlugRedirect(string $oldSlug, string $newSlug): void

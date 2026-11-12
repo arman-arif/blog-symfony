@@ -24,3 +24,4 @@ when@test:
                 Symfony\Component\Mailer\Messenger\SendEmailMessage: sync
                 App\Message\SendNewsletterCampaignMessage: sync
                 App\Message\SendScheduledNewsletterCampaignsMessage: sync
+                App\Message\AggregateAnalyticsMessage: sync

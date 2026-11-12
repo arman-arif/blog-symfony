@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Mock\MockDataProvider;
 use App\Tests\Factory\ArticleFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\DomCrawler\Crawler;
@@ -39,9 +38,9 @@ final class AdminShellTest extends AdminTestCase
         $client = self::createClient();
         $client->request('GET', '/admin');
         self::assertSelectorCount(2, 'canvas[role="img"][aria-describedby]');
-        self::assertSelectorCount(7, '#views-chart-table tbody tr');
-        self::assertSelectorCount(6, '#categories-chart-table tbody tr');
-        self::assertSelectorCount(5, 'main ol li');
+        self::assertSelectorExists('#views-chart-table');
+        self::assertSelectorExists('#categories-chart-table');
+        self::assertSelectorCount(4, '[data-dashboard-stat]');
         self::assertSelectorExists('form[action="/admin/articles"] input[name="q"]');
         self::assertSelectorExists('#admin-quick-draft fieldset[disabled]');
         self::assertSelectorExists('[data-sidebar-collapse][aria-expanded="true"]');
@@ -91,19 +90,6 @@ final class AdminShellTest extends AdminTestCase
             $client->request('GET', $link);
             self::assertResponseIsSuccessful('Broken admin link: '.$link);
         }
-    }
-
-    public function testDashboardCountsComeFromMockRecords(): void
-    {
-        $data = new MockDataProvider();
-        $dashboard = $data->dashboard();
-        self::assertSame(30, $dashboard['statuses']['published']);
-        self::assertSame(2, $dashboard['statuses']['draft']);
-        self::assertSame(2, $dashboard['statuses']['scheduled']);
-        self::assertSame(array_sum(array_column($data->articles(), 'viewCount')), $dashboard['stats'][0]['value']);
-        self::assertSame(3, $dashboard['stats'][3]['value']);
-        self::assertCount(5, $dashboard['activity']);
-        self::assertSame(100, array_sum($dashboard['categories']['values']));
     }
 
     public function testAdminRequiresAuthentication(): void

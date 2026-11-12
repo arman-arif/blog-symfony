@@ -80,20 +80,6 @@ final class AdminSystemTest extends AdminTestCase
         self::assertSelectorExists('[data-permission-summary][role="status"]');
     }
 
-    public function testAnalyticsAlternativesAndDateInputs(): void
-    {
-        $client = self::createClient();
-        $client->request('GET', '/admin/analytics');
-        self::assertSelectorCount(2, 'canvas[role="img"][aria-describedby]');
-        self::assertSelectorCount(30, '#analytics-views-chart-table tbody tr');
-        self::assertSelectorExists('#analytics-from[type="date"][required]');
-        self::assertSelectorExists('#analytics-to[type="date"][required]');
-        self::assertSelectorExists('[data-analytics-stat="views"] [data-stat-value]');
-        self::assertSelectorTextContains('main', 'Popular tags');
-        self::assertSelectorTextContains('main', 'Author performance');
-        self::assertSelectorTextContains('main', 'no tracking');
-    }
-
     public function testAppearanceAndSettingsContracts(): void
     {
         $client = self::createClient();

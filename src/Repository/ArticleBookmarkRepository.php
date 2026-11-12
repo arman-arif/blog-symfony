@@ -26,4 +26,24 @@ class ArticleBookmarkRepository extends ServiceEntityRepository
     {
         return $this->findBy(['user' => $userId], ['createdAt' => 'DESC']);
     }
+
+    /** @param list<int> $articleIds
+     * @return array<int, int>
+     */
+    public function countsByArticleIds(array $articleIds): array
+    {
+        if ([] === $articleIds) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('bookmark')
+            ->select('IDENTITY(bookmark.article) AS articleId, COUNT(bookmark.id) AS total')
+            ->andWhere('bookmark.article IN (:ids)')
+            ->setParameter('ids', $articleIds)
+            ->groupBy('bookmark.article')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_column($rows, 'total', 'articleId');
+    }
 }

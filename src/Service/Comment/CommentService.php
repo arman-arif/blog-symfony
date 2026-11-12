@@ -14,6 +14,8 @@ use App\Service\Mail\TransactionalMailer;
 use App\Service\Settings\SettingsServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final readonly class CommentService
 {
@@ -25,6 +27,8 @@ final readonly class CommentService
         private SpamCheckerInterface $spamChecker,
         private TransactionalMailer $mailer,
         private LoggerInterface $logger,
+        #[Autowire(service: 'cache.content')]
+        private TagAwareCacheInterface $cache,
     ) {
     }
 
@@ -92,6 +96,7 @@ final readonly class CommentService
 
         $this->entityManager->persist($comment);
         $this->entityManager->flush();
+        $this->cache->invalidateTags(['analytics']);
 
         if (CommentStatus::Pending === $comment->getStatus()) {
             $this->notifyAuthor($article, $comment);
@@ -104,18 +109,21 @@ final readonly class CommentService
     {
         $comment->setStatus($status);
         $this->entityManager->flush();
+        $this->cache->invalidateTags(['analytics']);
     }
 
     public function report(Comment $comment): void
     {
         $comment->setReportCount($comment->getReportCount() + 1);
         $this->entityManager->flush();
+        $this->cache->invalidateTags(['analytics']);
     }
 
     public function delete(Comment $comment): void
     {
         $this->entityManager->remove($comment);
         $this->entityManager->flush();
+        $this->cache->invalidateTags(['analytics']);
     }
 
     public function approvedCount(Article $article): int

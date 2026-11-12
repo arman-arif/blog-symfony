@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Scheduler;
 
+use App\Message\AggregateAnalyticsMessage;
 use App\Message\PublishScheduledArticlesMessage;
 use App\Message\SendScheduledNewsletterCampaignsMessage;
 use Symfony\Component\Scheduler\Attribute\AsSchedule;
@@ -25,6 +26,7 @@ final readonly class ArticlePublishingSchedule implements ScheduleProviderInterf
             ->stateful($this->cache)
             ->processOnlyLastMissedRun(true)
             ->add(RecurringMessage::every('1 minute', new PublishScheduledArticlesMessage()))
-            ->add(RecurringMessage::every('1 minute', new SendScheduledNewsletterCampaignsMessage()));
+            ->add(RecurringMessage::every('1 minute', new SendScheduledNewsletterCampaignsMessage()))
+            ->add(RecurringMessage::every('1 hour', new AggregateAnalyticsMessage()));
     }
 }

@@ -11,6 +11,8 @@ use App\Entity\User;
 use App\Repository\ArticleBookmarkRepository;
 use App\Repository\ArticleLikeRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final readonly class EngagementService
 {
@@ -18,6 +20,8 @@ final readonly class EngagementService
         private EntityManagerInterface $entityManager,
         private ArticleLikeRepository $likes,
         private ArticleBookmarkRepository $bookmarks,
+        #[Autowire(service: 'cache.content')]
+        private TagAwareCacheInterface $cache,
     ) {
     }
 
@@ -35,6 +39,7 @@ final readonly class EngagementService
             $active = true;
         }
         $this->entityManager->flush();
+        $this->cache->invalidateTags(['analytics']);
 
         return ['active' => $active, 'count' => $article->getLikeCount()];
     }
@@ -51,6 +56,7 @@ final readonly class EngagementService
             $active = true;
         }
         $this->entityManager->flush();
+        $this->cache->invalidateTags(['analytics']);
 
         return ['active' => $active];
     }

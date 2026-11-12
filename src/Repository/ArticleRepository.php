@@ -397,4 +397,36 @@ class ArticleRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /** @return list<Article> */
+    public function findRecentForDashboard(int $limit = 5): array
+    {
+        return $this->createQueryBuilder('article')
+            ->leftJoin('article.author', 'author')->addSelect('author')
+            ->leftJoin('article.featuredImage', 'featuredImage')->addSelect('featuredImage')
+            ->orderBy('article.updatedAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @param list<int> $ids
+     * @return list<Article>
+     */
+    public function findByIdsForAnalytics(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        return $this->findBy(['id' => $ids]);
+    }
+
+    public function sumLikeCount(): int
+    {
+        return (int) $this->createQueryBuilder('article')
+            ->select('COALESCE(SUM(article.likeCount), 0)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

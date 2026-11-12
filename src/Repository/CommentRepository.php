@@ -100,4 +100,38 @@ class CommentRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /** @return list<Comment> */
+    public function findRecent(int $limit = 5): array
+    {
+        return $this->createQueryBuilder('comment')
+            ->leftJoin('comment.article', 'article')->addSelect('article')
+            ->leftJoin('comment.user', 'user')->addSelect('user')
+            ->orderBy('comment.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @param list<int> $articleIds
+     * @return array<int, int>
+     */
+    public function countsApprovedByArticleIds(array $articleIds): array
+    {
+        if ([] === $articleIds) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('comment')
+            ->select('IDENTITY(comment.article) AS articleId, COUNT(comment.id) AS total')
+            ->andWhere('comment.article IN (:ids)')
+            ->andWhere('comment.status = :status')
+            ->setParameter('ids', $articleIds)
+            ->setParameter('status', CommentStatus::Approved)
+            ->groupBy('comment.article')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_column($rows, 'total', 'articleId');
+    }
 }

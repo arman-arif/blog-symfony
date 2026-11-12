@@ -10,7 +10,9 @@ use App\Repository\NewsletterSubscriberRepository;
 use App\Service\Mail\TransactionalMailer;
 use App\Service\Settings\SettingsServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final readonly class NewsletterSubscriptionService
 {
@@ -20,6 +22,8 @@ final readonly class NewsletterSubscriptionService
         private SettingsServiceInterface $settings,
         private TransactionalMailer $mailer,
         private UrlGeneratorInterface $urls,
+        #[Autowire(service: 'cache.content')]
+        private TagAwareCacheInterface $cache,
     ) {
     }
 
@@ -27,6 +31,7 @@ final readonly class NewsletterSubscriptionService
     {
         $email = mb_strtolower(trim($email));
         $subscriber = $this->subscribers->findOneByEmail($email);
+        $this->cache->invalidateTags(['analytics']);
 
         if (null === $subscriber) {
             $subscriber = (new NewsletterSubscriber())

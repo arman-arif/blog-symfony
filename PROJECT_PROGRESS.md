@@ -23,7 +23,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 8 | M8 | Comments & Engagement | Completed | Real comments, spam controls, moderation, likes/bookmarks and view tracking verified |
 | 9 | M9 | SEO | Completed | Metadata/JSON-LD, sitemaps, robots, redirects and consent-gated analytics verified |
 | 10 | M10 | Newsletter | Completed | Double opt-in, campaigns, batching, CSV and scheduler verified |
-| 11 | M11 | Analytics | Pending | |
+| 11 | M11 | Analytics | Completed | Hourly rollups, real dashboard, reports, CSV, cache and 100k-view benchmark verified |
 | 12 | M12 | Monetization | Pending | |
 | 13 | M13 | Website Settings | Pending | |
 | 14 | M14 | Security & Performance | Pending | |
@@ -198,3 +198,12 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Added sanitized campaign HTML rendered with inline CSS, batched Messenger delivery of 50 recipients per message with per-recipient failure accounting, and a scheduled campaign message running every minute from the stateful scheduler.
 - Tests: full suite passes with 259 tests / 23,821 assertions. New coverage includes double opt-in confirm/unsubscribe, single opt-in, invalid email, HTTP burst rate limiting, admin search/status/CSV, campaign draft/test/batch delivery and scheduled queueing.
 - Known issues: campaign delivery is at-least-once style (no per-recipient delivery ledger); test sends and campaign emails use the same transactional mailer; unsubscribe is a GET link plus one-click header, not an RFC 8058 POST endpoint; production workers for `scheduler_default` and `async` are required.
+
+### 2026-11-12 — M11 analytics and reporting
+- Implemented idempotent daily rollups from raw views, hourly scheduler aggregation, 30-day raw-view retention, and a manual `app:analytics:rollup` command. Analytics and dashboard read only `ArticleDailyStat`.
+- Replaced the mock dashboard and analytics screens with real stat cards, 7-day/30-day charts, recent articles/comments/activity, workflow counts, date-range reporting, top articles/authors/categories/tags, engagement metrics and CSV export.
+- Added 10-minute tag-aware report caching with invalidation from article, comment, engagement, subscription and rollup changes; kept `analytics.view` enforcement.
+- Fixed during verification: double number formatting in stat cards, date-range count/label behaviour, stale test containers after DI changes, and repository/query typing.
+- Tests: full suite passes with 260 tests / 23,820 assertions. New coverage includes rollup idempotence, pruning old raw views, analytics CSV/report rendering, cache invalidation, dashboard stats and date-range clamping.
+- Performance: with 100k raw views rolled up, production-mode analytics measured 39 ms server response / 92 ms load (dashboard 66 ms / 112 ms), under the 200 ms target.
+- Known issues: engagement is lifetime likes/comments/bookmarks divided by range views (not range-specific engagement); category shares normalise over the displayed category rows; benchmark uses the local MariaDB service and PHP built-in server.

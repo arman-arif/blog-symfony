@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Mock\MockDataProvider;
+use App\Service\Analytics\AnalyticsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -15,24 +14,15 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('admin.access')]
 final class DashboardController extends AbstractController
 {
-    public function __construct(private readonly MockDataProvider $data)
-    {
-    }
-
     #[Route('', name: 'dashboard_index', methods: ['GET'])]
-    #[IsGranted('admin.access')]
-    public function index(Request $request): Response
+    public function index(AnalyticsService $analytics): Response
     {
-        return $this->render('admin/dashboard/index.html.twig', [
-            'currentUser' => $this->data->users()[0],
-            'dashboard' => $this->data->dashboard(),
-            'state' => $request->query->getString('state'),
-        ]);
+        return $this->render('admin/dashboard/index.html.twig', ['dashboard' => $analytics->dashboard()]);
     }
 
     #[Route('/no-permission', name: 'permission_denied', methods: ['GET'])]
     public function noPermission(): Response
     {
-        return $this->render('admin/dashboard/no_permission.html.twig', ['currentUser' => $this->data->users()[0]], new Response(status: Response::HTTP_FORBIDDEN));
+        return $this->render('admin/dashboard/no_permission.html.twig', [], new Response(status: Response::HTTP_FORBIDDEN));
     }
 }

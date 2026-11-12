@@ -15,4 +15,15 @@ class ActivityLogRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, ActivityLog::class);
     }
+
+    /** @return list<ActivityLog> */
+    public function findRecent(int $limit = 5): array
+    {
+        return $this->createQueryBuilder('log')
+            ->leftJoin('log.user', 'user')->addSelect('user')
+            ->orderBy('log.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }
