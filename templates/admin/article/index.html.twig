@@ -1,0 +1,23 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Articles{% endblock %}
+{% block breadcrumb %}Articles{% endblock %}
+{% block eyebrow %}Content / Articles{% endblock %}
+{% block heading %}Stories in the making.{% endblock %}
+{% block intro %}A shared view of the editorial desk. Filter, sort and select mock records; removal only affects this browser page until reload.{% endblock %}
+{% block actions %}<twig:Button data-dialog-open="admin-quick-draft"><twig:Icon name="plus"/>Draft outline</twig:Button>{% endblock %}
+{% block content %}
+{% set statusOptions = [{value: 'published', label: 'Published'}, {value: 'draft', label: 'Draft'}, {value: 'pending_review', label: 'Pending review'}, {value: 'scheduled', label: 'Scheduled'}, {value: 'unpublished', label: 'Unpublished'}] %}
+{% set categoryOptions = [] %}{% for category in categories %}{% set categoryOptions = categoryOptions|merge([{value: category.slug, label: category.name}]) %}{% endfor %}
+{% set authorOptions = [] %}{% for author in authors %}{% set authorOptions = authorOptions|merge([{value: author.slug, label: author.displayName}]) %}{% endfor %}
+<twig:DataTable id="articles-table" caption="Articles" columns="{{ [{key: 'title', label: 'Story', sortable: true}, {key: 'authorName', label: 'Author', sortable: true}, {key: 'status', label: 'Status', sortable: true}, {key: 'views', label: 'Views', sortable: true}, {key: 'updated', label: 'Updated', sortable: true}] }}" filters="{{ [{key: 'status', label: 'Statuses', options: statusOptions}, {key: 'category', label: 'Categories', options: categoryOptions}, {key: 'author', label: 'Authors', options: authorOptions}] }}" state="{{ state }}">
+{% for article in articles %}<tr data-row data-id="{{ article.id }}" data-title="{{ article.title }}" data-search="{{ article.title }} {{ article.author.displayName }}" data-author-name="{{ article.author.displayName }}" data-author="{{ article.author.slug }}" data-status="{{ article.status }}" data-category="{{ article.categories|map(category => category.slug)|join(' ') }}" data-views="{{ article.viewCount }}" data-updated="{{ article.updatedAt|date('U') }}">
+    <td><input type="checkbox" data-select-row disabled aria-label="Select {{ article.title }}"></td>
+    <td><p class="max-w-xs font-semibold">{{ article.title }}</p><p class="mt-1 text-xs text-muted">{{ article.categories[0].name }} · {{ article.readingTime }} min read</p></td>
+    <td class="whitespace-nowrap">{{ article.author.displayName }}</td>
+    <td><twig:Badge tone="{{ article.status == 'published' ? 'success' : (article.status == 'pending_review' ? 'warning' : (article.status == 'scheduled' ? 'info' : 'neutral')) }}">{{ article.status|replace({'_': ' '})|title }}</twig:Badge></td>
+    <td>{{ article.viewCount|number_format }}</td><td class="whitespace-nowrap"><time datetime="{{ article.updatedAt|date('c') }}">{{ article.updatedAt|date('M j, Y') }}</time></td>
+    <td><div class="flex gap-2">{% if article.status == 'published' %}<twig:Button variant="ghost" size="sm" href="{{ path('front_article', {slug: article.slug}) }}" aria-label="Read {{ article.title }}">View</twig:Button>{% endif %}<twig:Button variant="ghost" size="sm" data-component="confirm" data-row-remove data-confirm-message="Remove ‘{{ article.title }}’ from this local table preview? No server data will be deleted." aria-label="Remove {{ article.title }} from preview"><twig:Icon name="trash" size="16"/></twig:Button></div></td>
+</tr>{% endfor %}
+</twig:DataTable>
+<p class="mt-4 text-xs text-muted">All mock statuses are available to this preview. Real article editing, workflow permissions and persistence are deliberately deferred.</p>
+{% endblock %}

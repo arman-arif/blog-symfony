@@ -120,6 +120,49 @@ final class MockDataProvider
         ]), $this->authors(), range(0, 5));
     }
 
+    /** @return list<array<string, mixed>> */
+    public function activityLogs(): array
+    {
+        $users = $this->users();
+        $actions = [
+            ['article.published', 'Article', 1, 'Published “The quiet power of making things with intention”'],
+            ['article.updated', 'Article', 31, 'Updated an unfinished notebook of ideas'],
+            ['comment.approved', 'Comment', 1, 'Approved Alex Morgan’s conversation starter'],
+            ['media.uploaded', 'Media', 4, 'Added “Into the green” to the media library'],
+            ['user.login', 'User', 2, 'Signed in to the editorial workspace'],
+        ];
+
+        return array_map(static fn (array $action, int $id): array => [
+            'id' => $id + 1, 'user' => $users[$id % 6], 'action' => $action[0],
+            'subjectType' => $action[1], 'subjectId' => $action[2], 'context' => ['summary' => $action[3]],
+            'createdAt' => new \DateTimeImmutable('2026-11-11 16:30 -'.$id.' hours'),
+        ], $actions, array_keys($actions));
+    }
+
+    /** Read-only aggregates and chart projections; not live traffic or stored metrics.
+     * @return array<string, mixed>
+     */
+    public function dashboard(): array
+    {
+        $articles = $this->articles();
+        $comments = $this->comments();
+        $commentCount = count($comments) + array_sum(array_map(static fn (array $comment): int => count($comment['replies']), $comments));
+        $statuses = array_count_values(array_column($articles, 'status'));
+
+        return [
+            'stats' => [
+                ['label' => 'Article views', 'value' => array_sum(array_column($articles, 'viewCount')), 'icon' => 'chart', 'note' => 'Illustrative lifetime views'],
+                ['label' => 'Published stories', 'value' => $statuses['published'] ?? 0, 'icon' => 'edit', 'note' => count($articles).' stories in the workspace'],
+                ['label' => 'Editorial team', 'value' => count($this->users()), 'icon' => 'user', 'note' => count($this->authors()).' contributing voices'],
+                ['label' => 'Reader conversations', 'value' => $commentCount, 'icon' => 'mail', 'note' => '1 comment awaiting review'],
+            ],
+            'statuses' => $statuses, 'recentArticles' => array_slice(array_reverse($articles), 0, 5),
+            'comments' => $comments, 'activity' => $this->activityLogs(),
+            'views' => ['labels' => ['Nov 5', 'Nov 6', 'Nov 7', 'Nov 8', 'Nov 9', 'Nov 10', 'Nov 11'], 'values' => [1240, 1860, 1540, 2280, 2010, 2650, 3120]],
+            'categories' => ['labels' => ['Design', 'Technology', 'Culture', 'Nature', 'Wellbeing', 'Work & Life'], 'values' => [32, 24, 18, 12, 8, 6]],
+        ];
+    }
+
     /** @return array<string, array<string, mixed>> */
     public function pages(): array
     {

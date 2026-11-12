@@ -1,0 +1,5 @@
+{% props sidebarTitle = 'Settings' %}
+<div {{ attributes.defaults({class: 'grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]'}) }}>
+    <section class="card min-w-0 p-5 sm:p-7">{% block content %}{% endblock %}</section>
+    <aside class="card self-start p-5"><h2 class="mb-5 text-base font-semibold">{{ sidebarTitle }}</h2>{% block sidebar %}{% endblock %}</aside>
+</div>

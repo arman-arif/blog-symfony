@@ -10,6 +10,9 @@ const loaders = {
   listing: () => import('../components/listing.js'),
   reader: () => import('../components/reader.js'),
   consent: () => import('../components/consent.js'),
+  'admin-shell': () => import('../admin/shell.js'),
+  'data-table': () => import('../components/data-table.js'),
+  charts: () => import('../admin/charts.js'),
 };
 const initialized = new WeakMap();
 export async function enhance(root) {

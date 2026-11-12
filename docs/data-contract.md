@@ -13,6 +13,8 @@
 | Role | id, name, description, permissions[], userCount (query projection) |
 | Page | id, slug, title, content (sanitized HTML later), createdAt, updatedAt; description/eyebrow/sections[] are the structured preview presentation projection |
 | SeoMetadata | title, description, focusKeyword, canonicalUrl?, noindex |
+| ActivityLog | id, user, action, subjectType, subjectId, context.summary (escaped), createdAt |
+| Dashboard projection | stats[] (label/value/icon/note), statuses (counts), recentArticles[], comments[], activity[], views/categories (labels[]/values[]); chart series are an explicitly illustrative snapshot, not live tracking |
 
 The provider contains 30 published and six non-public articles, eight categories including two children, 25 tags, six authors, threaded comments, six media illustrations and five roles. Status/visibility filters must be explicit when constructing public previews. Public article content is rendered through structured Twig in M1; unsanitized provider content is never marked raw.
 

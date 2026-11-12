@@ -64,4 +64,20 @@
   .article-results[data-view=list] > article { @apply grid grid-cols-[6rem_1fr] gap-5 sm:grid-cols-[14rem_1fr]; }
   .article-results[data-view=list] > article > div { @apply pt-0; }
   [data-engagement][aria-pressed=true] { @apply border-brand bg-brand/10 text-brand; }
+  .admin-shell { @apply min-h-dvh lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]; }
+  .admin-sidebar { @apply sticky top-0 hidden h-dvh overflow-y-auto border-r border-line bg-surface lg:block; }
+  .admin-nav-item { @apply flex min-h-11 items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium; }
+  .admin-nav-item svg { @apply shrink-0; }
+  .admin-workspace { @apply flex min-h-dvh flex-col; }
+  .admin-workspace main { @apply flex-1; }
+  @screen lg {
+    .admin-shell.is-collapsed { @apply grid-cols-[5rem_minmax(0,1fr)]; }
+    .is-collapsed .admin-sidebar .admin-brand,
+    .is-collapsed .admin-sidebar .admin-nav-label,
+    .is-collapsed .admin-sidebar .admin-group-label,
+    .is-collapsed .admin-sidebar .admin-sidebar-note,
+    .is-collapsed .admin-sidebar .admin-coming-soon { @apply sr-only; }
+    .is-collapsed .admin-sidebar .admin-navigation { @apply px-2; }
+    .is-collapsed .admin-sidebar .admin-nav-item { @apply justify-center; }
+  }
 }

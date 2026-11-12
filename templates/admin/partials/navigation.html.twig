@@ -1,0 +1,10 @@
+{% set route = app.request.attributes.get('_route') %}
+{% set groups = [
+    {name: 'Workspace', items: [{label: 'Dashboard', route: 'admin_dashboard_index', icon: 'grid'}, {label: 'Articles', route: 'admin_article_index', icon: 'edit'}]},
+    {name: 'Content', items: [{label: 'Categories & tags', icon: 'list'}, {label: 'Media library', icon: 'image'}, {label: 'Comments', icon: 'mail'}, {label: 'Static pages', icon: 'copy'}, {label: 'Navigation menus', icon: 'menu'}, {label: 'Advertisements', icon: 'image'}]},
+    {name: 'Audience', items: [{label: 'Newsletter', icon: 'mail'}, {label: 'Analytics', icon: 'chart'}, {label: 'Users & roles', icon: 'user'}]},
+    {name: 'System', items: [{label: 'Appearance', icon: 'sun'}, {label: 'SEO & settings', icon: 'settings'}, {label: 'Activity logs', icon: 'clock'}]}
+] %}
+<nav aria-label="{{ mobile ? 'Mobile admin' : 'Admin' }} navigation" class="space-y-5 {{ mobile ? '' : 'admin-navigation' }} p-4">
+{% for group in groups %}<div><p class="admin-group-label mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted">{{ group.name }}</p><div class="space-y-1">{% for item in group.items %}{% if item.route is defined %}<a href="{{ path(item.route) }}" class="admin-nav-item {{ route starts with item.route|replace({'_index': ''}) ? 'bg-brand/10 text-brand' : 'text-muted hover:bg-canvas hover:text-ink' }}" {% if route starts with item.route|replace({'_index': ''}) %}aria-current="page"{% endif %} title="{{ item.label }}"><twig:Icon name="{{ item.icon }}"/><span class="admin-nav-label">{{ item.label }}</span></a>{% else %}<span class="admin-nav-item text-muted/60" aria-disabled="true" title="{{ item.label }} UI follows in M1.7"><twig:Icon name="{{ item.icon }}"/><span class="admin-nav-label">{{ item.label }}</span><span class="admin-coming-soon ml-auto text-[10px]">Soon</span></span>{% endif %}{% endfor %}</div></div>{% endfor %}
+</nav>
