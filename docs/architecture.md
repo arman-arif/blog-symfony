@@ -73,3 +73,10 @@ The article, category and tag administration screens are now server-backed; rema
 - **Queries:** article listings, archives and details eager-load author, categories, tags and featured image; pagination uses Doctrine Paginator. FULLTEXT search (with a LIKE fallback) is indexed by migration `Version20261112130000`.
 - **Caching:** homepage section IDs are stored in the tag-aware `cache.content` pool with `articles`/`homepage` tags; `ArticleService` invalidates them after editorial changes.
 - **Feeds:** `/feed.xml` and category RSS feeds expose only published content.
+
+## M8 comments and engagement
+
+- **Comments:** real threaded comments with pending/approved/rejected/spam states, guest or registered authorship, depth limits, auto-approval for trusted users, author notifications and a real admin moderation queue with voter-based own/any permissions.
+- **Spam controls:** honeypot, submit timing, per-IP rate limiting, link cap, blocked words and a pluggable `SpamCheckerInterface`.
+- **Engagement:** authenticated JSON like/bookmark toggles backed by unique constraints, a saved-stories page, real share/copy actions and asynchronous de-duplicated view tracking with bot filtering.
+- **Front behavior:** the reader JavaScript now calls real endpoints and changes ARIA state/counts; the comment form submits a real Symfony form with reply context.

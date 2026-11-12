@@ -2,8 +2,42 @@
 {% block page_title %}Comment moderation{% endblock %}
 {% block breadcrumb %}Comments{% endblock %}
 {% block eyebrow %}Content / Reader conversations{% endblock %}
-{% block heading %}Make room for a good conversation.{% endblock %}
-{% block intro %}Review reader responses, try moderation decisions and compose a reply. These actions affect only the local preview; nobody is notified.{% endblock %}
-{% block content %}<div data-component="moderation">{% set tabs = [] %}{% for key, label in {all: 'All', pending: 'Pending', approved: 'Approved', rejected: 'Rejected', spam: 'Spam'} %}{% set tabs = tabs|merge([{key: key, label: label, href: path('admin_comment_index', {tab: key})}]) %}{% endfor %}
-<twig:DataTable id="comments-table" caption="Comments" columns="{{ [{key: 'name', label: 'Reader', sortable: true}, {key: 'content', label: 'Comment'}, {key: 'article', label: 'Article'}, {key: 'status', label: 'Status', sortable: true}] }}" tabs="{{ tabs }}" state="{{ state }}">{% for comment in records %}<tr data-row data-id="{{ comment.id }}" data-name="{{ comment.guestName }}" data-status="{{ comment.status }}" data-search="{{ comment.guestName }} {{ comment.content }} {{ comment.article.title }}"><td><input type="checkbox" data-select-row disabled aria-label="Select comment by {{ comment.guestName }}"></td><td><p class="font-semibold">{{ comment.guestName }}</p><p class="mt-1 text-xs text-muted">{{ comment.guestEmail }}</p><p class="mt-1 text-xs text-muted">{{ comment.createdAt|date('M j, Y') }}</p></td><td class="min-w-64 max-w-sm"><p>{{ comment.content }}</p>{% if comment.parent %}<p class="mt-2 text-xs text-muted">Reply to comment #{{ comment.parent.id }}</p>{% endif %}{% if comment.reportCount %}<p class="reader-report">{{ comment.reportCount }} reader report</p>{% endif %}<div data-local-replies></div></td><td><a class="text-brand underline" href="{{ path('admin_article_preview', {id: comment.article.id}) }}">{{ comment.article.title }}</a></td><td><span data-moderation-status class="badge {{ comment.status == 'approved' ? 'badge-success' : (comment.status == 'pending' ? 'badge-warning' : 'badge-neutral') }}">{{ comment.status|title }}</span></td><td><div class="flex flex-wrap gap-1 min-w-48">{% for value, label in {approved: 'Approve', rejected: 'Reject', spam: 'Spam'} %}<button type="button" class="btn btn-ghost btn-sm" data-moderate="{{ value }}" disabled>{{ label }}</button>{% endfor %}<button type="button" class="btn btn-ghost btn-sm" data-comment-reply data-dialog-open="comment-reply-dialog" disabled>Reply</button><twig:Button variant="ghost" size="sm" data-component="confirm" data-row-remove data-confirm-message="Remove this comment from the local moderation preview? No server record is deleted.">Remove</twig:Button></div></td></tr>{% endfor %}</twig:DataTable></div>
-<twig:Modal id="comment-reply-dialog" title="Reply to a reader"><p class="mb-5 text-sm text-muted" data-reply-context></p><twig:PreviewForm id="moderation-reply-form" successMessage="Reply added locally. Nothing was sent or stored."><twig:Field id="moderation-reply" label="Your reply" required><twig:Textarea id="moderation-reply" name="content" required minlength="10" maxlength="2000" rows="5"/></twig:Field><twig:Button type="submit">Add local reply</twig:Button></twig:PreviewForm></twig:Modal>{% endblock %}
+{% block heading %}Keep the conversation thoughtful.{% endblock %}
+{% block intro %}Approve, reject or remove comments. Reported comments are marked for attention.{% endblock %}
+{% block content %}
+<nav aria-label="Comment status" class="mb-6 flex flex-wrap gap-1 border-b border-line">
+    {% set tabs = [{label: 'All', value: ''}, {label: 'Pending', value: 'pending'}, {label: 'Approved', value: 'approved'}, {label: 'Rejected', value: 'rejected'}, {label: 'Spam', value: 'spam'}] %}
+    {% for tab in tabs %}<a class="tab {{ filters.status == tab.value ? 'border-brand text-brand' : '' }}" href="{{ path('admin_comment_index', app.request.query.all|merge({status: tab.value, page: 1})) }}" {% if filters.status == tab.value %}aria-current="page"{% endif %}>{{ tab.label }}</a>{% endfor %}
+</nav>
+<form method="get" action="{{ path('admin_comment_index') }}" class="card mb-6 flex flex-wrap items-end gap-3 p-4" role="search">
+    <div class="min-w-56 flex-1"><label class="field-label" for="comment-search">Search</label><input class="field-control" id="comment-search" type="search" name="q" value="{{ filters.q }}" placeholder="Content or guest name"></div>
+    <input type="hidden" name="status" value="{{ filters.status }}">
+    <twig:Button type="submit" variant="secondary">Search</twig:Button>
+</form>
+<div class="table-shell">
+<table class="data-table" aria-label="Comments">
+    <thead><tr><th>Comment</th><th>Story</th><th>Author</th><th>Status</th><th>Date</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for comment in comments %}
+        <tr data-row data-id="{{ comment.id }}" data-status="{{ comment.status.value }}">
+            <td><p class="max-w-md truncate text-sm">{{ comment.content }}</p>{% if comment.reportCount > 0 %}<span class="badge badge-warning mt-2">Reported {{ comment.reportCount }}×</span>{% endif %}</td>
+            <td><a class="text-sm font-semibold text-brand" href="{{ path('admin_article_edit', {id: comment.article.id}) }}">{{ comment.article.title }}</a></td>
+            <td>{{ comment.authorName }}{% if comment.user %}<p class="mt-1 text-xs text-muted">Registered reader</p>{% endif %}</td>
+            <td><span class="badge {{ comment.status.value == 'approved' ? 'badge-success' : (comment.status.value == 'pending' ? 'badge-warning' : 'badge-neutral') }}">{{ comment.status.value|title }}</span></td>
+            <td class="whitespace-nowrap text-xs text-muted">{{ comment.createdAt|date('M j, Y H:i') }}</td>
+            <td><div class="flex flex-wrap justify-end gap-1">
+                {% for status in ['approved', 'rejected', 'spam'] %}{% if comment.status.value != status %}<form method="post" action="{{ path('admin_comment_moderate', {id: comment.id, status: status}) }}"><input type="hidden" name="_token" value="{{ csrf_token('comment_moderate') }}"><button type="submit" class="btn btn-ghost btn-sm">{{ status == 'approved' ? 'Approve' : (status == 'rejected' ? 'Reject' : 'Spam') }}</button></form>{% endif %}{% endfor %}
+                <twig:Button href="{{ path('admin_comment_edit', {id: comment.id}) }}" variant="secondary" size="sm">Edit</twig:Button>
+                <form method="post" action="{{ path('admin_comment_delete', {id: comment.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('comment_delete') }}"><twig:Button type="submit" variant="danger" size="sm">Delete</twig:Button></form>
+            </div></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="6" class="py-10 text-center text-sm text-muted">No comments match these filters.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% if total > 20 %}
+<nav class="mt-5 flex items-center justify-between text-sm" aria-label="Comment pagination"><span class="text-muted">{{ total }} comments · page {{ page }} of {{ pages }}</span><div class="flex gap-2">{% if page > 1 %}<a class="btn btn-secondary btn-sm" href="{{ path('admin_comment_index', app.request.query.all|merge({page: page - 1})) }}">Previous</a>{% endif %}{% if page < pages %}<a class="btn btn-secondary btn-sm" href="{{ path('admin_comment_index', app.request.query.all|merge({page: page + 1})) }}">Next</a>{% endif %}</div></nav>
+{% endif %}
+{% endblock %}

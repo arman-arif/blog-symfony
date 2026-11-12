@@ -4,3 +4,11 @@ framework:
             policy: sliding_window
             limit: 12
             interval: '1 minute'
+        comment_submit:
+            policy: sliding_window
+            limit: 5
+            interval: '10 minutes'
+        comment_report:
+            policy: sliding_window
+            limit: 3
+            interval: '1 hour'

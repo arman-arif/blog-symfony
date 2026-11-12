@@ -1,0 +1,9 @@
+{% extends 'emails/layout.html.twig' %}
+{% block title %}A comment awaits moderation{% endblock %}
+{% block content %}
+<h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:24px;color:#1f2a24;">A comment awaits moderation</h1>
+<p>Hello {{ author.displayName }},</p>
+<p>A new comment was submitted on <strong>{{ article.title }}</strong> and is waiting for review.</p>
+<blockquote style="margin:20px 0;padding:14px 18px;border-left:3px solid #1c5b45;background:#f7f4ed;color:#3d4a43;">{{ comment.content }}</blockquote>
+<p>Open the moderation queue in the editorial workspace to approve, reject or mark it as spam.</p>
+{% endblock %}

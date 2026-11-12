@@ -63,10 +63,16 @@ final class PublicPagesTest extends FrontTestCase
             self::assertResponseIsSuccessful();
             $forms = $crawler->filter('form[data-component="validate"]');
             self::assertGreaterThanOrEqual(2, $forms->count());
-            $forms->each(static function (Crawler $form): void {
+            $previewForms = 0;
+            $forms->each(static function (Crawler $form) use (&$previewForms): void {
+                if (0 === $form->filter('fieldset[data-preview-fields]')->count()) {
+                    return;
+                }
+                ++$previewForms;
                 self::assertCount(1, $form->filter('fieldset[data-preview-fields][disabled]'));
                 self::assertCount(1, $form->filter('noscript'));
             });
+            self::assertGreaterThanOrEqual(2, $previewForms);
         }
     }
 

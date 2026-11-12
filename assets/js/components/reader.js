@@ -1,4 +1,5 @@
 import { notify } from './toast.js';
+
 export default function reader(article) {
   const content = article.querySelector('[data-article-content]');
   const toc = article.querySelector('[data-toc]');
@@ -31,35 +32,51 @@ export default function reader(article) {
     try { await navigator.clipboard.writeText(location.href.split('#')[0]); notify('Article link copied.'); }
     catch { notify('Copy is unavailable. You can copy the address from your browser.', 'error'); }
   });
+
   article.querySelectorAll('[data-engagement]').forEach(button => {
-    const key = `fieldnotes-preview-${article.dataset.articleId}-${button.dataset.engagement}`;
-    const count = button.querySelector('[data-count]'); const base = Number(count?.textContent || 0);
-    let active = false;
-    try { active = localStorage.getItem(key) === '1'; } catch { /* Optional local preview preference. */ }
-    const apply = () => { button.setAttribute('aria-pressed', String(active)); if (count) count.textContent = String(base + Number(active)); };
-    apply(); button.addEventListener('click', () => {
-      active = !active; apply();
-      try { localStorage.setItem(key, active ? '1' : '0'); } catch { /* Keep the visual state. */ }
-      notify(`${button.dataset.engagement === 'like' ? 'Like' : 'Bookmark'} ${active ? 'added' : 'removed'} in this browser preview only.`);
+    const endpoint = button.dataset.engagementUrl;
+    const token = button.dataset.engagementToken;
+    if (!endpoint || !token) return;
+    const count = button.querySelector('[data-count]');
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'X-CSRF-Token': token, Accept: 'application/json' },
+        });
+        const data = await response.json().catch(() => ({}));
+        if (401 === response.status) {
+          notify(data.error || 'Sign in to use this feature.');
+          if (data.loginUrl) {
+            const target = encodeURIComponent(location.pathname);
+            setTimeout(() => { location.href = `${data.loginUrl}?_target_path=${target}`; }, 700);
+          }
+          return;
+        }
+        if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+        button.setAttribute('aria-pressed', String(Boolean(data.active)));
+        if (count && 'number' === typeof data.count) count.textContent = String(data.count);
+        const label = button.dataset.engagement === 'like' ? 'Like' : 'Bookmark';
+        notify(`${label} ${data.active ? 'saved' : 'removed'}.`);
+      } catch (error) {
+        notify(error.message || 'That action could not be completed.', 'error');
+      } finally {
+        button.disabled = false;
+      }
     });
   });
+
   const form = article.querySelector('[data-comment-form]');
   if (!form) return;
+  const parentInput = form.querySelector('[data-parent-input]');
   const context = form.querySelector('[data-reply-context]');
-  const resetReply = () => { form.dataset.parent = ''; context.hidden = true; };
+  const resetReply = () => { if (parentInput) parentInput.value = ''; if (context) context.hidden = true; };
   article.querySelectorAll('[data-reply-to]').forEach(button => button.addEventListener('click', () => {
-    form.dataset.parent = button.dataset.replyTo;
-    context.querySelector('[data-reply-name]').textContent = button.dataset.replyName;
-    context.hidden = false; form.querySelector('textarea').focus();
+    if (parentInput) parentInput.value = button.dataset.replyTo;
+    if (context) { context.querySelector('[data-reply-name]').textContent = button.dataset.replyName; context.hidden = false; }
+    form.querySelector('textarea')?.focus();
   }));
-  form.querySelector('[data-cancel-reply]').addEventListener('click', resetReply);
-  form.addEventListener('preview:valid', () => {
-    const item = document.createElement('div'); item.className = 'card p-5';
-    const name = document.createElement('p'); name.className = 'text-sm font-semibold'; name.textContent = `${form.elements.namedItem('comment-name').value} · Preview only`;
-    const body = document.createElement('p'); body.className = 'mt-3 whitespace-pre-wrap text-sm text-muted'; body.textContent = form.elements.namedItem('comment-content').value;
-    item.append(name, body);
-    const parent = article.querySelector(`[data-comment-id="${form.dataset.parent || 'none'}"] [data-replies]`);
-    (parent || article.querySelector('[data-comments]')).append(item);
-    form.reset(); resetReply();
-  });
+  form.querySelector('[data-cancel-reply]')?.addEventListener('click', resetReply);
 }

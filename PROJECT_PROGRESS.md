@@ -20,7 +20,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 5 | M5 | Core CMS | Completed | Article workflow, sanitizer, revisions/autosave, taxonomy, scheduler and CMS tests verified |
 | 6 | M6 | Media Management | Completed | Validated uploads, Flysystem, Liip derivatives, library and picker verified |
 | 7 | M7 | Public Website Integration | Completed | Real catalog, FULLTEXT search, feeds, caching and public visibility tests verified |
-| 8 | M8 | Comments & Engagement | Pending | |
+| 8 | M8 | Comments & Engagement | Completed | Real comments, spam controls, moderation, likes/bookmarks and view tracking verified |
 | 9 | M9 | SEO | Pending | |
 | 10 | M10 | Newsletter | Pending | |
 | 11 | M11 | Analytics | Pending | |
@@ -173,3 +173,12 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Tests: full suite passes with 257 tests / 24,324 assertions. New coverage includes homepage cache invalidation after publishing, 404s for every non-public fixture and deleted content, body-content full-text search, RSS contents/category feeds/missing feeds, and related/adjacent article rendering; existing filter/pagination/archive tests now run against real fixtures.
 - Browser: verified homepage, listing, article detail with table/TOC/reading progress, search results and RSS with zero console errors.
 - Known issues: comments on article pages are still presentation fixtures until M8; popular/trending fall back to denormalized view counts until view/rollup data exists; HTTP caching and CDN policy remain M14.
+
+### 2026-11-12 — M8 comments and engagement
+- Implemented threaded comments with guest/registered authorship, pending/approved/rejected/spam statuses, depth limits, trusted-user auto-approval, author notification email and real public comment/report endpoints.
+- Added spam protections: honeypot, submit-time window, IP rate limit, link cap, blocked-word list and a pluggable `SpamCheckerInterface` with a null default. Added settings defaults for all comment controls.
+- Replaced the mock moderation screen with a real queue: status tabs, search, pagination, inline approve/reject/spam, edit and soft delete, guarded by `CommentVoter` and audited.
+- Added authenticated like/bookmark JSON toggles with unique constraints and count maintenance, a saved-stories page, real share/copy UI state, and asynchronous view tracking with visitor-hash de-duplication (24h) and bot filtering.
+- Tests: full suite passes with 265 tests / 24,717 assertions. New coverage includes guest pending comments + notification mail, honeypot/min-time/link/blocked-word/rate-limit rejection, global comment disable, like/bookmark auth + idempotency + saved page, view de-duplication and bot filtering, report counts, and moderation approval appearing publicly.
+- Browser: posted a guest comment (pending + Mailpit notification), logged in, liked/bookmarked a story, confirmed the saved page, and opened the real moderation queue with zero console errors.
+- Known issues: optional third-party spam adapters are interfaces only; view raw rows are pruned/rolled up in M11; async email/view workers are required in production.

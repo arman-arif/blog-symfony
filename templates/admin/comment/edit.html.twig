@@ -1,0 +1,32 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Edit comment{% endblock %}
+{% block breadcrumb %}Comments / Edit{% endblock %}
+{% block eyebrow %}Content / Moderation{% endblock %}
+{% block heading %}A closer look.{% endblock %}
+{% block intro %}Edit the wording or change the moderation status. Changes are saved immediately.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_comment_index') }}">All comments</twig:Button>{% endblock %}
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <section class="card p-5" aria-labelledby="comment-form-heading">
+        <h2 id="comment-form-heading" class="font-display text-2xl">Comment</h2>
+        {{ form_start(form, {attr: {novalidate: 'novalidate', 'data-component': 'validate'}}) }}
+        {{ form_errors(form) }}
+        {{ form_row(form.content) }}
+        {{ form_row(form.status) }}
+        <twig:Button type="submit">Save comment</twig:Button>
+        {{ form_end(form) }}
+        <form method="post" action="{{ path('admin_comment_delete', {id: comment.id}) }}" class="mt-6 border-t border-line pt-5"><input type="hidden" name="_token" value="{{ csrf_token('comment_delete') }}"><twig:Button type="submit" variant="danger">Delete comment</twig:Button></form>
+    </section>
+    <section class="card p-5" aria-labelledby="comment-context-heading">
+        <h2 id="comment-context-heading" class="font-display text-2xl">Context</h2>
+        <dl class="mt-4 space-y-3 text-sm">
+            <div><dt class="text-xs font-semibold uppercase tracking-wide text-muted">Story</dt><dd class="mt-1"><a class="font-semibold text-brand" href="{{ path('admin_article_edit', {id: comment.article.id}) }}">{{ comment.article.title }}</a></dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wide text-muted">Author</dt><dd>{{ comment.authorName }}</dd></div>
+            {% if comment.guestEmail %}<div><dt class="text-xs font-semibold uppercase tracking-wide text-muted">Guest email</dt><dd class="break-all">{{ comment.guestEmail }}</dd></div>{% endif %}
+            <div><dt class="text-xs font-semibold uppercase tracking-wide text-muted">Submitted</dt><dd>{{ comment.createdAt|date('M j, Y H:i') }}</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wide text-muted">Reports</dt><dd>{{ comment.reportCount }}</dd></div>
+            {% if comment.parent %}<div><dt class="text-xs font-semibold uppercase tracking-wide text-muted">Reply to</dt><dd>#{{ comment.parent.id }}</dd></div>{% endif %}
+        </dl>
+    </section>
+</div>
+{% endblock %}

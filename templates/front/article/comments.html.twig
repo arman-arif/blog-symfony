@@ -1,7 +1,45 @@
-{% macro thread(comment, depth = 0) %}
-<div class="{{ depth ? 'ml-4 border-l border-line pl-4 sm:ml-8' : 'card p-5' }}" data-comment-id="{{ comment.id }}"><div class="flex items-center gap-3"><twig:Avatar name="{{ comment.guestName }}" size="sm"/><div><p class="text-sm font-semibold">{{ comment.guestName }}</p><time class="text-xs text-muted" datetime="{{ comment.createdAt|date('c') }}">{{ comment.createdAt|date('M j, Y') }}</time></div></div><p class="mt-4 text-sm leading-7 text-muted">{{ comment.content }}</p><twig:Button variant="ghost" size="sm" class="mt-2" data-reply-to="{{ comment.id }}" data-reply-name="{{ comment.guestName }}">Reply</twig:Button><div class="mt-4 space-y-5" data-replies>{% for reply in comment.replies|filter(c => c.status == 'approved') %}{{ _self.thread(reply, depth + 1) }}{% endfor %}</div></div>
+{% macro thread(item, canComment, depth, maxDepth, token) %}
+    {% set comment = item.comment %}
+    <div class="{{ depth ? 'ml-4 border-l border-line pl-4 sm:ml-8' : 'card p-5' }}" data-comment-id="{{ comment.id }}">
+        <div class="flex flex-wrap items-center gap-3"><twig:Avatar name="{{ comment.authorName }}" size="sm"/><div><p class="text-sm font-semibold">{{ comment.authorName }}</p><time class="text-xs text-muted" datetime="{{ comment.createdAt|date('c') }}">{{ comment.createdAt|date('M j, Y') }}</time></div>{% if comment.reportCount > 0 %}<span class="badge badge-warning ml-auto">Reported</span>{% endif %}</div>
+        <p class="mt-4 whitespace-pre-line text-sm leading-7 text-muted">{{ comment.content }}</p>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+            {% if canComment and depth < maxDepth %}<twig:Button variant="ghost" size="sm" type="button" data-reply-to="{{ comment.id }}" data-reply-name="{{ comment.authorName }}">Reply</twig:Button>{% endif %}
+            <form method="post" action="{{ path('front_comment_report', {slug: comment.article.slug, id: comment.id}) }}"><input type="hidden" name="_token" value="{{ token }}"><button type="submit" class="btn btn-ghost btn-sm">Report</button></form>
+        </div>
+        <div class="mt-4 space-y-5" data-replies>{% for reply in item.replies %}{{ _self.thread(reply, canComment, depth + 1, maxDepth, token) }}{% endfor %}</div>
+    </div>
 {% endmacro %}
-<section class="mt-12" aria-labelledby="comments-heading"><h2 id="comments-heading" class="section-title">Join the conversation</h2><p class="mt-3 text-sm text-muted">Thoughtful replies make good stories even better. Be kind. Stay curious.</p>
-{% if article.allowComments %}<div class="mt-7 space-y-5" data-comments>{% for comment in comments|filter(c => c.status == 'approved') %}{{ _self.thread(comment) }}{% endfor %}</div><twig:PreviewForm class="card mt-7 p-6" data-comment-form legend="Comment preview" successMessage="Comment added to this page preview only. Nothing was submitted for publication."><div data-reply-context hidden class="flex items-center justify-between gap-3 rounded-control bg-brand/10 p-3 text-sm">Replying to <span data-reply-name></span><twig:Button variant="ghost" size="sm" data-cancel-reply>Cancel</twig:Button></div><div class="grid gap-5 sm:grid-cols-2"><twig:Field id="comment-name" label="Your name" required><twig:Input id="comment-name" required maxlength="80" autocomplete="name"/></twig:Field><twig:Field id="comment-email" label="Email (never displayed)" required><twig:Input id="comment-email" type="email" required autocomplete="email"/></twig:Field></div><twig:Field id="comment-content" label="Your thoughts" help="Keep it thoughtful. Preview comments stay only on this page." required><twig:Textarea id="comment-content" required minlength="10" maxlength="2000"/></twig:Field><twig:Button type="submit">Post preview comment<twig:Icon name="arrow"/></twig:Button></twig:PreviewForm>
-{% else %}<twig:Alert tone="info" title="Comments are closed" class="mt-6">The conversation is paused on this story. You can still share it with someone who might enjoy it.</twig:Alert>{% endif %}
+<section id="comments" class="mt-12" aria-labelledby="comments-heading">
+    <h2 id="comments-heading" class="section-title">Join the conversation</h2>
+    <p class="mt-3 text-sm text-muted">{{ commentCount }} {{ commentCount == 1 ? 'thoughtful response' : 'thoughtful responses' }}. Be kind. Stay curious.</p>
+    {% if threads %}
+        <div class="mt-7 space-y-5" data-comments>
+            {% for item in threads %}{{ _self.thread(item, canComment, 0, maxCommentDepth, csrf_token('report_comment')) }}{% endfor %}
+        </div>
+    {% else %}
+        <twig:EmptyState title="Start the conversation" description="No approved comments yet. Share a thoughtful perspective if you would like to add to the story."></twig:EmptyState>
+    {% endif %}
+
+    {% if canComment %}
+        <div class="card mt-7 p-6">
+            <h3 class="font-display text-2xl">Leave a comment</h3>
+            {{ form_start(commentForm, {attr: {novalidate: 'novalidate', 'data-comment-form': '', 'data-component': 'validate'}}) }}
+            {{ form_errors(commentForm) }}
+            {{ form_widget(commentForm.parentId, {attr: {'data-parent-input': ''}}) }}
+            {{ form_widget(commentForm.startedAt) }}
+            <div class="sr-only" aria-hidden="true">{{ form_row(commentForm.website) }}</div>
+            <div data-reply-context hidden class="mt-4 flex items-center justify-between gap-3 rounded-control bg-brand/10 p-3 text-sm">Replying to <span data-reply-name></span><twig:Button variant="ghost" size="sm" type="button" data-cancel-reply>Cancel</twig:Button></div>
+            {% if not app.user %}
+                <div class="mt-4 grid gap-5 sm:grid-cols-2">{{ form_row(commentForm.guestName) }}{{ form_row(commentForm.guestEmail) }}</div>
+            {% endif %}
+            <div class="mt-4">{{ form_row(commentForm.content) }}</div>
+            <twig:Button type="submit">Post comment</twig:Button>
+            {{ form_end(commentForm) }}
+        </div>
+    {% elseif commentsEnabled and article.allowComments %}
+        <twig:Alert tone="info" title="Sign in to comment" class="mt-6">Anonymous comments are disabled. <a class="font-semibold text-brand underline underline-offset-4" href="{{ path('app_login') }}">Sign in</a> or create a reader account to join the conversation.</twig:Alert>
+    {% else %}
+        <twig:Alert tone="info" title="Comments are closed" class="mt-6">The conversation is paused on this story. You can still share it with someone who might enjoy it.</twig:Alert>
+    {% endif %}
 </section>

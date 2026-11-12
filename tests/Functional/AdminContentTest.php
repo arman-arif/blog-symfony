@@ -45,22 +45,6 @@ final class AdminContentTest extends AdminTestCase
         self::assertSelectorNotExists('main script[src^="https:"]');
     }
 
-    public function testModerationStatesAndLocalReply(): void
-    {
-        $client = self::createClient();
-        $client->request('GET', '/admin/comments');
-        self::assertSelectorCount(5, '[data-table-tab]');
-        self::assertSelectorCount(5, '[data-row]');
-        foreach (['pending', 'approved', 'rejected', 'spam'] as $status) {
-            self::assertSelectorExists('[data-row][data-status="'.$status.'"]');
-        }
-        self::assertSelectorExists('[data-moderate="approved"][disabled]');
-        self::assertSelectorExists('#moderation-reply-form fieldset[disabled]');
-        self::assertSelectorExists('#moderation-reply[minlength="10"]');
-        self::assertSelectorTextContains('[data-id="2"]', 'Reply to comment #1');
-        self::assertSelectorTextContains('[data-id="4"]', 'reader report');
-    }
-
     public function testPagesReuseEditorAndEscapedContent(): void
     {
         $client = self::createClient();

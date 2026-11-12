@@ -1,0 +1,20 @@
+{% extends 'front/layout.html.twig' %}
+{% block title %}Saved stories · Fieldnotes{% endblock %}
+{% block description %}Stories you have saved for later.{% endblock %}
+{% block content %}
+<section class="container-editorial py-12 sm:py-16">
+    <twig:Breadcrumbs items="{{ [{label: 'Home', href: path('front_home')}, {label: 'Saved'}] }}"/>
+    <div class="mt-10 border-b border-line pb-8">
+        <p class="eyebrow">Your reading list</p>
+        <h1 class="mt-4 font-display text-display">Saved for later.</h1>
+        <p class="mt-4 max-w-xl text-sm leading-7 text-muted">A quiet place for the stories you want to return to. Saved items are tied to your account.</p>
+    </div>
+    {% if articles %}
+        <div class="mt-10 grid gap-x-7 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">{% for article in articles %}<twig:ArticleCard article="{{ article }}"/>{% endfor %}</div>
+    {% else %}
+        <twig:EmptyState title="Nothing saved yet" description="Use the bookmark button on any story to keep it here for later.">
+            <twig:Button href="{{ path('front_blog') }}">Browse the journal</twig:Button>
+        </twig:EmptyState>
+    {% endif %}
+</section>
+{% endblock %}

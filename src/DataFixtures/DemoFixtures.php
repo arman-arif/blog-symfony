@@ -257,7 +257,7 @@ final class DemoFixtures extends Fixture
                 continue;
             }
             $comment = (new Comment())
-                ->setArticle($articles[1])
+                ->setArticle($articles[2])
                 ->setGuestName($row['guestName'])
                 ->setGuestEmail($row['guestEmail'])
                 ->setContent($row['content'])
@@ -273,7 +273,7 @@ final class DemoFixtures extends Fixture
                 continue;
             }
             $comment = (new Comment())
-                ->setArticle($articles[1])
+                ->setArticle($articles[2])
                 ->setParent($comments[$row['parent']['id']])
                 ->setGuestName($row['guestName'])
                 ->setGuestEmail($row['guestEmail'])

@@ -43,6 +43,8 @@ final class UiRouteCrawlerTest extends AdminTestCase
         $category = CategoryFactory::createOne(['name' => 'Crawler category']);
         $tag = TagFactory::createOne(['name' => 'Crawler tag']);
         $media = MediaFactory::createOne(['uploadedBy' => $admin]);
+        $comment = self::getContainer()->get(\App\Repository\CommentRepository::class)->findOneBy([]);
+        self::assertNotNull($comment);
         $revision = (new ArticleRevision())
             ->setArticle($article)
             ->setTitle($article->getTitle())
@@ -70,6 +72,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
                         str_starts_with($name, 'admin_tag_') => $tag->getId(),
                         str_starts_with($name, 'admin_article_') => $article->getId(),
                         str_starts_with($name, 'admin_media_') => $media->getId(),
+                        str_starts_with($name, 'admin_comment_') => $comment->getId(),
                         default => 1,
                     },
                     'revision' => $revision->getId(),
