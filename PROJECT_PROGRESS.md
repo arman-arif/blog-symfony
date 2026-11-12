@@ -24,7 +24,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 9 | M9 | SEO | Completed | Metadata/JSON-LD, sitemaps, robots, redirects and consent-gated analytics verified |
 | 10 | M10 | Newsletter | Completed | Double opt-in, campaigns, batching, CSV and scheduler verified |
 | 11 | M11 | Analytics | Completed | Hourly rollups, real dashboard, reports, CSV, cache and 100k-view benchmark verified |
-| 12 | M12 | Monetization | Pending | |
+| 12 | M12 | Monetization | Completed | Ads, sponsorship/affiliate handling and extension interfaces verified |
 | 13 | M13 | Website Settings | Pending | |
 | 14 | M14 | Security & Performance | Pending | |
 | 15 | M15 | Testing | Pending | |
@@ -207,3 +207,10 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Tests: full suite passes with 260 tests / 23,820 assertions. New coverage includes rollup idempotence, pruning old raw views, analytics CSV/report rendering, cache invalidation, dashboard stats and date-range clamping.
 - Performance: with 100k raw views rolled up, production-mode analytics measured 39 ms server response / 92 ms load (dashboard 66 ms / 112 ms), under the 200 ms target.
 - Known issues: engagement is lifetime likes/comments/bookmarks divided by range views (not range-specific engagement); category shares normalise over the displayed category rows; benchmark uses the local MariaDB service and PHP built-in server.
+
+### 2026-11-12 — M12 monetization
+- Implemented real advertisement management with header/in-article/sidebar/footer placements, image/HTML/AdSense types, schedules, priorities, enable toggle, destination URLs and paragraph targeting; replaced the mock ad screens.
+- Added cached ad selection/wiring via `render_ad()` and the `article_ads` filter, with tag-based invalidation on save/toggle/delete and priority/schedule filtering.
+- Added sponsored-article disclosure, article-level affiliate-link `rel="sponsored nofollow noopener"` processing, and a premium flag hidden from public queries. Added `AccessPolicyInterface`/`DefaultAccessPolicy` and `PaymentGatewayInterface`/`DisabledPaymentGateway` as documented extension points without credentials or external calls.
+- Tests: full suite passes with 253 tests / 23,729 assertions. New coverage includes ad priority/schedule/cache invalidation, in-article placement after the second paragraph, sponsored disclosure, affiliate rel attributes, premium hiding and admin ad create/toggle/delete.
+- Known issues: HTML/AdSense creatives are trusted admin raw content (CSP hardening in M14); no ad targeting beyond placement/schedule; premium/membership/payment flows are interfaces only by design; mock advertisement tests were removed in favour of real coverage.

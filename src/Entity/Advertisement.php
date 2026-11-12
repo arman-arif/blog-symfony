@@ -48,6 +48,12 @@ class Advertisement
     #[ORM\Column(type: Types::INTEGER)]
     private int $priority = 10;
 
+    #[ORM\Column(name: 'target_url', type: Types::STRING, length: 2048, nullable: true)]
+    private ?string $targetUrl = null;
+
+    #[ORM\Column(name: 'after_paragraph', type: Types::INTEGER, nullable: true)]
+    private ?int $afterParagraph = null;
+
     public function getName(): string
     {
         return $this->name;
@@ -140,6 +146,30 @@ class Advertisement
     public function setIsActive(bool $isActive): self
     {
         $this->isActive = $isActive;
+
+        return $this;
+    }
+
+    public function getTargetUrl(): ?string
+    {
+        return $this->targetUrl;
+    }
+
+    public function setTargetUrl(?string $targetUrl): self
+    {
+        $this->targetUrl = $targetUrl;
+
+        return $this;
+    }
+
+    public function getAfterParagraph(): ?int
+    {
+        return $this->afterParagraph;
+    }
+
+    public function setAfterParagraph(?int $afterParagraph): self
+    {
+        $this->afterParagraph = $afterParagraph;
 
         return $this;
     }

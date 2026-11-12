@@ -23,6 +23,8 @@ services:
     App\Service\Settings\SettingsServiceInterface: '@App\Service\Settings\DefaultSettingsService'
     App\Service\Media\MediaStorageInterface: '@App\Service\Media\FlysystemMediaStorage'
     App\Service\Comment\SpamCheckerInterface: '@App\Service\Comment\NullSpamChecker'
+    App\Monetization\AccessPolicyInterface: '@App\Monetization\DefaultAccessPolicy'
+    App\Monetization\PaymentGatewayInterface: '@App\Monetization\DisabledPaymentGateway'
 
     # A runtime-selected adapter needs a factory; cache pools replace the namespace argument.
     app.optional_redis_adapter:

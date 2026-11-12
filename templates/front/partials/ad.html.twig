@@ -1,0 +1,10 @@
+<div class="ad-slot my-7 rounded-card border border-line bg-canvas p-3" role="complementary" aria-label="Advertisement" data-ad-placement="{{ ad.placement.value }}">
+    <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted">Advertisement</p>
+    {% if ad.type.value == 'image' and ad.image %}
+        {% if ad.targetUrl %}<a href="{{ ad.targetUrl }}" rel="sponsored nofollow noopener" target="_blank">{% endif %}
+        <img src="{{ media_url(ad.image, 'medium') }}" alt="{{ ad.image.alt ?: ad.name }}" width="{{ ad.image.width ?: 1200 }}" height="{{ ad.image.height ?: 800 }}" loading="lazy" class="w-full rounded-control object-cover">
+        {% if ad.targetUrl %}</a>{% endif %}
+    {% elseif ad.content %}
+        {{ ad.content|raw }}
+    {% endif %}
+</div>

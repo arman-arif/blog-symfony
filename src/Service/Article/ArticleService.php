@@ -146,6 +146,9 @@ final readonly class ArticleService
             ->setAuthor($author)
             ->setFeaturedImage($article->getFeaturedImage())
             ->setAllowComments($article->isAllowComments())
+            ->setIsSponsored($article->isSponsored())
+            ->setAffiliateLinks($article->hasAffiliateLinks())
+            ->setIsPremium($article->isPremium())
             ->setReadingTime($article->getReadingTime());
         foreach ($article->getCategories() as $category) {
             $copy->addCategory($category);
@@ -184,7 +187,7 @@ final readonly class ArticleService
 
     public function autosave(Article $article, string $title, string $content, User $editor): ArticleRevision
     {
-        $revision = $this->recordRevisionValues($article, $title, $this->processor->sanitize($content), $editor, true);
+        $revision = $this->recordRevisionValues($article, $title, $this->processor->sanitize($content, $article->hasAffiliateLinks()), $editor, true);
         $this->entityManager->persist($revision);
         $this->entityManager->flush();
         $this->revisions->pruneAutosaves($article);
@@ -240,7 +243,7 @@ final readonly class ArticleService
 
     private function prepareContent(Article $article): void
     {
-        $content = $this->processor->sanitize($article->getContent());
+        $content = $this->processor->sanitize($article->getContent(), $article->hasAffiliateLinks());
         $article->setContent($content);
         $article->setReadingTime($this->processor->readingTime($content));
 

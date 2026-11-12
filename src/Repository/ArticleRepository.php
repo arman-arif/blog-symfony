@@ -155,6 +155,7 @@ class ArticleRepository extends ServiceEntityRepository
             ->andWhere('article.status = :published')
             ->andWhere('article.publishedAt IS NOT NULL')
             ->andWhere('article.publishedAt <= :now')
+            ->andWhere('article.isPremium = false')
             ->setParameter('published', ArticleStatus::Published)
             ->setParameter('now', new \DateTimeImmutable());
     }
@@ -343,6 +344,7 @@ class ArticleRepository extends ServiceEntityRepository
             ->join('article.categories', 'category')
             ->andWhere('article.status = :published')
             ->andWhere('article.publishedAt <= :now')
+            ->andWhere('article.isPremium = false')
             ->setParameter('published', ArticleStatus::Published)
             ->setParameter('now', new \DateTimeImmutable())
             ->groupBy('category.id')
@@ -360,6 +362,7 @@ class ArticleRepository extends ServiceEntityRepository
             ->join('article.tags', 'tag')
             ->andWhere('article.status = :published')
             ->andWhere('article.publishedAt <= :now')
+            ->andWhere('article.isPremium = false')
             ->setParameter('published', ArticleStatus::Published)
             ->setParameter('now', new \DateTimeImmutable())
             ->groupBy('tag.id')
@@ -376,6 +379,7 @@ class ArticleRepository extends ServiceEntityRepository
             ->select('IDENTITY(article.author) AS authorId, COUNT(article.id) AS total')
             ->andWhere('article.status = :published')
             ->andWhere('article.publishedAt <= :now')
+            ->andWhere('article.isPremium = false')
             ->setParameter('published', ArticleStatus::Published)
             ->setParameter('now', new \DateTimeImmutable())
             ->groupBy('article.author')

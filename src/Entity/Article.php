@@ -67,6 +67,15 @@ class Article
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $allowComments = true;
 
+    #[ORM\Column(name: 'is_sponsored', type: Types::BOOLEAN)]
+    private bool $isSponsored = false;
+
+    #[ORM\Column(name: 'affiliate_links', type: Types::BOOLEAN)]
+    private bool $affiliateLinks = false;
+
+    #[ORM\Column(name: 'is_premium', type: Types::BOOLEAN)]
+    private bool $isPremium = false;
+
     #[ORM\Column(type: Types::INTEGER)]
     private int $readingTime = 0;
 
@@ -236,6 +245,42 @@ class Article
     public function isAllowComments(): bool
     {
         return $this->allowComments;
+    }
+
+    public function isSponsored(): bool
+    {
+        return $this->isSponsored;
+    }
+
+    public function setIsSponsored(bool $isSponsored): self
+    {
+        $this->isSponsored = $isSponsored;
+
+        return $this;
+    }
+
+    public function hasAffiliateLinks(): bool
+    {
+        return $this->affiliateLinks;
+    }
+
+    public function setAffiliateLinks(bool $affiliateLinks): self
+    {
+        $this->affiliateLinks = $affiliateLinks;
+
+        return $this;
+    }
+
+    public function isPremium(): bool
+    {
+        return $this->isPremium;
+    }
+
+    public function setIsPremium(bool $isPremium): self
+    {
+        $this->isPremium = $isPremium;
+
+        return $this;
     }
 
     public function setAllowComments(bool $allowComments): self

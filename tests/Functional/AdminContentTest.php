@@ -19,7 +19,6 @@ final class AdminContentTest extends AdminTestCase
             '/admin/media', '/admin/comments',
             '/admin/pages', '/admin/pages/new', '/admin/pages/1/edit',
             '/admin/menus', '/admin/menus/new', '/admin/menus/1/edit',
-            '/admin/advertisements', '/admin/advertisements/new', '/admin/advertisements/1/edit',
         ];
     }
 
@@ -58,7 +57,7 @@ final class AdminContentTest extends AdminTestCase
         self::assertSelectorCount(6, '[data-media-select]');
     }
 
-    public function testMenuStructureAndAdvertisingCodeStayInert(): void
+    public function testMenuStructureStaysInteractive(): void
     {
         $client = self::createClient();
         $client->request('GET', '/admin/menus/1/edit');
@@ -68,15 +67,6 @@ final class AdminContentTest extends AdminTestCase
         self::assertSelectorExists('[data-menu-root] [data-menu-move="outdent"]');
         self::assertSelectorExists('[data-menu-output][readonly]');
         self::assertSelectorExists('#menu-location option[value="header"][selected]');
-        $client->request('GET', '/admin/advertisements/2/edit');
-        self::assertSelectorTextContains('#ad-content', '<p>Support independent writing.</p>');
-        self::assertSelectorNotExists('main p:contains("Support independent writing.")');
-        self::assertSelectorExists('#ad-type option[value="html"][selected]');
-        self::assertSelectorExists('#ad-start[value="2026-12-01T00:00"]');
-        self::assertSelectorExists('#ad-end[value="2026-12-31T00:00"]');
-        self::assertSelectorExists('#ad-priority[min="0"][max="100"]');
-        self::assertSelectorExists('[data-ad-code-preview]');
-        self::assertSelectorNotExists('main iframe');
     }
 
     public function testAllContentLinksAndReadOnlyRoutes(): void
@@ -100,7 +90,7 @@ final class AdminContentTest extends AdminTestCase
             $client->request('GET', $path);
             self::assertResponseIsSuccessful('Broken content link: '.$path);
         }
-        foreach (['pages', 'menus', 'advertisements'] as $module) {
+        foreach (['pages', 'menus'] as $module) {
             $client->request('GET', '/admin/'.$module.'/999/edit');
             self::assertResponseStatusCodeSame(404);
         }

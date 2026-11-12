@@ -106,6 +106,16 @@ final class ArticleFormType extends AbstractType
                 'required' => false,
                 'attr' => ['id' => 'article-allow-comments'],
             ])
+            ->add('isSponsored', CheckboxType::class, [
+                'label' => 'Sponsored story',
+                'required' => false,
+                'attr' => ['id' => 'article-sponsored'],
+            ])
+            ->add('affiliateLinks', CheckboxType::class, [
+                'label' => 'Mark outbound links as sponsored/affiliate',
+                'required' => false,
+                'attr' => ['id' => 'article-affiliate-links'],
+            ])
             ->add('seo', SeoMetadataType::class, ['label' => false]);
     }
 

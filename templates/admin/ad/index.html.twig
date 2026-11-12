@@ -1,1 +1,39 @@
-{% extends 'admin/content/index.html.twig' %}
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Advertisements{% endblock %}
+{% block breadcrumb %}Advertisements{% endblock %}
+{% block eyebrow %}Content / Partnerships{% endblock %}
+{% block heading %}A place for the right partnership.{% endblock %}
+{% block intro %}Ads render by placement, priority and schedule. HTML and AdSense creatives are trusted admin content; only users with advertising permission can change them.{% endblock %}
+{% block actions %}<twig:Button href="{{ path('admin_ad_create') }}">New advertisement</twig:Button>{% endblock %}
+{% block content %}
+<form method="get" action="{{ path('admin_ad_index') }}" class="card mb-6 flex flex-wrap items-end gap-3 p-4" role="search">
+    <div><label class="field-label" for="ad-filter-placement">Placement</label><select class="field-control" id="ad-filter-placement" name="placement"><option value="">All placements</option>{% for option in placements %}<option value="{{ option.value }}" {% if placement == option.value %}selected{% endif %}>{{ option.value|replace({'_': ' '})|title }}</option>{% endfor %}</select></div>
+    <div><label class="field-label" for="ad-filter-active">Status</label><select class="field-control" id="ad-filter-active" name="active"><option value="">All</option><option value="1" {% if active == '1' %}selected{% endif %}>Enabled</option><option value="0" {% if active == '0' %}selected{% endif %}>Disabled</option></select></div>
+    <twig:Button type="submit" variant="secondary">Filter</twig:Button>
+    <a class="btn btn-ghost" href="{{ path('admin_ad_index') }}">Reset</a>
+</form>
+<div class="table-shell">
+<table class="data-table" aria-label="Advertisements">
+    <thead><tr><th>Name</th><th>Placement</th><th>Type</th><th>Schedule</th><th>Priority</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for ad in ads %}
+        <tr data-row data-id="{{ ad.id }}">
+            <td><a class="font-semibold text-brand" href="{{ path('admin_ad_edit', {id: ad.id}) }}">{{ ad.name }}</a></td>
+            <td>{{ ad.placement.value|replace({'_': ' '})|title }}{% if ad.afterParagraph %} <span class="text-xs text-muted">after ¶{{ ad.afterParagraph }}</span>{% endif %}</td>
+            <td>{{ ad.type.value|title }}</td>
+            <td class="whitespace-nowrap text-xs text-muted">{{ ad.startsAt ? ad.startsAt|date('M j, Y H:i') : 'Now' }} → {{ ad.endsAt ? ad.endsAt|date('M j, Y H:i') : 'Open' }}</td>
+            <td>{{ ad.priority }}</td>
+            <td><span class="badge {{ ad.isActive ? 'badge-success' : 'badge-neutral' }}">{{ ad.isActive ? 'Enabled' : 'Disabled' }}</span></td>
+            <td><div class="flex flex-wrap justify-end gap-1">
+                <twig:Button href="{{ path('admin_ad_edit', {id: ad.id}) }}" variant="secondary" size="sm">Edit</twig:Button>
+                <form method="post" action="{{ path('admin_ad_toggle', {id: ad.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('ad_toggle') }}"><button type="submit" class="btn btn-ghost btn-sm">{{ ad.isActive ? 'Disable' : 'Enable' }}</button></form>
+                <form method="post" action="{{ path('admin_ad_delete', {id: ad.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('ad_delete') }}"><twig:Button type="submit" variant="danger" size="sm">Delete</twig:Button></form>
+            </div></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="7" class="py-10 text-center text-sm text-muted">No advertisements yet. <a class="font-semibold text-brand" href="{{ path('admin_ad_create') }}">Create the first placement</a>.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

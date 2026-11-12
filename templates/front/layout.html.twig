@@ -7,7 +7,9 @@
 <nav class="hidden items-center gap-7 lg:flex" aria-label="Main navigation"><a href="{{ path('front_blog') }}" class="text-sm font-semibold hover:text-brand">Journal</a><twig:Dropdown id="header-categories" label="Explore">{% for category in categories|slice(0, 6) %}<a class="dropdown-item" href="{{ path('front_category', {slug: category.slug}) }}">{{ category.name }}</a>{% endfor %}<a class="dropdown-item border-t border-line" href="{{ path('front_categories') }}">All categories</a><a class="dropdown-item" href="{{ path('front_tags') }}">Explore topics</a><a class="dropdown-item" href="{{ path('front_authors') }}">Our contributors</a></twig:Dropdown><a href="{{ path('front_page', {slug: 'about'}) }}" class="text-sm font-semibold hover:text-brand">Our story</a>{% if app.user %}<a href="{{ path('front_saved') }}" class="text-sm font-semibold hover:text-brand">Saved</a>{% endif %}</nav>
 <div class="flex items-center gap-1 sm:gap-2"><twig:Button variant="ghost" size="icon" data-dialog-open="site-search" aria-label="Search stories"><twig:Icon name="search"/></twig:Button><twig:Button variant="ghost" size="icon" data-component="theme" aria-pressed="false" aria-label="Toggle dark mode"><twig:Icon name="sun"/></twig:Button><twig:Button href="#newsletter" class="hidden sm:inline-flex">Subscribe<twig:Icon name="arrow"/></twig:Button><twig:Button variant="ghost" size="icon" data-dialog-open="mobile-navigation" class="lg:hidden" aria-label="Open navigation"><twig:Icon name="menu"/></twig:Button></div>
 </div></header>
+{{ render_ad('header') }}
 <main id="main-content">{% block content %}{% endblock %}</main>
+{{ render_ad('footer') }}
 {% include 'front/partials/newsletter.html.twig' %}
 {% include 'front/partials/footer.html.twig' %}
 {% include 'front/partials/consent.html.twig' %}

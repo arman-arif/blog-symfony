@@ -102,3 +102,9 @@ The article, category and tag administration screens are now server-backed; rema
 - **Dashboard:** real stat cards, 7-day views, category share, recent articles/comments/activity and workflow counts.
 - **Reporting:** date-range charts and top-article/author/category/tag tables plus CSV export, gated by `analytics.view`.
 - **Measured:** 100k raw views → 39 ms production response / 92 ms load on the local MariaDB benchmark.
+
+## M12 monetization
+
+- **Ads:** real advertisement CRUD, placement/schedule/priority selection, placement-ID caching with invalidation, `render_ad()` and in-article insertion after a configured paragraph.
+- **Sponsored/affiliate:** article sponsorship disclosure and automatic `rel="sponsored nofollow noopener"` for affiliate-enabled content.
+- **Extensions:** premium article flag plus `AccessPolicyInterface`; payment checkout/webhook contract with a disabled implementation. No payment credentials or external provider are bundled.

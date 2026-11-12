@@ -47,6 +47,8 @@ final class UiRouteCrawlerTest extends AdminTestCase
         self::assertNotNull($comment);
         $campaign = self::getContainer()->get(\App\Repository\NewsletterCampaignRepository::class)->findOneBy([]);
         self::assertNotNull($campaign);
+        $ad = self::getContainer()->get(\App\Repository\AdvertisementRepository::class)->findOneBy([]);
+        self::assertNotNull($ad);
         $revision = (new ArticleRevision())
             ->setArticle($article)
             ->setTitle($article->getTitle())
@@ -76,6 +78,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
                         str_starts_with($name, 'admin_media_') => $media->getId(),
                         str_starts_with($name, 'admin_comment_') => $comment->getId(),
                         'admin_newsletter_edit' === $name => $campaign->getId(),
+                        'admin_ad_edit' === $name => $ad->getId(),
                         default => 1,
                     },
                     'revision' => $revision->getId(),

@@ -12,6 +12,7 @@ Target: **MySQL 8.4** with `utf8mb4`. Development in this workspace uses the own
 | `Version20261112114159` | Account recovery | `reset_password_request` selector/token pairs with a cascading user relation |
 | `Version20261112130000` | Search | FULLTEXT index `ft_article_search` on article title/excerpt/content |
 | `Version20261112174153` | Redirects | Shorten `redirect.source_path` to 512 chars so its unique index fits MySQL 8/InnoDB limits |
+| `Version20261112185703` | Monetization | Ad destination/paragraph targeting and article sponsored/affiliate/premium flags |
 
 Every migration was generated from attribute mapping and verified up, down and up again on a fresh empty database.
 

@@ -35,11 +35,11 @@ final class ContentProcessor
         $this->slugger = new AsciiSlugger();
     }
 
-    public function sanitize(string $html): string
+    public function sanitize(string $html, bool $affiliateLinks = false): string
     {
         $clean = $this->sanitizer->sanitize($html);
 
-        return $this->addHeadingIds($clean);
+        return $this->processDocument($clean, $affiliateLinks);
     }
 
     public function readingTime(string $html): int
@@ -62,7 +62,7 @@ final class ContentProcessor
         return rtrim(false === $space ? $cut : mb_substr($cut, 0, $space), '.,;:!?').'…';
     }
 
-    private function addHeadingIds(string $html): string
+    private function processDocument(string $html, bool $affiliateLinks = false): string
     {
         if ('' === trim($html)) {
             return '';
@@ -81,6 +81,9 @@ final class ContentProcessor
 
         $used = [];
         foreach ($root->getElementsByTagName('*') as $element) {
+            if ('a' === $element->tagName && $affiliateLinks) {
+                $element->setAttribute('rel', 'sponsored nofollow noopener');
+            }
             if (!in_array($element->tagName, ['h2', 'h3', 'h4'], true)) {
                 continue;
             }
