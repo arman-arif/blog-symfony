@@ -18,8 +18,10 @@ final readonly class TransactionalMailer
     ) {
     }
 
-    /** @param array<string, mixed> $context */
-    public function send(string $to, string $subject, string $template, array $context = []): void
+    /** @param array<string, mixed> $context
+     * @param array<string, string> $headers
+     */
+    public function send(string $to, string $subject, string $template, array $context = [], array $headers = []): void
     {
         $fromAddress = $this->settings->getString('mail.from_address');
         $fromName = $this->settings->getString('mail.from_name');
@@ -29,6 +31,10 @@ final readonly class TransactionalMailer
             ->to($to)
             ->subject($subject)
             ->html($this->twig->render($template, $context + ['siteName' => $this->settings->getString('general.name'), 'fromName' => $fromName]));
+
+        foreach ($headers as $name => $value) {
+            $email->getHeaders()->addTextHeader($name, $value);
+        }
 
         $this->mailer->send($email);
     }

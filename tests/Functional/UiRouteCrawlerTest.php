@@ -45,6 +45,8 @@ final class UiRouteCrawlerTest extends AdminTestCase
         $media = MediaFactory::createOne(['uploadedBy' => $admin]);
         $comment = self::getContainer()->get(\App\Repository\CommentRepository::class)->findOneBy([]);
         self::assertNotNull($comment);
+        $campaign = self::getContainer()->get(\App\Repository\NewsletterCampaignRepository::class)->findOneBy([]);
+        self::assertNotNull($campaign);
         $revision = (new ArticleRevision())
             ->setArticle($article)
             ->setTitle($article->getTitle())
@@ -61,7 +63,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
             if ([] !== $route->getMethods() && !in_array('GET', $route->getMethods(), true)) {
                 continue;
             }
-            if (str_ends_with($name, '_autocomplete') || str_ends_with($name, '_picker') || str_contains($name, 'feed') || str_contains($name, 'sitemap') || 'front_robots' === $name) {
+            if (str_ends_with($name, '_autocomplete') || str_ends_with($name, '_picker') || str_contains($name, 'feed') || str_contains($name, 'sitemap') || str_contains($name, 'newsletter_confirm') || str_contains($name, 'newsletter_unsubscribe') || str_ends_with($name, '_export') || 'front_robots' === $name) {
                 continue;
             }
             $parameters = [];
@@ -73,6 +75,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
                         str_starts_with($name, 'admin_article_') => $article->getId(),
                         str_starts_with($name, 'admin_media_') => $media->getId(),
                         str_starts_with($name, 'admin_comment_') => $comment->getId(),
+                        'admin_newsletter_edit' === $name => $campaign->getId(),
                         default => 1,
                     },
                     'revision' => $revision->getId(),

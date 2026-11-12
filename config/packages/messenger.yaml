@@ -22,3 +22,5 @@ when@test:
                 sync: 'sync://'
             routing:
                 Symfony\Component\Mailer\Messenger\SendEmailMessage: sync
+                App\Message\SendNewsletterCampaignMessage: sync
+                App\Message\SendScheduledNewsletterCampaignsMessage: sync

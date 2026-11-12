@@ -18,8 +18,7 @@ final class AdminSystemTest extends AdminTestCase
         return [
             '/admin/users', '/admin/users/new', '/admin/users/1/edit', '/admin/users/6/edit',
             '/admin/roles', '/admin/roles/new', '/admin/roles/1/edit', '/admin/permissions',
-            '/admin/newsletter', '/admin/newsletter/campaigns', '/admin/newsletter/history',
-            '/admin/newsletter/campaigns/new', '/admin/newsletter/campaigns/2/edit',
+
             '/admin/analytics', '/admin/appearance', '/admin/seo', '/admin/settings',
             '/admin/settings/smtp', '/admin/activity', '/admin/profile',
         ];
@@ -79,26 +78,6 @@ final class AdminSystemTest extends AdminTestCase
         self::assertSelectorExists('[data-permission-role="1"][value="settings.smtp.manage"][checked]');
         self::assertSelectorNotExists('[data-permission-role="2"][value="settings.system.manage"][checked]');
         self::assertSelectorExists('[data-permission-summary][role="status"]');
-    }
-
-    public function testNewsletterContractsAndScheduling(): void
-    {
-        $client = self::createClient();
-        $client->request('GET', '/admin/newsletter');
-        self::assertSelectorCount(18, '#subscribers-table [data-row]');
-        self::assertSelectorExists('#subscribers-table-status option[value="inactive"]');
-        self::assertSelectorExists('[data-export-preview][disabled]');
-        self::assertSelectorExists('#export-preview-dialog [data-export-content]');
-        $client->request('GET', '/admin/newsletter/campaigns');
-        self::assertSelectorCount(3, '#campaigns-table [data-row]');
-        $client->request('GET', '/admin/newsletter/history');
-        self::assertSelectorCount(1, '#campaigns-table [data-row][data-status="sent"]');
-        $client->request('GET', '/admin/newsletter/campaigns/2/edit');
-        self::assertSelectorExists('textarea[name="html"][readonly]');
-        self::assertSelectorNotExists('textarea[name="content"]');
-        self::assertSelectorExists('#campaign-schedule[value="2026-12-01T09:00"]');
-        self::assertSelectorExists('#campaign-status option[value="scheduled"][selected]');
-        self::assertSelectorExists('#campaign-test-dialog form fieldset[disabled]');
     }
 
     public function testAnalyticsAlternativesAndDateInputs(): void
@@ -177,7 +156,7 @@ final class AdminSystemTest extends AdminTestCase
             $client->request('GET', $path);
             self::assertResponseIsSuccessful('Broken system link: '.$path.' '.substr(strip_tags((string) $client->getResponse()->getContent()), 0, 500));
         }
-        foreach (['users', 'roles', 'newsletter/campaigns'] as $module) {
+        foreach (['users', 'roles'] as $module) {
             $client->request('GET', '/admin/'.$module.'/999/edit');
             self::assertResponseStatusCodeSame(404);
         }

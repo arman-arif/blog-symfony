@@ -1,4 +1,29 @@
 {% extends 'admin/layout.html.twig' %}
-{% set history = app.request.attributes.get('_route') == 'admin_newsletter_history' %}
-{% block page_title %}{{ history ? 'Campaign history' : 'Newsletter campaigns' }}{% endblock %}{% block breadcrumb %}Newsletter / {{ history ? 'History' : 'Campaigns' }}{% endblock %}{% block eyebrow %}Audience / Editorial letters{% endblock %}{% block heading %}{{ history ? 'A record of notes sent with care.' : 'Something worth opening.' }}{% endblock %}{% block intro %}Drafts, scheduling and past-delivery statistics are illustrative. No email has been sent by this preview.{% endblock %}{% block actions %}<twig:Button href="{{ path('admin_newsletter_create') }}">New campaign</twig:Button>{% endblock %}
-{% block content %}{% include 'admin/newsletter/partials/navigation.html.twig' %}<twig:DataTable id="campaigns-table" caption="{{ history ? 'Delivery history' : 'Campaigns' }}" state="{{ state }}" columns="{{ [{key: 'subject', label: 'Subject', sortable: true}, {key: 'status', label: 'Status', sortable: true}, {key: 'sent', label: 'Delivery'}, {key: 'schedule', label: 'Date'}] }}">{% for campaign in records|filter(item => not history or item.status == 'sent') %}<tr data-row data-id="{{ campaign.id }}" data-subject="{{ campaign.subject }}" data-status="{{ campaign.status }}" data-search="{{ campaign.subject }}"><td><input type="checkbox" data-select-row disabled aria-label="Select {{ campaign.subject }}"></td><td><a class="font-semibold text-brand" href="{{ path('admin_newsletter_edit', {id: campaign.id}) }}">{{ campaign.subject }}</a></td><td><twig:Badge tone="{{ campaign.status == 'sent' ? 'success' : 'neutral' }}">{{ campaign.status|title }}</twig:Badge></td><td>{{ campaign.stats.sent }} sent / {{ campaign.stats.failed }} failed <span class="block text-xs text-muted">Illustrative snapshot</span></td><td>{{ campaign.sentAt ? campaign.sentAt|date('M j, Y H:i') : (campaign.scheduledAt ? campaign.scheduledAt|date('M j, Y H:i') : 'Not scheduled') }}</td><td><div class="flex gap-2"><twig:Button variant="ghost" size="sm" href="{{ path('admin_newsletter_edit', {id: campaign.id}) }}">Open</twig:Button><twig:Button variant="ghost" size="sm" data-component="confirm" data-row-remove data-confirm-message="Remove this local campaign row? No campaign is deleted or cancelled.">Remove</twig:Button></div></td></tr>{% endfor %}</twig:DataTable>{% endblock %}
+{% block page_title %}{{ history ? 'Campaign history' : 'Newsletter campaigns' }}{% endblock %}
+{% block breadcrumb %}Newsletter / {{ history ? 'History' : 'Campaigns' }}{% endblock %}
+{% block eyebrow %}Audience / Email campaigns{% endblock %}
+{% block heading %}{{ history ? 'What was sent.' : 'Letters worth opening.' }}{% endblock %}
+{% block intro %}Draft, schedule and send campaigns to confirmed subscribers.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_newsletter_index') }}">Subscribers</twig:Button>{% if not history %}<twig:Button href="{{ path('admin_newsletter_create') }}">New campaign</twig:Button>{% endif %}{% endblock %}
+{% block content %}
+<nav aria-label="Campaign views" class="mb-6 flex gap-1 border-b border-line"><a class="tab {{ not history ? 'border-brand text-brand' : '' }}" href="{{ path('admin_newsletter_campaigns') }}" {% if not history %}aria-current="page"{% endif %}>Campaigns</a><a class="tab {{ history ? 'border-brand text-brand' : '' }}" href="{{ path('admin_newsletter_history') }}" {% if history %}aria-current="page"{% endif %}>History</a></nav>
+<div class="table-shell">
+<table class="data-table" aria-label="Newsletter campaigns">
+    <thead><tr><th>Subject</th><th>Status</th><th>Scheduled</th><th>Sent</th><th>Delivery</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for campaign in campaigns %}
+        <tr data-row data-id="{{ campaign.id }}">
+            <td><a class="font-semibold text-brand" href="{{ path('admin_newsletter_edit', {id: campaign.id}) }}">{{ campaign.subject }}</a></td>
+            <td><span class="badge {{ campaign.status.value == 'sent' ? 'badge-success' : (campaign.status.value == 'scheduled' ? 'badge-warning' : 'badge-neutral') }}">{{ campaign.status.value|title }}</span></td>
+            <td class="text-xs text-muted">{{ campaign.scheduledAt ? campaign.scheduledAt|date('M j, Y H:i') : '—' }}</td>
+            <td class="text-xs text-muted">{{ campaign.sentAt ? campaign.sentAt|date('M j, Y H:i') : '—' }}</td>
+            <td class="text-xs text-muted">{{ campaign.stats.sent }} sent · {{ campaign.stats.failed }} failed</td>
+            <td><div class="flex justify-end gap-1"><twig:Button href="{{ path('admin_newsletter_edit', {id: campaign.id}) }}" variant="secondary" size="sm">Edit</twig:Button>{% if campaign.status.value != 'sent' %}<form method="post" action="{{ path('admin_newsletter_send', {id: campaign.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('campaign_send') }}"><twig:Button type="submit" size="sm">Send now</twig:Button></form>{% endif %}</div></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="6" class="py-10 text-center text-sm text-muted">{{ history ? 'No campaign history yet.' : 'No campaigns yet.' }} {% if not history %}<a class="font-semibold text-brand" href="{{ path('admin_newsletter_create') }}">Write the first letter</a>.{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

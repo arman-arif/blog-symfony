@@ -1,3 +1,41 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}Newsletter subscribers{% endblock %}{% block breadcrumb %}Newsletter / Subscribers{% endblock %}{% block eyebrow %}Audience / Newsletter{% endblock %}{% block heading %}A thoughtful note, a willing audience.{% endblock %}{% block intro %}Fictional subscription records. Local status changes do not subscribe anyone or alter consent. The export button shows sample CSV only.{% endblock %}
-{% block content %}{% include 'admin/newsletter/partials/navigation.html.twig' %}<div data-component="system-actions"><twig:Button variant="secondary" class="mb-5" data-export-preview disabled>Preview subscriber export</twig:Button><twig:DataTable id="subscribers-table" caption="Subscribers" state="{{ state }}" columns="{{ [{key: 'email', label: 'Email', sortable: true}, {key: 'status', label: 'Status', sortable: true}, {key: 'updated', label: 'Joined', sortable: true}] }}" filters="{{ [{key: 'status', label: 'Statuses', options: [{value: 'active', label: 'Active'}, {value: 'inactive', label: 'Inactive (local)'}, {value: 'unconfirmed', label: 'Unconfirmed'}, {value: 'unsubscribed', label: 'Unsubscribed'}]}] }}">{% for subscriber in records %}<tr data-row data-id="{{ subscriber.id }}" data-email="{{ subscriber.email }}" data-status="{{ subscriber.status }}" data-updated="{{ subscriber.createdAt|date('U') }}" data-search="{{ subscriber.email }}"><td><input type="checkbox" data-select-row disabled aria-label="Select {{ subscriber.email }}"></td><td>{{ subscriber.email }}</td><td><span data-local-status-label class="badge badge-neutral">{{ subscriber.status|title }}</span></td><td>{{ subscriber.createdAt|date('M j, Y') }}</td><td><div class="flex gap-2"><button type="button" class="btn btn-secondary btn-sm" data-toggle-local-status disabled>Toggle active</button><twig:Button variant="ghost" size="sm" data-component="confirm" data-row-remove data-confirm-message="Remove this fictional subscription from the local preview only? Nothing is stored.">Remove</twig:Button></div></td></tr>{% endfor %}</twig:DataTable></div><twig:Modal id="export-preview-dialog" title="Subscriber CSV preview"><p class="mb-4 text-xs text-muted">All fictional fixture rows, irrespective of table filters. No file was exported or sent.</p><pre class="max-h-80 overflow-auto text-xs" data-export-content></pre></twig:Modal>{% endblock %}
+{% block page_title %}Newsletter{% endblock %}
+{% block breadcrumb %}Newsletter{% endblock %}
+{% block eyebrow %}Audience / Sunday letter{% endblock %}
+{% block heading %}A quieter kind of inbox.{% endblock %}
+{% block intro %}Manage subscribers and the campaigns that reach them.{% endblock %}
+{% block actions %}<a class="btn btn-secondary" href="{{ path('admin_newsletter_export') }}">Export CSV</a><twig:Button href="{{ path('admin_newsletter_campaigns') }}">Campaigns</twig:Button>{% endblock %}
+{% block content %}
+<nav aria-label="Subscriber status" class="mb-6 flex flex-wrap gap-1 border-b border-line">
+    {% set tabs = [{label: 'All (' ~ counts.all ~ ')', value: ''}, {label: 'Confirmed (' ~ counts.confirmed ~ ')', value: 'confirmed'}, {label: 'Pending (' ~ counts.pending ~ ')', value: 'pending'}, {label: 'Unsubscribed (' ~ counts.unsubscribed ~ ')', value: 'unsubscribed'}] %}
+    {% for tab in tabs %}<a class="tab {{ filters.status == tab.value ? 'border-brand text-brand' : '' }}" href="{{ path('admin_newsletter_index', app.request.query.all|merge({status: tab.value, page: 1})) }}" {% if filters.status == tab.value %}aria-current="page"{% endif %}>{{ tab.label }}</a>{% endfor %}
+</nav>
+<form method="get" action="{{ path('admin_newsletter_index') }}" class="card mb-6 flex flex-wrap items-end gap-3 p-4" role="search">
+    <div class="min-w-56 flex-1"><label class="field-label" for="subscriber-search">Search by email</label><input class="field-control" id="subscriber-search" type="search" name="q" value="{{ filters.q }}"></div>
+    <input type="hidden" name="status" value="{{ filters.status }}">
+    <twig:Button type="submit" variant="secondary">Search</twig:Button>
+</form>
+<div class="table-shell">
+<table class="data-table" aria-label="Newsletter subscribers">
+    <thead><tr><th>Email</th><th>Status</th><th>Joined</th><th>Confirmed</th><th>Unsubscribed</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for subscriber in subscribers %}
+        <tr data-row data-id="{{ subscriber.id }}">
+            <td class="font-semibold">{{ subscriber.email }}</td>
+            <td><span class="badge {{ subscriber.status.value == 'confirmed' ? 'badge-success' : (subscriber.status.value == 'pending' ? 'badge-warning' : 'badge-neutral') }}">{{ subscriber.status.value|title }}</span></td>
+            <td class="text-xs text-muted">{{ subscriber.createdAt|date('M j, Y') }}</td>
+            <td class="text-xs text-muted">{{ subscriber.confirmedAt ? subscriber.confirmedAt|date('M j, Y') : '—' }}</td>
+            <td class="text-xs text-muted">{{ subscriber.unsubscribedAt ? subscriber.unsubscribedAt|date('M j, Y') : '—' }}</td>
+            <td><div class="flex justify-end gap-1">
+                {% if subscriber.status.value != 'confirmed' %}<form method="post" action="{{ path('admin_newsletter_subscriber_status', {id: subscriber.id, status: 'confirmed'}) }}"><input type="hidden" name="_token" value="{{ csrf_token('subscriber_status') }}"><button type="submit" class="btn btn-ghost btn-sm">Activate</button></form>{% endif %}
+                {% if subscriber.status.value != 'unsubscribed' %}<form method="post" action="{{ path('admin_newsletter_subscriber_status', {id: subscriber.id, status: 'unsubscribed'}) }}"><input type="hidden" name="_token" value="{{ csrf_token('subscriber_status') }}"><button type="submit" class="btn btn-ghost btn-sm">Deactivate</button></form>{% endif %}
+            </div></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="6" class="py-10 text-center text-sm text-muted">No subscribers match these filters.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% if total > 25 %}<nav class="mt-5 flex items-center justify-between text-sm" aria-label="Subscriber pagination"><span class="text-muted">{{ total }} subscribers · page {{ page }} of {{ pages }}</span><div class="flex gap-2">{% if page > 1 %}<a class="btn btn-secondary btn-sm" href="{{ path('admin_newsletter_index', app.request.query.all|merge({page: page - 1})) }}">Previous</a>{% endif %}{% if page < pages %}<a class="btn btn-secondary btn-sm" href="{{ path('admin_newsletter_index', app.request.query.all|merge({page: page + 1})) }}">Next</a>{% endif %}</div></nav>{% endif %}
+{% endblock %}

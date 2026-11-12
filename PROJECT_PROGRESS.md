@@ -22,7 +22,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 7 | M7 | Public Website Integration | Completed | Real catalog, FULLTEXT search, feeds, caching and public visibility tests verified |
 | 8 | M8 | Comments & Engagement | Completed | Real comments, spam controls, moderation, likes/bookmarks and view tracking verified |
 | 9 | M9 | SEO | Completed | Metadata/JSON-LD, sitemaps, robots, redirects and consent-gated analytics verified |
-| 10 | M10 | Newsletter | Pending | |
+| 10 | M10 | Newsletter | Completed | Double opt-in, campaigns, batching, CSV and scheduler verified |
 | 11 | M11 | Analytics | Pending | |
 | 12 | M12 | Monetization | Pending | |
 | 13 | M13 | Website Settings | Pending | |
@@ -191,3 +191,10 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Tests: full suite passes with 273 tests / 24,756 assertions. New SEO coverage checks canonical/OG/Twitter data, JSON-LD graph structure and article headline/author, noindex search, sitemaps excluding drafts/noindex content, robots output, redirect status/hit counting, automatic slug-change redirects, and GA consent gating.
 - Browser: verified homepage/article canonical + JSON-LD, sitemap index and robots output with zero console errors.
 - Known issues: no image sitemap or news sitemap; sitemap cache TTL is one hour; Page/Category/Tag admin changes are not all wired yet but invalidate sitemap tags when their services are used; consent remains a first-party cookie/local preference.
+
+### 2026-11-12 — M10 newsletter and email
+- Added real newsletter subscriptions with CSRF and per-IP rate limiting, double opt-in, opaque confirmation/unsubscribe tokens, welcome emails and List-Unsubscribe headers.
+- Replaced the mock newsletter screens with subscriber management (status tabs/search/pagination/activate/deactivate), CSV export, campaign list/history and a campaign editor with test sends and delivery stats.
+- Added sanitized campaign HTML rendered with inline CSS, batched Messenger delivery of 50 recipients per message with per-recipient failure accounting, and a scheduled campaign message running every minute from the stateful scheduler.
+- Tests: full suite passes with 259 tests / 23,821 assertions. New coverage includes double opt-in confirm/unsubscribe, single opt-in, invalid email, HTTP burst rate limiting, admin search/status/CSV, campaign draft/test/batch delivery and scheduled queueing.
+- Known issues: campaign delivery is at-least-once style (no per-recipient delivery ledger); test sends and campaign emails use the same transactional mailer; unsubscribe is a GET link plus one-click header, not an RFC 8058 POST endpoint; production workers for `scheduler_default` and `async` are required.

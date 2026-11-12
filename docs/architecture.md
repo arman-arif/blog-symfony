@@ -88,3 +88,9 @@ The article, category and tag administration screens are now server-backed; rema
 - **Discovery:** sitemap index plus article/category/tag/author/page sitemaps, all tag-cached and filtered to public/indexable content; dynamic robots.txt.
 - **Redirects:** cached public request listener with hit counting, plus automatic 301 creation when an article slug changes.
 - **Consent:** GA4 is injected only after explicit optional consent; GSC verification is metadata only.
+
+## M10 newsletter and email
+
+- **Subscriptions:** CSRF/rate-limited opt-in with opaque confirmation/unsubscribe tokens, double opt-in setting, confirmation/welcome emails and List-Unsubscribe headers.
+- **Admin:** real subscriber management with status actions and CSV export, plus campaign editor, test sends, history and delivery stats.
+- **Delivery:** campaigns are batched through Messenger (50 recipients per message), rendered with inline CSS, and scheduled sends run every minute through the Symfony Scheduler. Failures are recorded per recipient without aborting the batch.
