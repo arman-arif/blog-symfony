@@ -1,0 +1,5 @@
+<nav class="mb-6 flex flex-wrap gap-2" aria-label="Website settings">
+{% for label, route in {'General & system': 'admin_settings_index', Appearance: 'admin_appearance_index', 'Search & redirects': 'admin_seo_index', 'SMTP & email': 'admin_settings_smtp'} %}
+<a class="btn btn-secondary btn-sm" href="{{ path(route) }}" {% if app.request.attributes.get('_route') == route %}aria-current="page"{% endif %}>{{ label }}</a>
+{% endfor %}
+</nav>

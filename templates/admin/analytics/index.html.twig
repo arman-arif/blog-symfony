@@ -1,0 +1,31 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Analytics{% endblock %}
+{% block breadcrumb %}Analytics{% endblock %}
+{% block eyebrow %}Audience / Editorial perspective{% endblock %}
+{% block heading %}Understand what resonates.{% endblock %}
+{% block intro %}Filter a fixed, fictional daily snapshot. Charts, totals and top tables update locally; there is no tracking, external analytics request or live measurement.{% endblock %}
+{% block content %}<twig:PreviewStates state="{{ state }}">
+<div data-component="analytics-preview" data-analytics-daily="{{ analytics.daily|json_encode }}">
+<twig:PreviewForm id="analytics-range-form" successMessage="Date range applied to the fictional snapshot only." fieldsClass="grid gap-4 sm:grid-cols-2 xl:flex xl:items-end card p-5">
+<twig:Field id="analytics-from" label="From date" required><twig:Input id="analytics-from" name="from" type="date" value="2026-10-13" required/></twig:Field>
+<twig:Field id="analytics-to" label="To date" required><twig:Input id="analytics-to" name="to" type="date" value="2026-11-11" required/></twig:Field>
+<twig:Button type="submit">Apply date range</twig:Button><button type="button" class="btn btn-secondary" data-analytics-reset>Reset range</button>
+</twig:PreviewForm>
+<p class="my-4 text-xs text-muted" role="status" data-analytics-summary>Snapshot: Oct 13–Nov 11, 2026. Enable JavaScript to calculate filtered totals.</p>
+<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+<twig:StatCard label="Article views" value="{{ analytics.daily|map(day => day.views)|reduce((sum, value) => sum + value, 0) }}" icon="chart" note="Fixed daily projection" data-analytics-stat="views"/>
+<twig:StatCard label="Engagements" value="{{ analytics.daily|map(day => day.engagements)|reduce((sum, value) => sum + value, 0) }}" icon="heart" note="Likes, comments & bookmarks" data-analytics-stat="engagements"/>
+<twig:StatCard label="Newsletter subscribers" value="18" icon="mail" note="Fictional lifetime total"/>
+<twig:StatCard label="Editorial team" value="6" icon="user" note="Fictional lifetime total"/>
+</div>
+<p class="mt-4 text-sm text-muted" data-analytics-empty hidden>No snapshot data falls in this date range. Nothing has been removed.</p>
+<div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+{% include 'admin/partials/chart.html.twig' with {id: 'analytics-views-chart', title: 'Daily reading', subtitle: 'Fixed daily views, filtered locally', type: 'line', chart: {labels: analytics.daily|map(day => day.date), values: analytics.daily|map(day => day.views)}, unit: 'views'} %}
+{% include 'admin/partials/chart.html.twig' with {id: 'analytics-monthly-chart', title: 'Month by month', subtitle: 'Monthly sums of the selected fictional days', type: 'line', chart: analytics.monthly, unit: 'views'} %}
+</div>
+<div class="mt-6 grid gap-6 xl:grid-cols-2">
+<section class="card min-w-0 p-5"><h2 class="mb-4 text-xl font-semibold">Most viewed articles & engagement</h2><p class="mb-4 text-xs text-muted">Illustrative ranking projected from the selected views, not measured article traffic.</p><div class="table-shell" tabindex="0" role="region" aria-label="Top articles, scroll horizontally"><table class="data-table min-w-[500px]"><caption class="sr-only">Most viewed articles; illustrative range projection</caption><thead><tr><th scope="col">Article</th><th scope="col">Views</th><th scope="col">Engagement rate</th></tr></thead><tbody>{% for article in analytics.articles %}<tr><td><a href="{{ path('admin_article_edit', {id: article.id}) }}" class="font-semibold text-brand">{{ article.title }}</a></td><td data-range-share="{{ 30 - loop.index * 3 }}">{{ article.viewCount|number_format }}</td><td>{{ (article.likeCount / article.viewCount * 100)|number_format(1) }}% <span class="block text-xs text-muted">Lifetime likes / views</span></td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card min-w-0 p-5"><h2 class="mb-4 text-xl font-semibold">Author performance</h2><div class="table-shell" tabindex="0" role="region" aria-label="Author performance, scroll horizontally"><table class="data-table min-w-[420px]"><caption class="sr-only">Fictional author performance projection</caption><thead><tr><th scope="col">Author</th><th scope="col">Views</th></tr></thead><tbody>{% for author in analytics.authors %}<tr><td><a class="text-brand" href="{{ path('front_author', {slug: author.slug}) }}">{{ author.displayName }}</a></td><td data-range-share="{{ 24 - loop.index * 2 }}">Illustrative range share</td></tr>{% endfor %}</tbody></table></div></section>
+{% for key, title in {categories: 'Popular categories', tags: 'Popular tags'} %}<section class="card p-5"><h2 class="mb-4 text-xl font-semibold">{{ title }}</h2><table class="w-full text-left text-sm"><caption class="sr-only">{{ title }} · fictional range projection</caption><thead><tr><th scope="col" class="pb-3">Name</th><th scope="col" class="pb-3">Views</th></tr></thead><tbody>{% for item in analytics[key] %}<tr class="border-t border-line"><th scope="row" class="py-3 font-normal">{{ item.name }}</th><td data-range-share="{{ 25 - loop.index * 2 }}">Illustrative range share</td></tr>{% endfor %}</tbody></table></section>{% endfor %}
+</div>
+</div></twig:PreviewStates>{% endblock %}

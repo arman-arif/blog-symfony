@@ -1,5 +1,5 @@
 {% props label, value, icon, note %}
 <div {{ attributes.defaults({class: 'card p-5 sm:p-6'}) }}>
     <div class="flex items-center justify-between gap-3"><p class="text-sm font-medium text-muted">{{ label }}</p><span class="rounded-control bg-brand/10 p-2 text-brand"><twig:Icon name="{{ icon }}"/></span></div>
-    <p class="mt-4 text-3xl font-semibold tracking-tight">{{ value|number_format }}</p><p class="mt-2 text-xs text-muted">{{ note }}</p>
+    <p class="mt-4 text-3xl font-semibold tracking-tight" data-stat-value>{{ value|number_format }}</p><p class="mt-2 text-xs text-muted">{{ note }}</p>
 </div>

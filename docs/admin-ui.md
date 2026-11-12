@@ -4,7 +4,7 @@ The workspace and article routes are available only in dev/test with `APP_UI_PRE
 
 ## Shared layout
 
-`templates/admin/layout.html.twig` supplies grouped navigation, active links, desktop collapse, a native modal mobile drawer, workspace search, editorial notifications, quick-create outline preview, profile summary, breadcrumbs, actions and live notifications. Later module navigation is explicitly marked unavailable, rather than linked to unfinished placeholder screens. Only implemented destinations are interactive.
+`templates/admin/layout.html.twig` supplies grouped navigation, active links, desktop collapse, a native modal mobile drawer, workspace search, editorial notifications, quick-create outline preview, profile/security links, breadcrumbs, actions and live notifications. All specified administration destinations are implemented and linked as mock-only screens.
 
 `StatCard`, `DataTable` and `AdminFormLayout` extend the M1.1 primitives. Forms that would mutate data must use `PreviewForm`: controls remain disabled until submission prevention is installed. The outline form validates but never creates a draft.
 
@@ -42,3 +42,18 @@ Categories/tags, media, comments, pages, menus and advertisements have real GET-
 - Advertisements expose placement/type/priority/enable and UTC start/end controls. HTML and network creatives are inert text; there is no script execution, provider request or live ad rendering. End-before-start validation works locally. M12 owns real placement/schedule behavior.
 
 `PreviewStates`, `SeoFields` and `MediaField` are reusable for later module forms. Local file checks, HTML-copy allow-lists and form constraints are UI safeguards, **not substitutes for backend validation, CSRF, authorization or sanitizing**.
+
+## System and audience modules (M1.7b)
+
+Every screen has real preview-gated GET routes and loading/empty/error examples. No mutation routes, mail transport, account security or settings persistence have been added.
+
+- Users expose profile fields, role IDs and local active/inactive changes. Roles use granular capability strings; the matrix supports individual checks and column selection. Assignments are illustrative, not enforced. Own-resource, contributor-draft and higher-role/last-Super-Administrator restrictions remain M4 voter responsibilities.
+- Newsletter includes 18 fictional subscribers, local activation with refreshed status filters, and an **all-fixture CSV dialog** irrespective of table filters. No file is exported. Campaigns have draft/scheduled/sent snapshots, history and the shared editor with `outputName="html"`; scheduling requires a date locally but starts no worker. Email preview uses the same safe DOM copy as pages. Test-email buttons validate fictional recipients without contacting them.
+- Analytics filters 30 fixed daily records (Oct 13–Nov 11, 2026), updates daily/monthly charts and their HTML alternatives, totals and illustrative top-table view projections. Lifetime engagement rates and team/subscriber counts are labeled separately. Empty ranges and reversed dates have distinct feedback. No visitor information is collected.
+- Appearance has an isolated sample, color contrast feedback, header/footer/sidebar/default-mode options, section visibility and keyboard-accessible ordering, footer text and HTTP(S) social URLs. It never changes the public website or stored theme preference.
+- General/system settings cover identity, logo/favicon association IDs, locale, registration/comments/opt-in, media limit, cache lifetime and maintenance. Custom CSS/JavaScript is **inert text**, never evaluated. Sensitive capability requirements are disclosed but not enforced until M4/M13.
+- SEO includes defaults, canonical/OG image, plain-text robots editor, sitemap toggles, GA/GSC token syntax and a local redirects table with safe path/URL validation and confirmed deletion. No tracker is loaded, crawler file served or redirect installed.
+- SMTP includes fictional host/port/encryption/sender/template fields and a test-email dialog. Passwords start blank and dummy values are cleared after successful local validation. No transport is connected.
+- Activity records support filtering and a safely text-rendered context dialog, with no deletion controls. Profile reuses identity/media fields; password confirmation and six-digit 2FA format validate locally, clear dummy values and explicitly leave security unchanged. The QR is a labeled, non-scannable placeholder; recovery codes remain unavailable.
+
+`MediaField` accepts a configurable `name` for distinct logo/favicon/avatar/OG associations. `DataTable` accepts `removable=false` for read-only audit history. `chart:changed` carries `{labels, values}` locally; late chart initialization reads updated node data too. Never send preview passwords or 2FA values through storage, logs or serialized events. Backend integration must replace these client safeguards with Symfony Form/Validator, CSRF, Mailer and permission voters.

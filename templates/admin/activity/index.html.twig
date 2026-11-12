@@ -1,0 +1,13 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Activity logs{% endblock %}
+{% block breadcrumb %}Activity logs{% endblock %}
+{% block eyebrow %}System / Editorial history{% endblock %}
+{% block heading %}A clear record of the work.{% endblock %}
+{% block intro %}Fictional audit records, not live tracking. Search, filter and inspect the context of each event without changing it.{% endblock %}
+{% block content %}
+<div data-component="activity-preview"><twig:DataTable id="activity-table" caption="Activity logs" state="{{ state }}" removable="{{ false }}" columns="{{ [{key: 'updated', label: 'Date', sortable: true}, {key: 'name', label: 'Actor', sortable: true}, {key: 'action', label: 'Action', sortable: true}, {key: 'subject', label: 'Subject'}] }}" filters="{{ [{key: 'subject', label: 'Subject types', options: [{value: 'Article', label: 'Articles'}, {value: 'Comment', label: 'Comments'}, {value: 'Media', label: 'Media'}, {value: 'User', label: 'Users'}]}] }}">
+{% for log in records %}<tr data-row data-id="{{ log.id }}" data-updated="{{ log.createdAt|date('U') }}" data-name="{{ log.user.displayName }}" data-action="{{ log.action }}" data-subject="{{ log.subjectType }}" data-search="{{ log.user.displayName }} {{ log.action }} {{ log.context.summary }}"><td><input type="checkbox" data-select-row disabled aria-label="Select event {{ log.id }}"></td><td><time datetime="{{ log.createdAt|date('c') }}">{{ log.createdAt|date('M j, H:i') }}</time></td><td>{{ log.user.displayName }}</td><td><code class="text-xs">{{ log.action }}</code></td><td>{{ log.subjectType }} #{{ log.subjectId }}</td><td><button class="btn btn-secondary btn-sm" type="button" data-activity-detail="{{ log|json_encode }}" disabled>View context</button></td></tr>{% endfor %}
+<twig:block name="bulkActions"><p class="text-xs text-muted">Selection is local; audit records cannot be modified.</p></twig:block>
+</twig:DataTable></div>
+<twig:Modal id="activity-detail-dialog" title="Event context"><pre class="whitespace-pre-wrap break-all text-xs leading-relaxed" data-activity-context></pre><p class="mt-4 text-xs text-muted">Fictional record only. No personal IP addresses or secrets are captured.</p></twig:Modal>
+{% endblock %}

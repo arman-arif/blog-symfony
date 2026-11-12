@@ -20,6 +20,11 @@ export default function charts(root) {
       ...(isLine ? { scales: { y: { beginAtZero: true, grid: { color: '#82958722' }, ticks: { color: `rgb(${textColor()})` } }, x: { grid: { display: false }, ticks: { color: `rgb(${textColor()})` } } } } : { cutout: '72%' }),
     },
   });
+  root.addEventListener('chart:changed', event => {
+    chart.data.labels = event.detail.labels;
+    chart.data.datasets[0].data = event.detail.values;
+    chart.update('none');
+  });
   new MutationObserver(() => {
     const color = `rgb(${textColor()})`;
     chart.options.plugins.legend.labels.color = color;

@@ -21,6 +21,14 @@ const loaders = {
   moderation: () => import('../admin/moderation.js'),
   'menu-builder': () => import('../admin/menu-builder.js'),
   'ad-form': () => import('../admin/ad-form.js'),
+  'system-actions': () => import('../admin/system-actions.js'),
+  'permission-matrix': () => import('../admin/permission-matrix.js'),
+  'campaign-form': () => import('../admin/campaign-form.js'),
+  'settings-preview': () => import('../admin/settings-preview.js'),
+  'appearance-preview': () => import('../admin/appearance-preview.js'),
+  'analytics-preview': () => import('../admin/analytics-preview.js'),
+  'redirect-preview': () => import('../admin/redirect-preview.js'),
+  'activity-preview': () => import('../admin/activity-preview.js'),
 };
 const initialized = new WeakMap();
 export async function enhance(root) {

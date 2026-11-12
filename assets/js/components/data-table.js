@@ -104,7 +104,7 @@ export default function dataTable(root) {
   });
   selectAll.addEventListener('change', () => { visible.forEach(row => selectAll.checked ? selected.add(row.dataset.id) : selected.delete(row.dataset.id)); render(false); });
   root.querySelector('[data-clear-selection]').addEventListener('click', () => { selected.clear(); render(false); });
-  root.querySelector('[data-bulk-remove]').addEventListener('preview:confirmed', () => { selected.forEach(id => { const row = rows.find(item => item.dataset.id === id); trashEnabled ? row.dataset.trash = 'true' : removed.add(id); }); selected.clear(); render(); root.querySelector('[data-filter="q"]').focus(); });
+  root.querySelector('[data-bulk-remove]')?.addEventListener('preview:confirmed', () => { selected.forEach(id => { const row = rows.find(item => item.dataset.id === id); trashEnabled ? row.dataset.trash = 'true' : removed.add(id); }); selected.clear(); render(); root.querySelector('[data-filter="q"]').focus(); });
   root.querySelector('[data-bulk-restore]')?.addEventListener('click', () => { rows.filter(row => selected.has(row.dataset.id)).forEach(row => { row.dataset.trash = 'false'; }); selected.clear(); render(); notify('Selected rows restored locally. No server data was changed.'); });
   root.querySelector('[data-apply-bulk-status]')?.addEventListener('click', () => {
     const value = root.querySelector('[data-bulk-status]').value;

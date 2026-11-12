@@ -27,6 +27,9 @@ abstract class ContentPreviewController extends AbstractController
             'currentUser' => $this->data->users()[0], 'media' => $this->data->media(),
             'categories' => $this->data->categories(), 'pages' => $this->data->pages(),
             'state' => $request->query->getString('state'),
+            'roles' => $this->data->roles(), 'permissions' => $this->data->permissions(),
+            'settings' => $this->data->settingsPreview(), 'dashboard' => $this->data->dashboard(),
+            'analytics' => $this->data->analyticsPreview(),
         ]);
     }
 }

@@ -162,7 +162,38 @@ final class MockDataProvider
     /** @return list<array<string, mixed>> */
     public function roles(): array
     {
-        return array_map(static fn (string $name, int $id): array => ['id' => $id + 1, 'name' => $name, 'description' => $name.' editorial access', 'permissions' => [], 'userCount' => $id + 1], ['Super Administrator', 'Administrator', 'Editor', 'Author', 'Contributor'], range(0, 4));
+        $codes = array_column($this->permissions(), 'code');
+        $assignments = [
+            $codes,
+            array_values(array_diff($codes, ['role.manage', 'permission.manage', 'settings.smtp.manage', 'settings.system.manage', 'settings.code.manage'])),
+            ['admin.access', 'article.create', 'article.edit.own', 'article.edit.any', 'article.delete.own', 'article.delete.any', 'article.publish', 'article.schedule', 'article.review', 'article.submit', 'category.manage', 'tag.manage', 'media.upload', 'media.manage.any', 'comment.moderate', 'analytics.view', 'profile.manage.own'],
+            ['admin.access', 'article.create', 'article.edit.own', 'article.delete.own', 'article.submit', 'media.upload', 'comment.moderate', 'analytics.view', 'profile.manage.own'],
+            ['admin.access', 'article.create', 'article.edit.own', 'article.delete.own', 'article.submit', 'media.upload', 'profile.manage.own'],
+        ];
+
+        return array_map(static fn (string $name, int $id): array => ['id' => $id + 1, 'name' => $name, 'description' => $name.' editorial access', 'permissions' => $assignments[$id], 'userCount' => 0 === $id ? 2 : 1], ['Super Administrator', 'Administrator', 'Editor', 'Author', 'Contributor'], range(0, 4));
+    }
+
+    /** Permission names are presentation fixtures, not authorization decisions.
+     * @return list<array{code: string, label: string, group: string}>
+     */
+    public function permissions(): array
+    {
+        $groups = [
+            'Workspace' => ['admin.access' => 'Access the workspace', 'profile.manage.own' => 'Manage own profile'],
+            'Editorial' => ['article.create' => 'Create articles', 'article.edit.own' => 'Edit own articles', 'article.edit.any' => 'Edit any article', 'article.delete.own' => 'Delete own articles', 'article.delete.any' => 'Delete any article', 'article.submit' => 'Submit for review', 'article.review' => 'Review submissions', 'article.publish' => 'Publish articles', 'article.schedule' => 'Schedule articles', 'category.manage' => 'Manage categories', 'tag.manage' => 'Manage tags', 'media.upload' => 'Upload media', 'media.manage.any' => 'Manage any media', 'comment.moderate' => 'Moderate comments'],
+            'Audience' => ['newsletter.manage' => 'Manage newsletter', 'analytics.view' => 'View analytics'],
+            'Site' => ['page.manage' => 'Manage pages', 'menu.manage' => 'Manage menus', 'ad.manage' => 'Manage advertisements'],
+            'System' => ['user.manage' => 'Manage users', 'role.manage' => 'Manage roles', 'permission.manage' => 'Manage permissions', 'settings.general.manage' => 'Manage general settings', 'settings.appearance.manage' => 'Manage appearance', 'settings.seo.manage' => 'Manage SEO', 'settings.smtp.manage' => 'Manage SMTP', 'settings.system.manage' => 'Manage system settings', 'settings.code.manage' => 'Manage custom code', 'activity_log.view' => 'View activity logs'],
+        ];
+        $permissions = [];
+        foreach ($groups as $group => $items) {
+            foreach ($items as $code => $label) {
+                $permissions[] = ['code' => $code, 'label' => $label, 'group' => $group];
+            }
+        }
+
+        return $permissions;
     }
 
     /** @return list<array<string, mixed>> */
@@ -170,6 +201,7 @@ final class MockDataProvider
     {
         return array_map(fn (array $author, int $id): array => array_merge($author, [
             'roles' => [$this->roles()[$id % 5]], 'lastLoginAt' => new \DateTimeImmutable('2026-11-11'),
+            'isActive' => 5 !== $id,
         ]), $this->authors(), range(0, 5));
     }
 
@@ -271,6 +303,11 @@ final class MockDataProvider
             'comment' => $this->moderationComments(),
             'menu' => $this->menus(),
             'ad' => $this->advertisements(),
+            'user' => $this->users(),
+            'role' => $this->roles(),
+            'subscriber' => $this->subscribers(),
+            'campaign' => $this->campaigns(),
+            'activity' => $this->activityLogs(),
             default => [],
         };
     }
@@ -286,6 +323,8 @@ final class MockDataProvider
                 'parent' => null, 'image' => null, 'status' => 'draft', 'sections' => [], 'items' => [],
                 'location' => 'header', 'placement' => 'sidebar', 'type' => 'image', 'startsAt' => null, 'endsAt' => null,
                 'isActive' => false, 'priority' => 10, 'seo' => ['title' => '', 'description' => '', 'noindex' => false],
+                'displayName' => '', 'email' => '', 'bio' => '', 'jobTitle' => '', 'roles' => [], 'permissions' => [],
+                'subject' => '', 'html' => '', 'scheduledAt' => null, 'sentAt' => null, 'stats' => ['sent' => 0, 'failed' => 0],
             ];
         }
         foreach ($this->contentRecords($module) as $record) {
@@ -335,6 +374,68 @@ final class MockDataProvider
             'image' => $this->media()[$index], 'startsAt' => new \DateTimeImmutable('2026-12-01'),
             'endsAt' => new \DateTimeImmutable('2026-12-31'), 'isActive' => 0 === $index, 'priority' => 10 + $index,
         ], ['Winter reading collection', 'Independent journal sponsorship', 'Footer network placement'], range(0, 2));
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function subscribers(): array
+    {
+        return array_map(static fn (int $id): array => [
+            'id' => $id, 'email' => 'reader'.$id.'@example.test', 'status' => ['active', 'unconfirmed', 'unsubscribed'][$id % 3],
+            'createdAt' => new \DateTimeImmutable('2026-10-01 +'.$id.' days'),
+            'confirmedAt' => 1 === $id % 3 ? null : new \DateTimeImmutable('2026-10-03 +'.$id.' days'),
+            'unsubscribedAt' => 2 === $id % 3 ? new \DateTimeImmutable('2026-11-01') : null,
+        ], range(1, 18));
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function campaigns(): array
+    {
+        return array_map(static fn (int $index): array => [
+            'id' => $index + 1, 'subject' => ['A little room for curiosity', 'Your weekend field guide', 'Notes from the editorial desk'][$index],
+            'html' => '<h1>A little room for curiosity</h1><p>Three thoughtful stories for your week.</p>',
+            'status' => ['draft', 'scheduled', 'sent'][$index], 'scheduledAt' => 1 === $index ? new \DateTimeImmutable('2026-12-01 09:00') : null,
+            'sentAt' => 2 === $index ? new \DateTimeImmutable('2026-11-07 09:00') : null,
+            'stats' => ['sent' => 2 === $index ? 142 : 0, 'failed' => 2 === $index ? 2 : 0],
+        ], range(0, 2));
+    }
+
+    /** Structured preview defaults only. SettingsService is deferred to backend milestones.
+     * @return array<string, mixed>
+     */
+    public function settingsPreview(): array
+    {
+        return [
+            'general' => ['name' => 'Fieldnotes', 'tagline' => 'A journal for the things that matter.', 'description' => 'Independent voices and thoughtful stories.', 'email' => 'hello@example.test', 'contact' => 'An independent editorial studio', 'timezone' => 'UTC', 'dateFormat' => 'M j, Y', 'timeFormat' => 'H:i', 'language' => 'en', 'logo' => $this->media()[0], 'favicon' => null],
+            'system' => ['registration' => false, 'comments' => true, 'anonymousComments' => true, 'doubleOptIn' => true, 'uploadLimit' => 10, 'cacheTtl' => 600, 'maintenance' => false, 'customCss' => '', 'customJavaScript' => ''],
+            'appearance' => ['primary' => '#1c5b45', 'secondary' => '#bb4527', 'header' => 'editorial', 'footer' => 'columns', 'theme' => 'light', 'sidebar' => 'related', 'footerText' => 'Independent voices. Thoughtful ideas.', 'sections' => ['Featured story', 'Latest articles', 'Popular stories', 'Trending articles', 'Categories', 'Recommended reading', 'Author highlights', 'Newsletter'], 'socialLinks' => ['Instagram' => 'https://instagram.com/', 'LinkedIn' => 'https://linkedin.com/']],
+            'seo' => ['title' => 'Fieldnotes — Thoughtful stories', 'description' => 'A journal for curious minds.', 'noindex' => false, 'canonicalUrl' => 'https://fieldnotes.example', 'robots' => "User-agent: *\nDisallow: /admin/\nSitemap: https://fieldnotes.example/sitemap.xml", 'sitemapArticles' => true, 'sitemapPages' => true, 'sitemapTaxonomies' => true, 'gaId' => '', 'gscId' => '', 'redirects' => [['id' => 1, 'sourcePath' => '/journal', 'targetUrl' => '/blog', 'statusCode' => 301, 'hits' => 24]]],
+            'smtp' => ['host' => 'smtp.example.test', 'port' => 587, 'encryption' => 'starttls', 'username' => '', 'fromEmail' => 'hello@example.test', 'fromName' => 'Fieldnotes'],
+        ];
+    }
+
+    /** Fixed daily projections for client-side date filtering, never collected traffic.
+     * @return array<string, mixed>
+     */
+    public function analyticsPreview(): array
+    {
+        $articles = array_slice($this->articles(), 0, 5);
+        $daily = array_map(static fn (int $day): array => [
+            'date' => (new \DateTimeImmutable('2026-10-13 +'.$day.' days'))->format('Y-m-d'),
+            'views' => 900 + ($day * 137 % 1700), 'engagements' => 40 + ($day * 11 % 100),
+        ], range(0, 29));
+        $monthly = [];
+        foreach ($daily as $day) {
+            $month = substr($day['date'], 0, 7);
+            $monthly[$month] = ($monthly[$month] ?? 0) + $day['views'];
+        }
+
+        return [
+            'daily' => $daily, 'monthly' => ['labels' => array_keys($monthly), 'values' => array_values($monthly)],
+            'articles' => $articles,
+            'categories' => array_slice($this->categories(), 0, 6),
+            'tags' => array_slice($this->tags(), 0, 5),
+            'authors' => $this->authors(),
+        ];
     }
 
     private function slug(string $value): string
