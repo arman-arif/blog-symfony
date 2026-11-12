@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-
-final class HomepageTest extends WebTestCase
+final class HomepageTest extends FrontTestCase
 {
     public function testHomepageLinksAndLocalImagesResolve(): void
     {
         $client = self::createClient();
+        $this->seed();
         $crawler = $client->request('GET', '/');
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('nav[aria-label="Main navigation"]');

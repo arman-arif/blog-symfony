@@ -27,7 +27,7 @@ class Page
 
     #[Gedmo\Slug(fields: ['title'], updatable: false)]
     #[ORM\Column(type: Types::STRING, length: 280, unique: true)]
-    private string $slug = '';
+    private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT)]
     private string $content = '';
@@ -64,7 +64,7 @@ class Page
 
     public function getSlug(): string
     {
-        return $this->slug;
+        return $this->slug ?? '';
     }
 
     public function setSlug(string $slug): self

@@ -25,7 +25,7 @@
 
 The provider contains 30 published and six non-public articles, eight categories including two children, 25 tags, six authors, threaded comments, six media illustrations and five roles. Status/visibility filters must be explicit when constructing public previews. Public article content is rendered through structured Twig in M1; unsanitized provider content is never marked raw.
 
-When introducing entities in M3, preserve these property names. Aggregate/query projections can be DTOs rather than persistent columns. In M7 swap the preview provider for published query services; never leak draft content. UI-only preview submissions explicitly validate without persisting or sending email.
+When introducing entities in M3, preserve these property names. Aggregate/query projections can be DTOs rather than persistent columns. **M7 is complete:** public routes now read `PublicCatalog`/repositories and render entities; `articleCount` remains a transient projection. `MockDataProvider` is retained only for administration screens not yet connected, the dev styleguide and demo fixtures. Draft content is never exposed publicly. UI-only preview submissions explicitly validate without persisting or sending email.
 
 M1.4 static pages use escaped `sections[].title` / `sections[].text` rather than raw HTML. Replace that content loop with the M5-sanitized `page.content` output at integration. Consent choices and theme preferences stay in local storage; optional tracking remains disabled. Public forms use the shared `PreviewForm` component: its fieldset is enabled only after the submit-prevention handler is attached, and stays disabled if JavaScript is unavailable.
 

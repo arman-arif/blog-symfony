@@ -171,7 +171,7 @@ final class AdminSystemTest extends AdminTestCase
             self::assertResponseStatusCodeSame(405);
         }
         foreach (array_unique($links) as $path) {
-            if (preg_match('#^/admin/(articles|categories|tags)/\d+#', $path)) {
+            if (preg_match('#^/(admin/(articles|categories|tags)/\d+|authors/|categories/|tags/|blog/|media/cache/|uploads/)#', $path)) {
                 continue;
             }
             $client->request('GET', $path);

@@ -15,6 +15,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Component\Workflow\WorkflowInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final readonly class ArticleService
 {
@@ -27,6 +28,8 @@ final readonly class ArticleService
         private PermissionChecker $permissions,
         #[Autowire(service: 'state_machine.article_publishing')]
         private WorkflowInterface $publishingWorkflow,
+        #[Autowire(service: 'cache.content')]
+        private TagAwareCacheInterface $publicCache,
     ) {
     }
 
@@ -40,6 +43,7 @@ final readonly class ArticleService
         if (ArticleStatus::Draft !== $target) {
             $this->applyStatus($article, $target, $author);
         }
+        $this->invalidatePublicCache();
 
         return $article;
     }
@@ -57,6 +61,7 @@ final readonly class ArticleService
             $this->recordRevision($article, $editor, false);
             $this->entityManager->flush();
         }
+        $this->invalidatePublicCache();
 
         return $article;
     }
@@ -107,18 +112,21 @@ final readonly class ArticleService
         }
 
         $this->entityManager->flush();
+        $this->invalidatePublicCache();
     }
 
     public function delete(Article $article): void
     {
         $this->entityManager->remove($article);
         $this->entityManager->flush();
+        $this->invalidatePublicCache();
     }
 
     public function restore(Article $article): void
     {
         $article->setDeletedAt(null);
         $this->entityManager->flush();
+        $this->invalidatePublicCache();
     }
 
     public function duplicate(Article $article, User $author): Article
@@ -153,6 +161,7 @@ final readonly class ArticleService
 
         $this->entityManager->persist($copy);
         $this->entityManager->flush();
+        $this->invalidatePublicCache();
 
         return $copy;
     }
@@ -165,6 +174,7 @@ final readonly class ArticleService
         $this->entityManager->flush();
         $this->recordRevision($article, $editor, false);
         $this->entityManager->flush();
+        $this->invalidatePublicCache();
     }
 
     public function autosave(Article $article, string $title, string $content, User $editor): ArticleRevision
@@ -201,6 +211,11 @@ final readonly class ArticleService
         }
 
         return $slug;
+    }
+
+    private function invalidatePublicCache(): void
+    {
+        $this->publicCache->invalidateTags(['articles', 'homepage']);
     }
 
     private function prepareContent(Article $article): void

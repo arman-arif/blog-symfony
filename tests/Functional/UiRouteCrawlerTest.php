@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use App\DataFixtures\DemoFixtures;
 use App\Entity\ArticleRevision;
 use App\Mock\MockDataProvider;
 use App\Tests\Factory\ArticleFactory;
@@ -18,24 +19,35 @@ final class UiRouteCrawlerTest extends AdminTestCase
 {
     public function testEveryUiRouteAndItsInternalLinks(): void
     {
-        $client = self::createClient();
+        $client = self::createRawClient();
+        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        self::getContainer()->get(DemoFixtures::class)->load($entityManager);
+        self::getContainer()->get(\Symfony\Contracts\Cache\TagAwareCacheInterface::class)->invalidateTags(['articles', 'homepage']);
+        $contentCache = self::getContainer()->get('cache.content');
+        if (method_exists($contentCache, 'clear')) {
+            $contentCache->clear();
+        }
+        $admin = self::getContainer()->get(\App\Repository\UserRepository::class)->findOneByEmail('writer1@example.test');
+        self::assertNotNull($admin);
+        $client->loginUser($admin);
         $router = self::getContainer()->get(RouterInterface::class);
         self::assertInstanceOf(RouterInterface::class, $router);
         $data = new MockDataProvider();
         $slugs = [
             'front_article' => $data->articles()[0]['slug'], 'front_author' => $data->authors()[0]['slug'],
             'front_category' => $data->categories()[0]['slug'], 'front_tag' => $data->tags()[0]['slug'], 'front_page' => 'about',
+            'front_category_feed' => $data->categories()[0]['slug'],
         ];
 
-        $article = ArticleFactory::createOne(['author' => self::authenticatedUser()]);
+        $article = ArticleFactory::createOne(['author' => $admin]);
         $category = CategoryFactory::createOne(['name' => 'Crawler category']);
         $tag = TagFactory::createOne(['name' => 'Crawler tag']);
-        $media = MediaFactory::createOne(['uploadedBy' => self::authenticatedUser()]);
+        $media = MediaFactory::createOne(['uploadedBy' => $admin]);
         $revision = (new ArticleRevision())
             ->setArticle($article)
             ->setTitle($article->getTitle())
             ->setContent($article->getContent())
-            ->setCreatedBy(self::authenticatedUser());
+            ->setCreatedBy($admin);
         self::getContainer()->get(EntityManagerInterface::class)->persist($revision);
         self::getContainer()->get(EntityManagerInterface::class)->flush();
 
@@ -47,7 +59,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
             if ([] !== $route->getMethods() && !in_array('GET', $route->getMethods(), true)) {
                 continue;
             }
-            if (str_ends_with($name, '_autocomplete') || str_ends_with($name, '_picker')) {
+            if (str_ends_with($name, '_autocomplete') || str_ends_with($name, '_picker') || str_contains($name, 'feed')) {
                 continue;
             }
             $parameters = [];

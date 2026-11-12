@@ -20,6 +20,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[ORM\Table(name: 'article')]
 #[ORM\Index(name: 'idx_article_status_published_at', columns: ['status', 'published_at'])]
 #[ORM\Index(name: 'idx_article_author', columns: ['author_id'])]
+#[ORM\Index(name: 'ft_article_search', columns: ['title', 'excerpt', 'content'], flags: ['fulltext'])]
 #[Gedmo\SoftDeleteable(fieldName: 'deletedAt', timeAware: false, hardDelete: false)]
 class Article
 {
@@ -35,7 +36,7 @@ class Article
 
     #[Gedmo\Slug(fields: ['title'], updatable: false)]
     #[ORM\Column(type: Types::STRING, length: 280, unique: true)]
-    private string $slug = '';
+    private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $excerpt = null;
@@ -126,7 +127,7 @@ class Article
 
     public function getSlug(): string
     {
-        return $this->slug;
+        return $this->slug ?? '';
     }
 
     public function setSlug(string $slug): self

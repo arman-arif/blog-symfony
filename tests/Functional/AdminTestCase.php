@@ -50,6 +50,14 @@ abstract class AdminTestCase extends WebTestCase
         return $client;
     }
 
+    /** @param array<string, mixed> $options
+     * @param array<string, mixed> $server
+     */
+    protected static function createRawClient(array $options = [], array $server = []): KernelBrowser
+    {
+        return parent::createClient($options, $server);
+    }
+
     protected static function authenticatedUser(): User
     {
         if (null === self::$adminUser) {

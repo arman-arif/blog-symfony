@@ -6,14 +6,14 @@ namespace App\Tests\Functional;
 
 use App\Mock\MockDataProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-final class BlogTest extends WebTestCase
+final class BlogTest extends FrontTestCase
 {
     #[DataProvider('filterCases')]
     public function testFilteringAndPagination(string $query, int $count): void
     {
         $client = self::createClient();
+        $this->seed();
         $client->request('GET', '/blog'.$query);
         self::assertResponseIsSuccessful();
         self::assertSelectorCount($count, '[data-results] > article');
@@ -37,6 +37,7 @@ final class BlogTest extends WebTestCase
     public function testOldestSortAndPaginationKeepFilters(): void
     {
         $client = self::createClient();
+        $this->seed();
         $crawler = $client->request('GET', '/blog?sort=oldest&tag=creativity');
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('Digital craft', $crawler->filter('[data-results] h3')->first()->text());
@@ -48,6 +49,7 @@ final class BlogTest extends WebTestCase
     public function testArticleStatesAndPrivateContent(): void
     {
         $client = self::createClient();
+        $this->seed();
         $articles = (new MockDataProvider())->articles();
         $client->request('GET', '/blog/'.$articles[1]['slug']);
         self::assertResponseIsSuccessful();

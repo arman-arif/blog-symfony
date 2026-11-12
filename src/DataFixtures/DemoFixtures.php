@@ -420,6 +420,7 @@ final class DemoFixtures extends Fixture
 <ul><li>Start with a smaller question.</li><li>Leave room for the unexpected.</li><li>Share the work before it feels finished.</li></ul>
 <p>The full story, <em>{$safeTitle}</em>, is part of our continuing exploration of thoughtful work and everyday life.</p>
 <pre><code>Make a little room. Notice what happens next.</code></pre>
+<table><thead><tr><th>Practice</th><th>What it changes</th></tr></thead><tbody><tr><td>Notice</td><td>More useful questions</td></tr><tr><td>Revise</td><td>Clearer work</td></tr></tbody></table>
 HTML;
     }
 }

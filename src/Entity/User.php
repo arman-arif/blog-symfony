@@ -39,7 +39,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TwoFact
 
     #[Gedmo\Slug(fields: ['displayName'], updatable: false)]
     #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
-    private string $slug = '';
+    private ?string $slug = null;
 
     #[ORM\Column(type: Types::STRING, length: 150, nullable: true)]
     private ?string $jobTitle = null;
@@ -62,6 +62,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TwoFact
     #[ORM\ManyToOne(targetEntity: Media::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Media $avatar = null;
+
+    private int $articleCount = 0;
 
     /** @var Collection<int, Role> */
     #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: 'users')]
@@ -116,7 +118,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TwoFact
 
     public function getSlug(): string
     {
-        return $this->slug;
+        return $this->slug ?? '';
     }
 
     public function setSlug(string $slug): self
@@ -220,6 +222,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TwoFact
     public function getAvatar(): ?Media
     {
         return $this->avatar;
+    }
+
+    public function getArticleCount(): int
+    {
+        return $this->articleCount;
+    }
+
+    public function setArticleCount(int $articleCount): self
+    {
+        $this->articleCount = $articleCount;
+
+        return $this;
     }
 
     public function setAvatar(?Media $avatar): self

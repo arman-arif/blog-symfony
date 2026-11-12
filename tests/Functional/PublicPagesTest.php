@@ -6,13 +6,12 @@ namespace App\Tests\Functional;
 
 use App\Mock\MockDataProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\TerminableInterface;
 use Symfony\Component\Routing\RouterInterface;
 
-final class PublicPagesTest extends WebTestCase
+final class PublicPagesTest extends FrontTestCase
 {
     /** @return iterable<string, array{string, int}> */
     public static function pages(): iterable
@@ -33,6 +32,7 @@ final class PublicPagesTest extends WebTestCase
     public function testPublicPages(string $path, int $status): void
     {
         $client = self::createClient(['debug' => false]);
+        $this->seed();
         $client->request('GET', $path);
         self::assertResponseStatusCodeSame($status);
         self::assertSelectorExists('main#main-content h1');
@@ -41,6 +41,7 @@ final class PublicPagesTest extends WebTestCase
     public function testContactAndCookieStates(): void
     {
         $client = self::createClient();
+        $this->seed();
         $client->request('GET', '/contact');
         self::assertSelectorExists('#contact-email[type="email"][required]');
         self::assertSelectorExists('#contact-message[minlength="20"]');
@@ -55,6 +56,7 @@ final class PublicPagesTest extends WebTestCase
     public function testAllPublicPreviewFormsWaitForClientEnhancement(): void
     {
         $client = self::createClient();
+        $this->seed();
         $article = (new MockDataProvider())->articles()[1];
         foreach (['/', '/contact', '/blog/'.$article['slug']] as $path) {
             $crawler = $client->request('GET', $path);
@@ -81,6 +83,7 @@ final class PublicPagesTest extends WebTestCase
     public function testArchiveContentAndBoundedPages(string $path, int $count, string $heading): void
     {
         $client = self::createClient();
+        $this->seed();
         $client->request('GET', $path.'?page=999');
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('main h1', $heading);
@@ -93,6 +96,7 @@ final class PublicPagesTest extends WebTestCase
     public function testDiscoveryLinksAndPublicNavigationResolve(): void
     {
         $client = self::createClient();
+        $this->seed();
         $links = [];
         foreach (['/about', '/contact', '/privacy', '/terms', '/cookies', '/authors', '/categories', '/tags', '/search'] as $path) {
             $crawler = $client->request('GET', $path);
@@ -108,6 +112,7 @@ final class PublicPagesTest extends WebTestCase
     public function testSearchPreservesItsRouteAndEscapesInput(): void
     {
         $client = self::createClient();
+        $this->seed();
         $crawler = $client->request('GET', '/search?q=the&sort=oldest');
         self::assertResponseIsSuccessful();
         self::assertSelectorCount(9, '[data-results] > article');

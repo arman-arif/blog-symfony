@@ -23,13 +23,15 @@ class Tag
 
     #[Gedmo\Slug(fields: ['name'], updatable: false)]
     #[ORM\Column(type: Types::STRING, length: 120, unique: true)]
-    private string $slug = '';
+    private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
     #[ORM\Embedded(class: SeoMetadata::class)]
     private SeoMetadata $seo;
+
+    private int $articleCount = 0;
 
     public function __construct()
     {
@@ -50,7 +52,7 @@ class Tag
 
     public function getSlug(): string
     {
-        return $this->slug;
+        return $this->slug ?? '';
     }
 
     public function setSlug(string $slug): self
@@ -75,6 +77,18 @@ class Tag
     public function getSeo(): SeoMetadata
     {
         return $this->seo;
+    }
+
+    public function getArticleCount(): int
+    {
+        return $this->articleCount;
+    }
+
+    public function setArticleCount(int $articleCount): self
+    {
+        $this->articleCount = $articleCount;
+
+        return $this;
     }
 
     public function setSeo(SeoMetadata $seo): self

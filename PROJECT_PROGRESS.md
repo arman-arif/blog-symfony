@@ -19,7 +19,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 4 | M4 | Authentication & Authorization | Completed | Entity auth, reset/verify, TOTP 2FA, voters, permission matrix, locked admin verified |
 | 5 | M5 | Core CMS | Completed | Article workflow, sanitizer, revisions/autosave, taxonomy, scheduler and CMS tests verified |
 | 6 | M6 | Media Management | Completed | Validated uploads, Flysystem, Liip derivatives, library and picker verified |
-| 7 | M7 | Public Website Integration | Pending | |
+| 7 | M7 | Public Website Integration | Completed | Real catalog, FULLTEXT search, feeds, caching and public visibility tests verified |
 | 8 | M8 | Comments & Engagement | Pending | |
 | 9 | M9 | SEO | Pending | |
 | 10 | M10 | Newsletter | Pending | |
@@ -164,3 +164,12 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Tests: full suite passes with 252 tests / 24,480 assertions. New media tests cover valid uploads with variants, mismatched MIME, disguised `.php.png`, oversized files, metadata edits, deletion blocked by article usage then succeeding after reference removal, derivative generation and picker metadata.
 - Browser: uploaded a PNG through the real form, verified metadata editing/no console errors, and confirmed LiipImagine generated a derivative file. Added web-server hardening guidance for `/uploads`.
 - Known issues: uploaded media is excluded from version control as intended; deletion removes originals but Liip cache files are pruned independently; S3 remains a documented adapter swap, not an installed integration.
+
+### 2026-11-12 — M7 public website integration
+- Replaced `MockCatalog` on every public route with `PublicCatalog` and real repositories. All public queries require published status, a non-null publishedAt not in the future, and not soft-deleted; drafts/pending/scheduled/unpublished/deleted content returns 404 and never enters feeds, archives or related lists.
+- Added homepage latest/popular/trending/recommended sections with tag-aware ID caching and ArticleService invalidation, taxonomy article-count projections, previous/next, related-by-category/tag, listing filters/sorting/clamped pagination and real category/tag/author archives.
+- Added FULLTEXT search migration and MATCH-based search with a per-term LIKE fallback, plus RSS 2.0 feeds at `/feed.xml` and `/feed/category/{slug}.xml`. Updated front templates to entity fields, sanitized real article HTML, media URLs and feed metadata.
+- Fixed during verification: Gedmo slug generation was blocked by initialized empty slug properties (now nullable with `getSlug()` fallback), many-to-many count projections, category collection indexing in Twig, RSS XML escaping, tag-aware cache pollution between tests and front routes inside the admin link crawler.
+- Tests: full suite passes with 257 tests / 24,324 assertions. New coverage includes homepage cache invalidation after publishing, 404s for every non-public fixture and deleted content, body-content full-text search, RSS contents/category feeds/missing feeds, and related/adjacent article rendering; existing filter/pagination/archive tests now run against real fixtures.
+- Browser: verified homepage, listing, article detail with table/TOC/reading progress, search results and RSS with zero console errors.
+- Known issues: comments on article pages are still presentation fixtures until M8; popular/trending fall back to denormalized view counts until view/rollup data exists; HTTP caching and CDN policy remain M14.

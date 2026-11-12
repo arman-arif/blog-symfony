@@ -39,4 +39,20 @@ class ArticleViewRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /** @return list<int> Article ids ordered by view count since the given time. */
+    public function topArticleIdsSince(\DateTimeImmutable $since, int $limit = 5): array
+    {
+        $rows = $this->createQueryBuilder('view')
+            ->select('IDENTITY(view.article) AS articleId, COUNT(view.id) AS total')
+            ->andWhere('view.viewedAt >= :since')
+            ->setParameter('since', $since)
+            ->groupBy('view.article')
+            ->orderBy('total', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_map(intval(...), array_column($rows, 'articleId'));
+    }
 }

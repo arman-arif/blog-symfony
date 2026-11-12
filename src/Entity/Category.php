@@ -26,7 +26,7 @@ class Category
 
     #[Gedmo\Slug(fields: ['name'], updatable: false)]
     #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
-    private string $slug = '';
+    private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
@@ -63,6 +63,8 @@ class Category
     #[Gedmo\TreeRoot]
     private ?int $root = null;
 
+    private int $articleCount = 0;
+
     public function __construct()
     {
         $this->children = new ArrayCollection();
@@ -83,7 +85,7 @@ class Category
 
     public function getSlug(): string
     {
-        return $this->slug;
+        return $this->slug ?? '';
     }
 
     public function setSlug(string $slug): self
@@ -165,6 +167,18 @@ class Category
     public function getRoot(): ?int
     {
         return $this->root;
+    }
+
+    public function getArticleCount(): int
+    {
+        return $this->articleCount;
+    }
+
+    public function setArticleCount(int $articleCount): self
+    {
+        $this->articleCount = $articleCount;
+
+        return $this;
     }
 
     public function setRoot(?int $root): self

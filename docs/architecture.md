@@ -66,3 +66,10 @@ The article, category and tag administration screens are now server-backed; rema
 - **Derivatives:** LiipImagine filter sets `thumbnail`, `medium`, `large` and `webp`; URLs resolve through `/media/cache/resolve/{filter}/{key}`.
 - **Library:** media index, upload form, metadata editing, filters/pagination, JSON picker API and usage-protected deletion. The old mock media screen is gone.
 - **URLs:** the `media_url()` Twig function resolves bundled fixture illustrations through AssetMapper and uploaded files through the storage abstraction.
+
+## M7 public website integration
+
+- **Catalog:** `PublicCatalog` replaces `MockCatalog` for every public route and enforces published/visible/not-deleted rules in repository queries. `MockDataProvider` remains only for unfinished admin preview modules, the styleguide and fixtures.
+- **Queries:** article listings, archives and details eager-load author, categories, tags and featured image; pagination uses Doctrine Paginator. FULLTEXT search (with a LIKE fallback) is indexed by migration `Version20261112130000`.
+- **Caching:** homepage section IDs are stored in the tag-aware `cache.content` pool with `articles`/`homepage` tags; `ArticleService` invalidates them after editorial changes.
+- **Feeds:** `/feed.xml` and category RSS feeds expose only published content.
