@@ -1,8 +1,20 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}Article preview{% endblock %}
+{% block page_title %}Preview · {{ article.title }}{% endblock %}
 {% block breadcrumb %}Articles / Preview{% endblock %}
+{% block eyebrow %}Content / Preview{% endblock %}
 {% block heading %}{{ article.title }}{% endblock %}
-{% block eyebrow %}Private workspace preview / {{ article.status|replace({'_': ' '}) }}{% endblock %}
-{% block intro %}{{ article.subtitle }}{% endblock %}
-{% block actions %}<twig:Button href="{{ path('admin_article_edit', {id: article.id}) }}">Back to editor</twig:Button>{% endblock %}
-{% block content %}<twig:PreviewStates state="{{ state }}"><article class="card mx-auto max-w-4xl p-5 sm:p-9"><p class="mb-5 text-xs text-muted">Mock snapshot · {{ article.author.displayName }} · {{ article.readingTime }} min read · not a public article URL</p>{% if article.featuredImage %}<figure><img src="{{ asset(article.featuredImage.url) }}" width="{{ article.featuredImage.width }}" height="{{ article.featuredImage.height }}" loading="lazy" alt="{{ article.featuredImage.alt }}" class="aspect-video w-full rounded-card object-cover"><figcaption class="mt-2 text-xs text-muted">{{ article.featuredImage.caption }}</figcaption></figure>{% endif %}<div class="prose prose-stone mt-8 max-w-none dark:prose-invert">{% include 'admin/article/editor_content.html.twig' %}</div></article></twig:PreviewStates>{% endblock %}
+{% block intro %}{{ article.subtitle ?: article.excerpt }}{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_article_edit', {id: article.id}) }}">Edit article</twig:Button><twig:Button variant="ghost" href="{{ path('admin_article_revisions', {id: article.id}) }}">Revisions</twig:Button>{% endblock %}
+{% block content %}
+<div class="mb-6 flex flex-wrap gap-3 text-xs text-muted">
+    <span class="badge badge-neutral">{{ article.status.value|replace({'_': ' '})|title }}</span>
+    <span>By {{ article.author.displayName }}</span>
+    <span>{{ article.readingTime }} min read</span>
+    {% if article.publishedAt %}<span>Published {{ article.publishedAt|date('M j, Y') }}</span>{% endif %}
+    {% if article.deletedAt %}<span class="badge badge-danger">In trash</span>{% endif %}
+</div>
+{% if article.featuredImage %}<img class="mb-8 aspect-video w-full rounded-card object-cover" src="{{ asset(article.featuredImage.storageKey) }}" alt="{{ article.featuredImage.alt }}" width="{{ article.featuredImage.width ?: 1200 }}" height="{{ article.featuredImage.height ?: 800 }}">{% endif %}
+<div class="prose prose-stone max-w-none dark:prose-invert">{{ article.content|raw }}</div>
+{% if article.tags is not empty %}<ul class="mt-8 flex flex-wrap gap-2" aria-label="Tags">{% for tag in article.tags %}<li class="badge badge-neutral">{{ tag.name }}</li>{% endfor %}</ul>{% endif %}
+<p class="mt-8 rounded-control bg-canvas p-4 text-xs text-muted">Admin preview of server-sanitized content. It is not a public URL and is visible only to authorized staff.</p>
+{% endblock %}

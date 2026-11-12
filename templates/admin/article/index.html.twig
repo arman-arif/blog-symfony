@@ -1,25 +1,58 @@
 {% extends 'admin/layout.html.twig' %}
 {% block page_title %}Articles{% endblock %}
 {% block breadcrumb %}Articles{% endblock %}
-{% block eyebrow %}Content / Articles{% endblock %}
-{% block heading %}Stories in the making.{% endblock %}
-{% block intro %}A shared view of the editorial desk. Filter, sort and select mock records; removal only affects this browser page until reload.{% endblock %}
-{% block actions %}<twig:Button href="{{ path('admin_article_create') }}"><twig:Icon name="plus"/>New article</twig:Button>{% endblock %}
+{% block eyebrow %}Content / Editorial pipeline{% endblock %}
+{% block heading %}Stories in motion.{% endblock %}
+{% block intro %}Create drafts, review submissions and keep published work in order.{% endblock %}
+{% block actions %}<twig:Button href="{{ path('admin_article_create') }}">New article</twig:Button>{% endblock %}
 {% block content %}
-{% set statusOptions = [{value: 'published', label: 'Published'}, {value: 'draft', label: 'Draft'}, {value: 'pending_review', label: 'Pending review'}, {value: 'scheduled', label: 'Scheduled'}, {value: 'unpublished', label: 'Unpublished'}] %}
-{% set categoryOptions = [] %}{% for category in categories %}{% set categoryOptions = categoryOptions|merge([{value: category.slug, label: category.name}]) %}{% endfor %}
-{% set authorOptions = [] %}{% for author in authors %}{% set authorOptions = authorOptions|merge([{value: author.slug, label: author.displayName}]) %}{% endfor %}
-{% set statusTabs = [] %}{% for key, label in {all: 'All', draft: 'Drafts', pending_review: 'Pending', scheduled: 'Scheduled', published: 'Published', trash: 'Trash'} %}{% set statusTabs = statusTabs|merge([{key: key, label: label, href: path('admin_article_index', {tab: key})}]) %}{% endfor %}
-<twig:DataTable id="articles-table" caption="Articles" columns="{{ [{key: 'title', label: 'Story', sortable: true}, {key: 'authorName', label: 'Author', sortable: true}, {key: 'status', label: 'Status', sortable: true}, {key: 'views', label: 'Views', sortable: true}, {key: 'updated', label: 'Updated', sortable: true}] }}" filters="{{ [{key: 'status', label: 'Statuses', options: statusOptions}, {key: 'category', label: 'Categories', options: categoryOptions}, {key: 'author', label: 'Authors', options: authorOptions}] }}" state="{{ state }}" tabs="{{ statusTabs }}" trashEnabled>
-<twig:block name="bulkActions"><label class="sr-only" for="bulk-article-status">Local status action</label><select id="bulk-article-status" class="field-control w-auto" data-bulk-status><option value="draft">Mark draft</option><option value="pending_review">Submit for review</option><option value="published">Mark published</option><option value="unpublished">Unpublish</option></select><twig:Button size="sm" variant="secondary" data-apply-bulk-status>Apply locally</twig:Button></twig:block>
-{% for article in articles %}<tr data-row data-id="{{ article.id }}" data-title="{{ article.title }}" data-search="{{ article.title }} {{ article.author.displayName }}" data-author-name="{{ article.author.displayName }}" data-author="{{ article.author.slug }}" data-status="{{ article.status }}" data-trash="{{ article.deletedAt ? 'true' : 'false' }}" data-category="{{ article.categories|map(category => category.slug)|join(' ') }}" data-views="{{ article.viewCount }}" data-updated="{{ article.updatedAt|date('U') }}">
-    <td><input type="checkbox" data-select-row disabled aria-label="Select {{ article.title }}"></td>
-    <td><a class="block max-w-xs font-semibold hover:text-brand" href="{{ path('admin_article_edit', {id: article.id}) }}">{{ article.title }}</a><p class="mt-1 text-xs text-muted">{{ article.categories[0].name }} · {{ article.readingTime }} min read{% if article.scheduledAt %} · Scheduled {{ article.scheduledAt|date('M j, Y') }}{% endif %}</p></td>
-    <td class="whitespace-nowrap">{{ article.author.displayName }}</td>
-    <td><twig:Badge data-status-badge tone="{{ article.status == 'published' ? 'success' : (article.status == 'pending_review' ? 'warning' : (article.status == 'scheduled' ? 'info' : 'neutral')) }}">{{ article.status|replace({'_': ' '})|title }}</twig:Badge><span data-trash-label class="mt-1 block text-xs text-muted" {% if not article.deletedAt %}hidden{% endif %}>In preview trash</span></td>
-    <td>{{ article.viewCount|number_format }}</td><td class="whitespace-nowrap"><time datetime="{{ article.updatedAt|date('c') }}">{{ article.updatedAt|date('M j, Y') }}</time></td>
-    <td><div class="flex gap-2"><twig:Button variant="ghost" size="sm" href="{{ path('admin_article_preview', {id: article.id}) }}" aria-label="Preview {{ article.title }}">Preview</twig:Button><twig:Button variant="ghost" size="sm" data-component="confirm" data-row-remove data-confirm-message="Move ‘{{ article.title }}’ to local preview trash? No server data will be deleted." aria-label="Move {{ article.title }} to preview trash"><twig:Icon name="trash" size="16"/></twig:Button><button type="button" class="btn btn-ghost btn-sm" data-row-restore {% if not article.deletedAt %}hidden{% endif %}>Restore</button></div></td>
-</tr>{% endfor %}
-</twig:DataTable>
-<p class="mt-4 text-xs text-muted">All mock statuses are available to this preview. Real article editing, workflow permissions and persistence are deliberately deferred.</p>
+<nav aria-label="Article status" class="mb-6 flex flex-wrap gap-1 border-b border-line">
+    {% set tabs = [{label: 'All', value: ''}, {label: 'Drafts', value: 'draft'}, {label: 'Pending', value: 'pending_review'}, {label: 'Scheduled', value: 'scheduled'}, {label: 'Published', value: 'published'}, {label: 'Trash', value: 'trash'}] %}
+    {% for tab in tabs %}<a class="tab {{ activeStatus == tab.value ? 'border-brand text-brand' : '' }}" href="{{ path('admin_article_index', app.request.query.all|merge({status: tab.value, page: 1})) }}" {% if activeStatus == tab.value %}aria-current="page"{% endif %}>{{ tab.label }}</a>{% endfor %}
+</nav>
+<form method="get" action="{{ path('admin_article_index') }}" class="card mb-6 grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-5" role="search">
+    <div><label class="field-label" for="filter-q">Search</label><input class="field-control" id="filter-q" type="search" name="q" value="{{ filters.q }}" placeholder="Title or excerpt"></div>
+    <div><label class="field-label" for="filter-status">Status</label><select class="field-control" id="filter-status" name="status"><option value="">Any status</option>{% for status in statuses %}<option value="{{ status.value }}" {% if filters.status == status.value %}selected{% endif %}>{{ status.value|replace({'_': ' '})|title }}</option>{% endfor %}<option value="trash" {% if trash %}selected{% endif %}>Trash</option></select></div>
+    <div><label class="field-label" for="filter-author">Author</label><select class="field-control" id="filter-author" name="author"><option value="">Any author</option>{% for author in authors %}<option value="{{ author.id }}" {% if filters.author == author.id %}selected{% endif %}>{{ author.displayName }}</option>{% endfor %}</select></div>
+    <div><label class="field-label" for="filter-category">Category</label><select class="field-control" id="filter-category" name="category"><option value="">Any category</option>{% for category in categories %}<option value="{{ category.id }}" {% if filters.category == category.id %}selected{% endif %}>{{ category.lvl > 0 ? '— ' : '' }}{{ category.name }}</option>{% endfor %}</select></div>
+    <div class="flex items-end gap-2"><twig:Button type="submit" variant="secondary">Filter</twig:Button><a class="btn btn-ghost" href="{{ path('admin_article_index') }}">Reset</a></div>
+</form>
+<div class="table-shell">
+<table class="data-table" aria-label="Articles">
+    <thead><tr><th>Story</th><th>Author</th><th>Status</th><th>Updated</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for article in articles %}
+        <tr data-row data-id="{{ article.id }}">
+            <td><a class="font-semibold text-brand" href="{{ path('admin_article_edit', {id: article.id}) }}">{{ article.title }}</a><p class="mt-1 max-w-md truncate text-xs text-muted">{{ article.slug }}</p></td>
+            <td>{{ article.author.displayName }}</td>
+            <td><span class="badge {{ article.status.value == 'published' ? 'badge-success' : (article.status.value == 'pending_review' ? 'badge-warning' : 'badge-neutral') }}">{{ article.status.value|replace({'_': ' '})|title }}</span></td>
+            <td class="whitespace-nowrap text-xs text-muted">{{ article.updatedAt|date('M j, Y H:i') }}</td>
+            <td><div class="flex flex-wrap justify-end gap-1">
+                {% if trash %}
+                    <form method="post" action="{{ path('admin_article_restore', {id: article.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('article_restore') }}"><twig:Button type="submit" variant="secondary" size="sm">Restore</twig:Button></form>
+                {% else %}
+                    <twig:Button href="{{ path('admin_article_preview', {id: article.id}) }}" variant="ghost" size="sm">Preview</twig:Button>
+                    <twig:Button href="{{ path('admin_article_revisions', {id: article.id}) }}" variant="ghost" size="sm">Revisions</twig:Button>
+                    <twig:Button href="{{ path('admin_article_edit', {id: article.id}) }}" variant="secondary" size="sm">Edit</twig:Button>
+                    <form method="post" action="{{ path('admin_article_duplicate', {id: article.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('article_duplicate') }}"><twig:Button type="submit" variant="ghost" size="sm">Duplicate</twig:Button></form>
+                    <form method="post" action="{{ path('admin_article_delete', {id: article.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('article_delete') }}"><twig:Button type="submit" variant="danger" size="sm">Trash</twig:Button></form>
+                {% endif %}
+            </div></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="5" class="py-10 text-center text-sm text-muted">{{ trash ? 'Trash is empty.' : 'No articles match these filters.' }} <a class="font-semibold text-brand" href="{{ path('admin_article_create') }}">Create a story</a>.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% set pages = ((total - 1) // 10) + 1 %}
+{% if total > 10 %}
+<nav class="mt-5 flex items-center justify-between text-sm" aria-label="Article pagination">
+    <span class="text-muted">{{ total }} records · page {{ page }} of {{ pages }}</span>
+    <div class="flex gap-2">
+        {% if page > 1 %}<a class="btn btn-secondary btn-sm" href="{{ path('admin_article_index', app.request.query.all|merge({page: page - 1})) }}">Previous</a>{% endif %}
+        {% if page < pages %}<a class="btn btn-secondary btn-sm" href="{{ path('admin_article_index', app.request.query.all|merge({page: page + 1})) }}">Next</a>{% endif %}
+    </div>
+</nav>
+{% endif %}
 {% endblock %}

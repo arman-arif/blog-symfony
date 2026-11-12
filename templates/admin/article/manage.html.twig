@@ -1,0 +1,73 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}{{ article.id ? 'Edit article' : 'New article' }}{% endblock %}
+{% block breadcrumb %}Articles / {{ article.id ? 'Edit' : 'New' }}{% endblock %}
+{% block eyebrow %}Content / {{ article.id ? 'Edit story' : 'New story' }}{% endblock %}
+{% block heading %}{{ article.id ? 'Give this story room to grow.' : 'Begin with a little curiosity.' }}{% endblock %}
+{% block intro %}{{ article.id ? 'Save drafts, review revisions and move the story through its publishing workflow.' : 'Draft a new story. You can save it now and publish when it is ready.' }}{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_article_index') }}">All articles</twig:Button>{% if article.id %}<twig:Button variant="secondary" href="{{ path('admin_article_preview', {id: article.id}) }}">Preview</twig:Button><twig:Button variant="secondary" href="{{ path('admin_article_revisions', {id: article.id}) }}">Revisions</twig:Button>{% endif %}{% endblock %}
+{% block content %}
+{{ form_start(form, {attr: {novalidate: 'novalidate', 'data-component': 'validate article-manage autosave', 'data-autosave-url': article.id ? path('admin_article_autosave', {id: article.id}) : '', 'data-autosave-token': csrf_token('article_autosave'), 'data-new-article': article.id ? 'false' : 'true'}}) }}
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <p class="text-xs text-muted" role="status" aria-live="polite" data-autosave-status>{{ article.id ? 'Autosave keeps a revision every few seconds while you type.' : 'Save the draft once to enable autosave.' }}</p>
+    <div class="flex flex-wrap gap-2"><twig:Button type="submit">Save article</twig:Button></div>
+</div>
+{{ form_errors(form) }}
+<twig:AdminFormLayout sidebarTitle="Story settings">
+    <div class="space-y-6">
+        {{ form_row(form.title) }}
+        <div>
+            {{ form_label(form.slug) }}
+            <div class="flex flex-wrap gap-2">{{ form_widget(form.slug) }}<twig:Button variant="secondary" size="sm" type="button" data-regenerate-slug>Regenerate</twig:Button></div>
+            {{ form_help(form.slug) }}{{ form_errors(form.slug) }}
+        </div>
+        {{ form_row(form.subtitle) }}
+        {{ form_row(form.excerpt) }}
+        <div>
+            <twig:RichEditor id="article-content" content="{{ article.content }}" outputName="{{ form.content.vars.full_name }}" label="Article content" />
+            {{ form_errors(form.content) }}
+        </div>
+        <section class="rounded-control border border-line p-5" aria-labelledby="seo-panel-title">
+            <h2 id="seo-panel-title" class="mb-5 text-lg font-semibold">Search &amp; sharing</h2>
+            <div class="space-y-5">
+                {{ form_row(form.seo.title) }}<p class="text-xs text-muted" data-seo-title-count>0 / 70 characters</p>
+                {{ form_row(form.seo.description) }}<p class="text-xs text-muted" data-seo-description-count>0 / 160 characters</p>
+                <div class="grid gap-5 md:grid-cols-2">{{ form_row(form.seo.focusKeyword) }}{{ form_row(form.seo.canonicalUrl) }}</div>
+                {{ form_row(form.seo.noindex) }}
+                {{ form_row(form.seo.ogTitle) }}
+                {{ form_row(form.seo.ogDescription) }}
+                {{ form_row(form.seo.ogImageUrl) }}
+                <div class="rounded-control bg-canvas p-4" role="region" aria-label="Search result preview">
+                    <p class="mb-2 text-[10px] uppercase tracking-wider text-muted">Search snippet preview</p>
+                    <p class="break-all text-xs text-muted" data-snippet-url>fieldnotes.example/blog/{{ article.slug }}</p>
+                    <p class="mt-2 text-lg font-medium text-brand" data-snippet-title>{{ article.title ?: 'Your article title' }}</p>
+                    <p class="mt-2 text-sm text-muted" data-snippet-description>{{ article.excerpt ?: 'A short description of your story will appear here.' }}</p>
+                </div>
+            </div>
+        </section>
+    </div>
+    <twig:block name="sidebar">
+        <div class="space-y-6">
+            {{ form_row(form.status) }}
+            {{ form_row(form.visibility) }}
+            <div data-schedule-panel {% if article.status.value != 'scheduled' %}hidden{% endif %}>{{ form_row(form.scheduledAt) }}</div>
+            {{ form_row(form.author) }}
+            {{ form_row(form.categories) }}
+            {{ form_row(form.tags) }}
+            {{ form_row(form.featuredImage) }}
+            {{ form_row(form.allowComments) }}
+            <twig:Button type="submit" class="w-full">Save article</twig:Button>
+            <p class="rounded-control bg-canvas p-4 text-xs leading-relaxed text-muted">Permissions are checked on the server. Authors can work on their own stories; editors and administrators can review and publish.</p>
+        </div>
+    </twig:block>
+</twig:AdminFormLayout>
+{{ form_widget(form._token) }}
+{{ form_end(form, {render_rest: false}) }}
+{% if article.id %}
+<div class="mt-6 flex flex-wrap gap-3">
+    <form method="post" action="{{ path('admin_article_duplicate', {id: article.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('article_duplicate') }}"><twig:Button type="submit" variant="secondary">Duplicate as draft</twig:Button></form>
+    <form method="post" action="{{ path('admin_article_delete', {id: article.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('article_delete') }}"><twig:Button type="submit" variant="danger">Move to trash</twig:Button></form>
+</div>
+{% endif %}
+{% include 'admin/media/picker.html.twig' %}
+{% include 'admin/article/editor_dialogs.html.twig' %}
+{% endblock %}

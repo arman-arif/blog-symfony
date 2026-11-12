@@ -1,0 +1,34 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Tags{% endblock %}
+{% block breadcrumb %}Tags{% endblock %}
+{% block eyebrow %}Content / Taxonomy{% endblock %}
+{% block heading %}The subjects readers follow.{% endblock %}
+{% block intro %}Tags connect stories across categories. Slugs are kept unique automatically.{% endblock %}
+{% block actions %}<twig:Button href="{{ path('admin_tag_create') }}">New tag</twig:Button>{% endblock %}
+{% block content %}
+<div hidden data-tag-quick-create-token="{{ csrf_token('tag_quick_create') }}"></div>
+<form method="get" action="{{ path('admin_tag_index') }}" class="mb-5 flex flex-wrap items-end gap-3" role="search">
+    <div class="min-w-56 flex-1"><label class="field-label" for="tag-search">Search tags</label><input class="field-control" id="tag-search" type="search" name="q" value="{{ query }}"></div>
+    <twig:Button type="submit" variant="secondary">Search</twig:Button>
+</form>
+<div class="table-shell">
+<table class="data-table" aria-label="Tags">
+    <thead><tr><th>Name</th><th>Slug</th><th>Description</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for tag in tags %}
+        <tr data-row data-id="{{ tag.id }}">
+            <td class="font-semibold">{{ tag.name }}</td>
+            <td class="text-xs text-muted">{{ tag.slug }}</td>
+            <td class="max-w-md truncate text-sm text-muted">{{ tag.description ?: '—' }}</td>
+            <td><div class="flex justify-end gap-2">
+                <twig:Button href="{{ path('admin_tag_edit', {id: tag.id}) }}" variant="secondary" size="sm">Edit</twig:Button>
+                <form method="post" action="{{ path('admin_tag_delete', {id: tag.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('tag_delete') }}"><twig:Button type="submit" variant="danger" size="sm">Delete</twig:Button></form>
+            </div></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="4" class="py-10 text-center text-sm text-muted">No tags found.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

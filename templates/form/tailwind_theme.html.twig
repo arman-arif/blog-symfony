@@ -9,31 +9,42 @@
 
 {% block form_label %}
     {% if label is not same as(false) %}
-        <label for="{{ id }}" class="field-label">{{ label|default(name|humanize) }}{% if required %}<span class="text-danger" aria-hidden="true"> *</span>{% endif %}</label>
+        <label for="{{ attr.id|default(id) }}" class="field-label">{{ label|default(name|humanize) }}{% if required %}<span class="text-danger" aria-hidden="true"> *</span>{% endif %}</label>
     {% endif %}
 {% endblock %}
 
 {% block form_help %}
-    {% if help is not empty %}<p id="{{ id }}-help" class="field-help">{{ help }}</p>{% endif %}
+    {% if help is not empty %}<p id="{{ attr.id|default(id) }}-help" class="field-help">{{ help }}</p>{% endif %}
 {% endblock %}
 
 {% block form_errors %}
     {% if errors|length > 0 %}
-        <ul id="{{ id }}-error" class="field-error" role="alert">
+        <ul id="{{ attr.id|default(id) }}-error" class="field-error" role="alert">
             {% for error in errors %}<li>{{ error.message }}</li>{% endfor %}
         </ul>
     {% endif %}
 {% endblock %}
 
+{% block widget_attributes %}
+    id="{{ attr.id|default(id) }}" name="{{ full_name }}"{% if disabled %} disabled="disabled"{% endif %}{% if required %} required="required"{% endif %}
+    {%- for attrname, attrvalue in attr -%}
+        {%- if attrname != 'id' -%}
+            {%- if attrvalue is same as(true) -%} {{ attrname }}="{{ attrname }}"
+            {%- elseif attrvalue is not same as(false) -%} {{ attrname }}="{{ attrvalue }}"
+            {%- endif -%}
+        {%- endif -%}
+    {%- endfor -%}
+{% endblock %}
+
 {% block form_widget_simple %}
     {% set attr = attr|merge({class: (attr.class|default('') ~ ' field-control')|trim}) %}
-    {% set attr = errors|length > 0 ? attr|merge({'aria-invalid': 'true', 'aria-describedby': id ~ '-error'}) : attr %}
+    {% set attr = errors|length > 0 ? attr|merge({'aria-invalid': 'true', 'aria-describedby': (attr.id|default(id)) ~ '-error'}) : attr %}
     <input type="{{ type|default('text') }}" {{ block('widget_attributes') }}{% if value is not empty %} value="{{ value }}"{% endif %}>
 {% endblock %}
 
 {% block textarea_widget %}
     {% set attr = attr|merge({class: (attr.class|default('') ~ ' field-control')|trim}) %}
-    {% set attr = errors|length > 0 ? attr|merge({'aria-invalid': 'true', 'aria-describedby': id ~ '-error'}) : attr %}
+    {% set attr = errors|length > 0 ? attr|merge({'aria-invalid': 'true', 'aria-describedby': (attr.id|default(id)) ~ '-error'}) : attr %}
     <textarea {{ block('widget_attributes') }}>{{ value }}</textarea>
 {% endblock %}
 

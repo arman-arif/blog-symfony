@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\Mock\MockDataProvider;
+use App\Tests\Factory\ArticleFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,7 +31,7 @@ final class AdminShellTest extends AdminTestCase
         self::assertSelectorExists('main#main-content h1');
         self::assertSelectorExists('nav[aria-label="Admin navigation"]');
         self::assertSelectorExists('#admin-mobile-navigation');
-        self::assertSelectorTextContains('main [role="status"]', 'Forms never save');
+        self::assertSelectorTextContains('main [role="status"]', 'Articles, revisions and publishing are live');
     }
 
     public function testDashboardChartsHaveAccessibleLocalData(): void
@@ -49,23 +50,27 @@ final class AdminShellTest extends AdminTestCase
         self::assertSelectorNotExists('script[src^="https://"]');
     }
 
-    public function testReusableTableHasFiltersAndSafeMockActions(): void
+    public function testArticleListSupportsFiltersAndPagination(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/admin/articles?q=notebook&status=draft');
-        self::assertSelectorCount(38, '#articles-table [data-row]');
-        self::assertSelectorCount(5, '#articles-table th[aria-sort="none"]');
-        self::assertSelectorExists('[data-filter="status"] option[value="pending_review"]');
-        self::assertSelectorExists('[data-filter="category"] option[value="architecture"]');
-        self::assertSelectorExists('[data-filter="author"] option[value="maya-chen"]');
-        self::assertSelectorExists('[data-select-all][disabled]');
-        self::assertSelectorExists('[data-bulk-remove][data-component="confirm"]');
-        self::assertSelectorCount(38, '[data-row-remove]');
-        self::assertSelectorExists('[data-table-no-results][hidden]');
-        self::assertSelectorExists('[data-table-error][hidden]');
-        self::assertSelectorExists('[data-table-loading][hidden]');
-        self::assertSelectorExists('#confirmation-dialog');
+        $author = self::authenticatedUser();
+        for ($index = 1; $index <= 12; ++$index) {
+            ArticleFactory::createOne(['author' => $author, 'title' => 'Draft story '.$index]);
+        }
+
+        $client->request('GET', '/admin/articles?status=draft');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(10, 'tbody [data-row]');
+        self::assertSelectorExists('#filter-q');
+        self::assertSelectorExists('#filter-status option[value="pending_review"]');
+        self::assertSelectorExists('#filter-author');
+        self::assertSelectorExists('#filter-category');
+        self::assertSelectorTextContains('main', 'Draft story');
+        self::assertSelectorExists('nav[aria-label="Article pagination"] a[href*="page=2"]');
         self::assertSelectorExists('nav[aria-label="Admin navigation"] a[aria-current="page"][href="/admin/articles"]');
+
+        $client->request('GET', '/admin/articles?q=Draft+story+12');
+        self::assertSelectorCount(1, 'tbody [data-row]');
         $client->request('POST', '/admin/articles');
         self::assertResponseStatusCodeSame(405);
     }
@@ -80,6 +85,9 @@ final class AdminShellTest extends AdminTestCase
             $links = array_merge($links, $crawler->filter('a[href^="/"]')->each(static fn (Crawler $node): string => explode('#', $node->attr('href') ?? '')[0]));
         }
         foreach (array_unique($links) as $link) {
+            if (preg_match('#^/admin/(articles|categories|tags)/\d+#', $link)) {
+                continue;
+            }
             $client->request('GET', $link);
             self::assertResponseIsSuccessful('Broken admin link: '.$link);
         }

@@ -1,0 +1,36 @@
+framework:
+    workflows:
+        article_publishing:
+            type: state_machine
+            audit_trail: true
+            marking_store:
+                type: method
+                property: status
+            supports:
+                - App\Entity\Article
+            initial_marking: draft
+            places:
+                draft: ~
+                pending_review: ~
+                scheduled: ~
+                published: ~
+                unpublished: ~
+            transitions:
+                submit:
+                    from: draft
+                    to: pending_review
+                return_to_draft:
+                    from: pending_review
+                    to: draft
+                publish:
+                    from: [draft, pending_review, scheduled]
+                    to: published
+                schedule:
+                    from: [draft, pending_review]
+                    to: scheduled
+                unpublish:
+                    from: published
+                    to: unpublished
+                revise:
+                    from: unpublished
+                    to: draft

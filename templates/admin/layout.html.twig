@@ -19,12 +19,12 @@
             </div>
         </header>
         <main id="main-content" class="min-w-0 p-4 sm:p-7 xl:p-9">
-            <div class="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4 text-xs text-muted" role="status"><span><strong class="text-brand">UI preview</strong> · Fictional records. Forms never save, publish, upload or send data.</span><a href="{{ path('front_home') }}" class="font-semibold text-brand">View site ↗</a></div>
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4 text-xs text-muted" role="status"><span><strong class="text-brand">Editorial workspace</strong> · Articles, revisions and publishing are live. Remaining modules are connected milestone by milestone.</span><a href="{{ path('front_home') }}" class="font-semibold text-brand">View site ↗</a></div>
             <nav aria-label="Breadcrumb" class="mb-4 text-xs text-muted"><a href="{{ path('admin_dashboard_index') }}" class="underline underline-offset-2 hover:text-brand">Workspace</a><span aria-hidden="true" class="mx-2">/</span><span aria-current="page">{% block breadcrumb %}Dashboard{% endblock %}</span></nav>
             <div class="mb-7 flex flex-wrap items-start justify-between gap-4"><div class="min-w-0"><p class="eyebrow mb-2">{% block eyebrow %}Your editorial overview{% endblock %}</p><h1 class="font-display text-4xl tracking-tight sm:text-5xl">{% block heading %}A good day to make something.{% endblock %}</h1><p class="mt-3 max-w-2xl text-sm leading-relaxed text-muted">{% block intro %}A little perspective on your stories, readers and the people behind them.{% endblock %}</p></div><div class="flex flex-wrap gap-2">{% block actions %}{% endblock %}</div></div>
             {% block content %}{% endblock %}
         </main>
-        <footer class="flex flex-wrap justify-between gap-3 border-t border-line px-7 py-5 text-xs text-muted"><span>Fieldnotes · Editorial workspace</span><span>UI-only preview / Symfony &amp; locally hosted assets</span></footer>
+        <footer class="flex flex-wrap justify-between gap-3 border-t border-line px-7 py-5 text-xs text-muted"><span>Fieldnotes · Editorial workspace</span><span>Server-backed editorial workspace / Symfony &amp; locally hosted assets</span></footer>
     </div>
 </div>
 <twig:Modal id="admin-mobile-navigation" title="Editorial workspace" drawer><a class="mb-5 block font-display text-3xl" href="{{ path('admin_dashboard_index') }}">fieldnotes.</a>{% include 'admin/partials/navigation.html.twig' with {mobile: true} %}</twig:Modal>

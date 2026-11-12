@@ -26,4 +26,33 @@ class CategoryRepository extends ServiceEntityRepository
     {
         return $this->findBy(['parent' => null], ['lft' => 'ASC']);
     }
+
+    /** @return list<Category> */
+    public function findTree(): array
+    {
+        return $this->findBy([], ['lft' => 'ASC']);
+    }
+
+    public function slugExists(string $slug, ?int $ignoreId = null): bool
+    {
+        $builder = $this->createQueryBuilder('category')
+            ->select('COUNT(category.id)')
+            ->andWhere('category.slug = :slug')
+            ->setParameter('slug', $slug);
+        if (null !== $ignoreId) {
+            $builder->andWhere('category.id != :id')->setParameter('id', $ignoreId);
+        }
+
+        return (int) $builder->getQuery()->getSingleScalarResult() > 0;
+    }
+
+    public function hasChildren(Category $category): bool
+    {
+        return (int) $this->createQueryBuilder('category')
+            ->select('COUNT(category.id)')
+            ->andWhere('category.parent = :parent')
+            ->setParameter('parent', $category)
+            ->getQuery()
+            ->getSingleScalarResult() > 0;
+    }
 }

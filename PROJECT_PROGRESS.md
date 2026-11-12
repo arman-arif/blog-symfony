@@ -17,7 +17,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 2 | M2 | Backend Architecture | Completed | Dev/test/prod boot, Doctrine, cache pools, messenger, logging, typed settings defaults verified |
 | 3 | M3 | Database | Completed | 22 entities + embeddable, 3 reversible migrations, fixtures and repository tests verified |
 | 4 | M4 | Authentication & Authorization | Completed | Entity auth, reset/verify, TOTP 2FA, voters, permission matrix, locked admin verified |
-| 5 | M5 | Core CMS | Pending | |
+| 5 | M5 | Core CMS | Completed | Article workflow, sanitizer, revisions/autosave, taxonomy, scheduler and CMS tests verified |
 | 6 | M6 | Media Management | Pending | |
 | 7 | M7 | Public Website Integration | Pending | |
 | 8 | M8 | Comments & Engagement | Pending | |
@@ -146,3 +146,13 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Fixed during verification: Symfony 8 voter/user-checker signatures, permission voter support for access-control requests, explicit logout route registration, preview-form test exclusion for the real logout form, and test settings/mailer wiring.
 - Known issues: TOTP secrets are stored as plaintext columns until the M14 encryption hardening; admin module screens still render M1 fixtures until M5/M7 connect persistence; registration is disabled by default and must be enabled by an administrator in M13.
 - Decisions: one main firewall plus access control is simpler and avoids duplicated 2FA configuration; permissions remain data-driven strings; Super Administrator bypasses granular checks; deployment must run the permission sync command.
+
+### 2026-11-12 — M5 core CMS
+- Implemented the real article pipeline: create/edit/delete/restore/duplicate/preview, permission-guarded workflow transitions, revisions, compare/restore, sanitized HTML with heading anchors, reading time and automatic excerpts. Replaced the mock article list/editor/preview/revision screens with Symfony Form-based administration.
+- Added autosave with CSRF and a 12/minute rate limit, keeping the latest 10 autosave revisions per article; added the article publishing schedule, message and handler for scheduled publication.
+- Added server-backed category and tag management with nested categories, child-safe deletion, unique slugs, tag search/autocomplete and idempotent quick-create. Wired category/tag forms and navigation.
+- Fixed during verification: workflow transitions were being bypassed by direct form status binding (publishedAt was never set), form field IDs were emitted twice by the custom theme, empty title/slug values needed explicit empty_data, autosave ran once on page load, and preview-form validation blocked real form submissions.
+- Tests: full suite passes with 248 tests / 24,286 assertions. New coverage includes sanitizer stripping XSS, heading anchors, automatic metadata, slug uniqueness, workflow permission guards, own-vs-any access, revisions, autosave/CSRF/rate limiting, scheduled publishing, delete/restore/duplicate, nested category deletion protection and tag quick-create.
+- Browser: verified login, real article list/edit/preview screens, Quill toolbar initialization, media picker, SEO counters, no console errors, and a live autosave that created a revision in MySQL.
+- Known issues: media, comments, pages, menus, advertisements, users/roles and settings screens remain presentation fixtures until their milestones; slug-change redirects arrive in M9; public FULLTEXT search arrives in M7; scheduled publishing requires a running `scheduler_default` worker.
+- Decisions: fixture-free production screens use explicit empty_data; autosave stores sanitized snapshots only; the CMS uses Symfony Form validation as the single server-side validation path.

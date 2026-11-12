@@ -1,0 +1,30 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}{{ tag.id ? 'Edit tag' : 'New tag' }}{% endblock %}
+{% block breadcrumb %}Tags / {{ tag.id ? 'Edit' : 'New' }}{% endblock %}
+{% block eyebrow %}Content / Taxonomy{% endblock %}
+{% block heading %}{{ tag.id ? 'Refine this topic.' : 'Name a new topic.' }}{% endblock %}
+{% block intro %}A short label and description make related stories easier to discover.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_tag_index') }}">All tags</twig:Button>{% endblock %}
+{% block content %}
+{{ form_start(form, {attr: {novalidate: 'novalidate', 'data-component': 'validate content-form'}}) }}
+{{ form_errors(form) }}
+<twig:AdminFormLayout sidebarTitle="Tag settings">
+    <div class="space-y-6">
+        {{ form_row(form.name) }}
+        <div>
+            {{ form_label(form.slug) }}
+            <div class="flex flex-wrap gap-2">{{ form_widget(form.slug) }}<twig:Button variant="secondary" size="sm" type="button" data-regenerate-slug>Regenerate</twig:Button></div>
+            {{ form_errors(form.slug) }}
+        </div>
+        {{ form_row(form.description) }}
+        <section class="rounded-control border border-line p-5" aria-labelledby="seo-panel-title">
+            <h2 id="seo-panel-title" class="mb-5 text-lg font-semibold">Search &amp; sharing</h2>
+            <div class="space-y-5">{{ form_row(form.seo.title) }}{{ form_row(form.seo.description) }}{{ form_row(form.seo.noindex) }}</div>
+        </section>
+    </div>
+    <twig:block name="sidebar">
+        <div class="space-y-6"><twig:Button type="submit" class="w-full">Save tag</twig:Button></div>
+    </twig:block>
+</twig:AdminFormLayout>
+{{ form_end(form) }}
+{% endblock %}

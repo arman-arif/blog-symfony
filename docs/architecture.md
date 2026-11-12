@@ -48,3 +48,13 @@ The application boots in `dev`, `test` and `prod` with the same code path. Doctr
 - **Seeding:** `app:security:sync-permissions` idempotently creates or updates the canonical 31 permissions and five default roles from `PermissionCatalog`. Run it after deployment and after permission changes.
 - **Audit:** successful login updates `lastLoginAt` and writes a `user.login` activity entry; logout, registration, verification, password reset and TOTP changes are also recorded. Monolog channel `audit` receives the same events.
 - **Test strategy:** real entity users exercise login/logout, inactive accounts, registration + verification, reset, required 2FA and the full enrollment challenge. A role × route matrix asserts 200/403 access for all five default roles.
+
+## M5 core CMS
+
+The article, category and tag administration screens are now server-backed; remaining mock modules are media, comments, pages, menus, advertisements, users/roles and system settings, which are connected in their own milestones.
+
+- **Forms:** Symfony Form types with a shared Tailwind form theme render every CMS field. Validation is server-side; preview-only forms are explicitly marked and never submit.
+- **Services:** `ArticleService` owns publishing transitions, revisions, autosave, duplication, soft deletion, restoring and scheduled publication. `TaxonomyService` owns category/tag hierarchy and unique slugs. `ContentProcessor` owns sanitization, heading anchors, reading time and excerpts.
+- **Workflow:** `config/packages/workflow.yaml` defines the article state machine. Invalid transitions surface as form errors rather than silent status changes.
+- **Async:** scheduled publishing uses Symfony Scheduler + Messenger; the `scheduler_default` transport must be consumed in production.
+- **Search:** admin filtering uses indexed columns and `LIKE`; public FULLTEXT search is added in M7.

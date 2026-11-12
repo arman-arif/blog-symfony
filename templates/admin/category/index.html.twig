@@ -1,0 +1,29 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Categories{% endblock %}
+{% block breadcrumb %}Categories{% endblock %}
+{% block eyebrow %}Content / Taxonomy{% endblock %}
+{% block heading %}A clear way through the journal.{% endblock %}
+{% block intro %}Categories can be nested. Move child categories before deleting a parent.{% endblock %}
+{% block actions %}<twig:Button href="{{ path('admin_category_create') }}">New category</twig:Button>{% endblock %}
+{% block content %}
+<div class="table-shell">
+<table class="data-table" aria-label="Categories">
+    <thead><tr><th>Name</th><th>Slug</th><th>Parent</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for category in categories %}
+        <tr data-row data-id="{{ category.id }}">
+            <td><span style="padding-left: {{ category.lvl * 1.25 }}rem" class="inline-flex items-center gap-2 font-semibold">{% if category.lvl > 0 %}<span class="text-muted" aria-hidden="true">↳</span>{% endif %}{{ category.name }}</span>{% if category.description %}<p class="mt-1 max-w-md truncate text-xs text-muted">{{ category.description }}</p>{% endif %}</td>
+            <td class="text-xs text-muted">{{ category.slug }}</td>
+            <td>{{ category.parent ? category.parent.name : '—' }}</td>
+            <td><div class="flex justify-end gap-2">
+                <twig:Button href="{{ path('admin_category_edit', {id: category.id}) }}" variant="secondary" size="sm">Edit</twig:Button>
+                <form method="post" action="{{ path('admin_category_delete', {id: category.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('category_delete') }}"><twig:Button type="submit" variant="danger" size="sm">Delete</twig:Button></form>
+            </div></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="4" class="py-10 text-center text-sm text-muted">No categories yet. Create the first one.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

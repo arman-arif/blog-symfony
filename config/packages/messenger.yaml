@@ -9,6 +9,7 @@ framework:
                     delay: 1000
                     multiplier: 2
             failed: 'doctrine://default?queue_name=failed&auto_setup=0'
+            scheduler_default: 'schedule://default'
         routing:
             Symfony\Component\Mailer\Messenger\SendEmailMessage: async
 

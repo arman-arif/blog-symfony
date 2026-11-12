@@ -23,11 +23,11 @@ class Page
     use TimestampableTrait;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
-    private string $title;
+    private string $title = '';
 
-    #[Gedmo\Slug(fields: ['title'])]
+    #[Gedmo\Slug(fields: ['title'], updatable: false)]
     #[ORM\Column(type: Types::STRING, length: 280, unique: true)]
-    private string $slug;
+    private string $slug = '';
 
     #[ORM\Column(type: Types::TEXT)]
     private string $content = '';

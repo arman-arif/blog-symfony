@@ -1,0 +1,6 @@
+framework:
+    rate_limiter:
+        article_autosave:
+            policy: sliding_window
+            limit: 12
+            interval: '1 minute'

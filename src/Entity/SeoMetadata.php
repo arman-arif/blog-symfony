@@ -87,6 +87,11 @@ final class SeoMetadata
         return $this->noindex;
     }
 
+    public function getNoindex(): bool
+    {
+        return $this->noindex;
+    }
+
     public function setNoindex(bool $noindex): self
     {
         $this->noindex = $noindex;

@@ -28,14 +28,14 @@ class Article
     use TimestampableTrait;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
-    private string $title;
+    private string $title = '';
 
     #[ORM\Column(type: Types::STRING, length: 500, nullable: true)]
     private ?string $subtitle = null;
 
-    #[Gedmo\Slug(fields: ['title'])]
+    #[Gedmo\Slug(fields: ['title'], updatable: false)]
     #[ORM\Column(type: Types::STRING, length: 280, unique: true)]
-    private string $slug;
+    private string $slug = '';
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $excerpt = null;

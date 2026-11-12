@@ -20,4 +20,29 @@ class TagRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['slug' => $slug]);
     }
+
+    public function slugExists(string $slug, ?int $ignoreId = null): bool
+    {
+        $builder = $this->createQueryBuilder('tag')
+            ->select('COUNT(tag.id)')
+            ->andWhere('tag.slug = :slug')
+            ->setParameter('slug', $slug);
+        if (null !== $ignoreId) {
+            $builder->andWhere('tag.id != :id')->setParameter('id', $ignoreId);
+        }
+
+        return (int) $builder->getQuery()->getSingleScalarResult() > 0;
+    }
+
+    /** @return list<Tag> */
+    public function search(string $query, int $limit = 20): array
+    {
+        return $this->createQueryBuilder('tag')
+            ->andWhere('tag.name LIKE :query')
+            ->setParameter('query', '%'.$query.'%')
+            ->orderBy('tag.name', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -1,8 +1,29 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}Revision history{% endblock %}
+{% block page_title %}Revisions · {{ article.title }}{% endblock %}
 {% block breadcrumb %}Articles / Revisions{% endblock %}
-{% block eyebrow %}Editorial history / Mock snapshots{% endblock %}
-{% block heading %}Every story has a process.{% endblock %}
-{% block intro %}{{ article.title }} — illustrative manual saves and autosave snapshots. Nothing is recorded or restored yet.{% endblock %}
-{% block actions %}<twig:Button href="{{ path('admin_article_edit', {id: article.id}) }}">Back to editor</twig:Button><twig:Button variant="secondary" href="{{ path('admin_article_preview', {id: article.id}) }}">Preview story</twig:Button>{% endblock %}
-{% block content %}<twig:PreviewStates state="{{ state }}"><twig:Table caption="Article revision history" columns="{{ ['Snapshot', 'Edited by', 'Created', 'Compare'] }}">{% for revision in revisions|reverse %}<tr><td><p class="font-semibold">{{ revision.title }}</p><div class="mt-2"><twig:Badge tone="{{ revision.isAutosave ? 'neutral' : 'info' }}">{{ revision.isAutosave ? 'Autosave example' : 'Manual save example' }}</twig:Badge></div></td><td>{{ revision.createdBy.displayName }}</td><td><time datetime="{{ revision.createdAt|date('c') }}">{{ revision.createdAt|date('M j, Y · H:i') }}</time></td><td><twig:Button variant="secondary" size="sm" href="{{ path('admin_article_compare', {id: article.id, revision: revision.id}) }}">Compare with current</twig:Button></td></tr>{% endfor %}</twig:Table></twig:PreviewStates>{% endblock %}
+{% block eyebrow %}Content / Revision history{% endblock %}
+{% block heading %}Every considered change.{% endblock %}
+{% block intro %}Manual saves and autosaves are kept as sanitized snapshots. Restoring a revision creates another snapshot first.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_article_edit', {id: article.id}) }}">Back to editor</twig:Button>{% endblock %}
+{% block content %}
+<div class="table-shell">
+<table class="data-table" aria-label="Revision history">
+    <thead><tr><th>Snapshot</th><th>Saved by</th><th>Created</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for revision in revisions %}
+        <tr data-row>
+            <td><span class="font-semibold">{{ revision.title }}</span>{% if revision.isAutosave %}<span class="badge badge-info ml-2">Autosave</span>{% endif %}<p class="mt-1 max-w-lg truncate text-xs text-muted">{{ revision.content|striptags|slice(0, 140) }}</p></td>
+            <td>{{ revision.createdBy ? revision.createdBy.displayName : 'System' }}</td>
+            <td class="whitespace-nowrap text-xs text-muted">{{ revision.createdAt|date('M j, Y H:i') }}</td>
+            <td><div class="flex justify-end gap-2">
+                <twig:Button href="{{ path('admin_article_compare', {id: article.id, revision: revision.id}) }}" variant="secondary" size="sm">Compare</twig:Button>
+                <form method="post" action="{{ path('admin_article_restore_revision', {id: article.id, revision: revision.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('restore_revision') }}"><twig:Button type="submit" variant="ghost" size="sm">Restore</twig:Button></form>
+            </div></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="4" class="py-10 text-center text-sm text-muted">No revisions yet. Save the article to create the first snapshot.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

@@ -9,10 +9,17 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Zenstruck\Foundry\Test\Factories;
+use Zenstruck\Foundry\Test\ResetDatabase;
 
 /** Admin UI tests run as a real super-administrator entity. */
 abstract class AdminTestCase extends WebTestCase
 {
+    use Factories;
+    use ResetDatabase;
+
+    protected static ?User $adminUser = null;
+
     /** @param array<string, mixed> $options
      * @param array<string, mixed> $server
      */
@@ -37,8 +44,18 @@ abstract class AdminTestCase extends WebTestCase
         $entityManager->persist($user);
         $entityManager->flush();
 
+        self::$adminUser = $user;
         $client->loginUser($user);
 
         return $client;
+    }
+
+    protected static function authenticatedUser(): User
+    {
+        if (null === self::$adminUser) {
+            throw new \LogicException('Call createClient() first.');
+        }
+
+        return self::$adminUser;
     }
 }

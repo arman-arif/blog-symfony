@@ -37,9 +37,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TwoFact
     #[ORM\Column(type: Types::STRING, length: 150)]
     private string $displayName;
 
-    #[Gedmo\Slug(fields: ['displayName'])]
+    #[Gedmo\Slug(fields: ['displayName'], updatable: false)]
     #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
-    private string $slug;
+    private string $slug = '';
 
     #[ORM\Column(type: Types::STRING, length: 150, nullable: true)]
     private ?string $jobTitle = null;

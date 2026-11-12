@@ -19,11 +19,11 @@ class Tag
     use TimestampableTrait;
 
     #[ORM\Column(type: Types::STRING, length: 100)]
-    private string $name;
+    private string $name = '';
 
-    #[Gedmo\Slug(fields: ['name'])]
+    #[Gedmo\Slug(fields: ['name'], updatable: false)]
     #[ORM\Column(type: Types::STRING, length: 120, unique: true)]
-    private string $slug;
+    private string $slug = '';
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;

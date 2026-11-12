@@ -1,0 +1,34 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}{{ category.id ? 'Edit category' : 'New category' }}{% endblock %}
+{% block breadcrumb %}Categories / {{ category.id ? 'Edit' : 'New' }}{% endblock %}
+{% block eyebrow %}Content / Taxonomy{% endblock %}
+{% block heading %}{{ category.id ? 'Refine this category.' : 'Give this collection a name.' }}{% endblock %}
+{% block intro %}Use a short name, a clear description and optional parent to build the journal structure.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_category_index') }}">All categories</twig:Button>{% endblock %}
+{% block content %}
+{{ form_start(form, {attr: {novalidate: 'novalidate', 'data-component': 'validate content-form'}}) }}
+{{ form_errors(form) }}
+<twig:AdminFormLayout sidebarTitle="Category settings">
+    <div class="space-y-6">
+        {{ form_row(form.name) }}
+        <div>
+            {{ form_label(form.slug) }}
+            <div class="flex flex-wrap gap-2">{{ form_widget(form.slug) }}<twig:Button variant="secondary" size="sm" type="button" data-regenerate-slug>Regenerate</twig:Button></div>
+            {{ form_errors(form.slug) }}
+        </div>
+        {{ form_row(form.description) }}
+        <section class="rounded-control border border-line p-5" aria-labelledby="seo-panel-title">
+            <h2 id="seo-panel-title" class="mb-5 text-lg font-semibold">Search &amp; sharing</h2>
+            <div class="space-y-5">{{ form_row(form.seo.title) }}{{ form_row(form.seo.description) }}{{ form_row(form.seo.noindex) }}</div>
+        </section>
+    </div>
+    <twig:block name="sidebar">
+        <div class="space-y-6">
+            {{ form_row(form.parent) }}
+            {{ form_row(form.image) }}
+            <twig:Button type="submit" class="w-full">Save category</twig:Button>
+        </div>
+    </twig:block>
+</twig:AdminFormLayout>
+{{ form_end(form) }}
+{% endblock %}

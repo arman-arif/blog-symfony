@@ -1,8 +1,22 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}Compare revision{% endblock %}
-{% block breadcrumb %}Articles / Revision comparison{% endblock %}
-{% block eyebrow %}Revision {{ revision.id }} / Mock comparison{% endblock %}
-{% block heading %}See how the story changed.{% endblock %}
-{% block intro %}A side-by-side text snapshot. Highlighted fields differ; revision restoration is disabled until the CMS backend is implemented.{% endblock %}
-{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_article_revisions', {id: article.id}) }}">All revisions</twig:Button><twig:Button disabled title="Revision restoration is implemented in M5">Restore revision</twig:Button>{% endblock %}
-{% block content %}<twig:PreviewStates state="{{ state }}"><div class="grid gap-6 lg:grid-cols-2"><section class="card min-w-0 p-6"><h2 class="text-lg font-semibold">Previous snapshot</h2><p class="mt-2 text-xs text-muted">{{ revision.createdBy.displayName }} · {{ revision.createdAt|date('M j, H:i') }}</p><h3 class="mt-6 text-sm font-semibold">Title</h3><p class="mt-2 break-words">{% if revision.title != article.title %}<del class="rounded bg-red-50 p-1 text-red-900 dark:bg-red-950 dark:text-red-200">{{ revision.title }}</del>{% else %}{{ revision.title }}{% endif %}</p><h3 class="mt-6 text-sm font-semibold">Content snapshot</h3><p class="mt-2 text-sm leading-relaxed">{% if revision.content != article.excerpt %}<del class="bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-200">{{ revision.content }}</del>{% else %}{{ revision.content }}{% endif %}</p></section><section class="card min-w-0 p-6"><h2 class="text-lg font-semibold">Current mock version</h2><p class="mt-2 text-xs text-muted">{{ article.author.displayName }} · {{ article.updatedAt|date('M j, Y') }}</p><h3 class="mt-6 text-sm font-semibold">Title</h3><p class="mt-2 break-words">{% if revision.title != article.title %}<ins class="rounded bg-green-50 p-1 text-green-900 dark:bg-green-950 dark:text-green-200">{{ article.title }}</ins>{% else %}{{ article.title }}{% endif %}</p><h3 class="mt-6 text-sm font-semibold">Content snapshot</h3><p class="mt-2 text-sm leading-relaxed">{% if revision.content != article.excerpt %}<ins class="bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-200">{{ article.excerpt }}</ins>{% else %}{{ article.excerpt }}{% endif %}</p></section></div></twig:PreviewStates>{% endblock %}
+{% block page_title %}Compare revision · {{ article.title }}{% endblock %}
+{% block breadcrumb %}Articles / Revisions / Compare{% endblock %}
+{% block eyebrow %}Content / Revision comparison{% endblock %}
+{% block heading %}What changed.{% endblock %}
+{% block intro %}The selected snapshot is compared with the current saved article.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_article_revisions', {id: article.id}) }}">All revisions</twig:Button>{% endblock %}
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-2">
+    <section class="card p-5" aria-labelledby="revision-heading">
+        <h2 id="revision-heading" class="font-display text-2xl">Revision · {{ revision.createdAt|date('M j, Y H:i') }}</h2>
+        <p class="mt-1 text-xs text-muted">{{ revision.title }} · {{ revision.isAutosave ? 'Autosave' : 'Manual save' }}</p>
+        <div class="prose prose-stone mt-5 max-w-none dark:prose-invert">{{ revision.content|raw }}</div>
+    </section>
+    <section class="card p-5" aria-labelledby="current-heading">
+        <h2 id="current-heading" class="font-display text-2xl">Current article</h2>
+        <p class="mt-1 text-xs text-muted">{{ article.updatedAt|date('M j, Y H:i') }}</p>
+        <div class="prose prose-stone mt-5 max-w-none dark:prose-invert">{{ article.content|raw }}</div>
+    </section>
+</div>
+<form method="post" action="{{ path('admin_article_restore_revision', {id: article.id, revision: revision.id}) }}" class="mt-6"><input type="hidden" name="_token" value="{{ csrf_token('restore_revision') }}"><twig:Button type="submit" variant="secondary">Restore this revision</twig:Button></form>
+{% endblock %}
