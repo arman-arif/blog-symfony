@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 {% block title %}{% block page_title %}Editorial workspace{% endblock %} · Fieldnotes CMS{% endblock %}
-{% block importmap %}{{ importmap('admin') }}{% endblock %}
+{% block importmap %}{{ importmap('admin', {nonce: csp_nonce()}) }}{% endblock %}
 {% block body %}
 <div class="admin-shell" data-component="admin-shell">
     <aside id="admin-sidebar" class="admin-sidebar" aria-label="Editorial workspace navigation">

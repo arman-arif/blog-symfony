@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Form;
 
+use App\Validator\StrongPassword;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -33,7 +34,7 @@ final class RegistrationFormType extends AbstractType
                 'first_options' => ['label' => 'Password'],
                 'second_options' => ['label' => 'Confirm password'],
                 'invalid_message' => 'The password fields must match.',
-                'constraints' => [new Assert\NotBlank(), new Assert\Length(min: 10, max: 4096)],
+                'constraints' => [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096), new StrongPassword()],
             ]);
     }
 

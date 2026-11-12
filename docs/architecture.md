@@ -117,3 +117,10 @@ The article, category and tag administration screens are now server-backed; rema
 - **Maintenance/custom code:** request listener with admin bypass, restricted custom CSS/JS.
 - **Menus:** database-backed nested header/footer menus with drag reorder and public fallbacks.
 - **Admin completion:** users, roles, permission matrix, pages, activity and profile are real; no `ContentPreviewController` screens remain in the admin area.
+
+## M14 security and performance
+
+- **Headers/CSP:** per-request nonce, strict script/frame/object policy, HSTS on HTTPS, referrer/permissions/frame headers.
+- **Passwords/2FA:** 12-character common-password rejection and encrypted TOTP secrets at rest.
+- **Caching:** public GET caching headers with cookie variation; private responses for authenticated/session requests; tag-based invalidation.
+- **Query budgets:** `PerformanceTest` enforces bounded eager-loaded public and admin queries.

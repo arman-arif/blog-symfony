@@ -172,7 +172,7 @@ final class SeoTest extends FrontTestCase
     /** @return list<array<string, mixed>> */
     private function jsonLdGraph(string $html): array
     {
-        self::assertSame(1, preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $html, $matches));
+        self::assertSame(1, preg_match('#<script type="application/ld\+json"[^>]*>(.*?)</script>#s', $html, $matches));
         $data = json_decode($matches[1], true, 512, \JSON_THROW_ON_ERROR);
         self::assertSame('https://schema.org', $data['@context']);
 

@@ -25,6 +25,11 @@ services:
         public: true
     App\Service\Media\MediaStorageInterface: '@App\Service\Media\FlysystemMediaStorage'
     App\Service\Comment\SpamCheckerInterface: '@App\Service\Comment\NullSpamChecker'
+    App\EventListener\UserTotpSecretListener:
+        tags:
+            - { name: doctrine.event_listener, event: postLoad }
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: onFlush }
     App\Monetization\AccessPolicyInterface: '@App\Monetization\DefaultAccessPolicy'
     App\Monetization\PaymentGatewayInterface: '@App\Monetization\DisabledPaymentGateway'
     Symfony\Component\Mailer\MailerInterface: '@App\Service\Mail\SettingsMailer'

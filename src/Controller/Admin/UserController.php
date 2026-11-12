@@ -90,8 +90,8 @@ final class UserController extends AbstractController
             }
 
             $plainPassword = (string) $form->get('temporaryPassword')->getData();
-            if ('' !== $plainPassword && strlen($plainPassword) < 10) {
-                $form->get('temporaryPassword')->addError(new FormError('Use at least 10 characters.'));
+            if ('' !== $plainPassword && strlen($plainPassword) < 12) {
+                $form->get('temporaryPassword')->addError(new FormError('Use at least 12 characters.'));
                 $hasErrors = true;
             }
             if (!$hasErrors) {

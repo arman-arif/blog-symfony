@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 {% block stylesheets %}{{ parent() }}<style id="custom-css">{{ setting('custom.css')|raw }}</style>{% endblock %}
-{% block javascripts %}{{ parent() }}{% if setting('custom.js') %}<script id="custom-js">{{ setting('custom.js')|raw }}</script>{% endif %}{% endblock %}
+{% block javascripts %}{{ parent() }}{% if setting('custom.js') %}<script id="custom-js" nonce="{{ csp_nonce() }}">{{ setting('custom.js')|raw }}</script>{% endif %}{% endblock %}
 {% block body %}
 {% if setting('appearance.show_header') %}
 <div class="border-b border-line bg-brand/5 py-2.5 text-center text-xs text-muted">{{ setting('appearance.header_tagline') }} <a class="font-semibold text-brand underline underline-offset-4" href="#newsletter">A little inspiration, every Sunday <span aria-hidden="true">↗</span></a></div>

@@ -6,6 +6,7 @@ namespace App\Form;
 
 use App\Entity\Role;
 use App\Entity\User;
+use App\Validator\StrongPassword;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -43,7 +44,7 @@ final class AdminUserFormType extends AbstractType
                 'label' => $options['creating'] ? 'Temporary password' : 'New password (leave blank to keep current)',
                 'always_empty' => true,
                 'attr' => ['autocomplete' => 'new-password'],
-                'constraints' => $options['creating'] ? [new Assert\NotBlank(), new Assert\Length(min: 10, max: 4096)] : [],
+                'constraints' => $options['creating'] ? [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096), new StrongPassword()] : [],
             ]);
     }
 
