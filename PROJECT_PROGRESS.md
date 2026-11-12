@@ -13,8 +13,8 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 1 | M1.6 | Article Management & Editor UI | Completed | Mock-only editor, settings, media picker, preview and revisions verified |
 | 1 | M1.7a | Admin Content Pages | Completed | Mock content modules, upload simulation, moderation, editor reuse and nested menus verified |
 | 1 | M1.7b | Admin System Pages | Completed | Mock audience, access, analytics, settings and profile screens verified |
-| 1 | M1.8 | UI Audit & Sign-off | Pending | Human review gate before M2 |
-| 2 | M2 | Backend Architecture | Pending | Requires MySQL 8 verification |
+| 1 | M1.8 | UI Audit & Sign-off | Completed | Mock UI engineering audit complete; human approval still required before M2 |
+| 2 | M2 | Backend Architecture | Pending | Requires human UI approval and MySQL 8 verification |
 | 3 | M3 | Database | Pending | |
 | 4 | M4 | Authentication & Authorization | Pending | |
 | 5 | M5 | Core CMS | Pending | |
@@ -29,6 +29,12 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 14 | M14 | Security & Performance | Pending | |
 | 15 | M15 | Testing | Pending | |
 | 16 | M16 | Deployment & Documentation | Pending | |
+
+## Phase 1 review gate
+
+- **Phase 1 engineering status: Completed** — mock-data interfaces and their audit only.
+- **Human UI approval: Pending.** Review `docs/ui-checklist.md` and `docs/ui-audit/README.md`, or the preview at `http://127.0.0.1:8088/` and `/admin`.
+- **M2 must not start until approval.** Persistence, authentication, authorization and business functionality are not implemented. A verified MySQL 8 server is also still required for backend work.
 
 ## Log
 
@@ -106,3 +112,13 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Verification: `composer qa` passed with 251 tests / 2,248 assertions, lint/style/PHPStan, standalone CSS, clean fetched dependency audit and PHP-only tooling check. Added 89 system tests including route/state combinations, unique IDs, field contracts, read-only methods, links, preview/production gates and absent credential fixtures.
 - Browser: 37 interaction assertions and 320 route/state/viewport checks at 360/768/1024/1440 passed; all 20 no-JavaScript screens remained safe/readable without overflow. Zero mutation requests, external requests or runtime errors. Fixed modern-browser pattern syntax for SMTP/GSC tokens; inspected dark analytics desktop and enabled mobile profile screenshots.
 - No invitations, persisted permissions, consent changes, exported files, delivery, tracking, installed redirects, executed custom code, password changes or 2FA enrollment are implemented. Dummy password/code values clear after local validation. The QR is explicitly non-scannable. Full UI audit and human review remain M1.8; backend implementation is still deferred.
+
+### 2026-11-12 — M1.8 UI engineering audit
+- Completed `docs/ui-checklist.md`: 816 page × state rows for 68 screen variants, with explicit Pass/N/A applicability and shared-component evidence. All applicable rows pass; human UI approval remains pending. Retained machine-readable final results and twelve reviewed screenshots in `docs/ui-audit/`.
+- Added the HTTP UI route crawler covering every UI route, loading/empty/error admin states, all public fixture detail pages, internal links, expected error statuses, landmarks, unique IDs, labels/ARIA references and safe disabled preview forms. Added article editor/preview/revision/compare state wrappers and consolidated analytics table markup into the shared component.
+- Fixed missing help/error targets and semantic roles, live-notification semantics, keyboard-reachable scrolling tables, native-dialog Tab/Shift+Tab boundary wrapping, dark prose/error/report/control contrast and chart palettes/borders that update with the theme. Styleguide forms now use the same safe PreviewForm contract as production-shaped screens. Videos use explicit external links; no provider is contacted automatically.
+- Final QA: `composer qa` passed with **252 tests / 46,694 assertions**, container/Twig/YAML lint, PHPStan level 6, CS Fixer, standalone Tailwind 3.4.17 build, clean dependency audit and PHP-only tooling check. The crawler alone contributes 44,443 assertions. Expected denial/error logs in tests are deliberate requests, not unresolved failures.
+- Browser evidence: **2,128** page/state/viewport checks across light/dark and 360/768/1024/1440px; **137** JavaScript-disabled pages; **524** final settled default/state axe scans; **330** keyboard assertions including **19** overlay/feedback scans; **64** changed-page/theme regressions and **24** focused-validation regressions/axe scans. All final checks pass with zero observed mutation/external requests or runtime errors.
+- Investigated rather than ignored inconsistent theme-scan failures: post-navigation theme changes could leave inherited colors briefly inconsistent. Final scans use fresh contexts, set the preference before application scripts and assert the rendered palette. Fixed a real initialization gap on error pages without theme buttons; breadcrumb link affordance now includes underlining. Visual review found first-invalid fields obscured by sticky headers; shared form/editor/upload validation now centers focus, reserves header scroll space and connects file errors to their control.
+- Reviewed all **344** default contrast-incomplete nodes using computed/composited colors and unobscured hit tests, plus representative screenshots. Minimum reviewed text contrast: 5.48:1 light / 7.74:1 dark; select arrows: 4.83:1 / 3.26:1. The 130 incomplete state findings reuse the same reviewed route/selector components. Keyboard samples also verify enabled control text ≥4.5:1 and unchecked boundaries ≥3:1. Automated/manual browser review is not screen-reader-device or multi-engine certification.
+- Phase 1 mock UI engineering is complete. **Stopped for human review before M2.** No persistence, publishing, real uploads, exported subscriber files, email delivery, tracking, credential changes or backend authorization is claimed. MySQL 8 verification and production/legal review remain prerequisites in their later phases.

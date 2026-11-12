@@ -1,6 +1,7 @@
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import { localImage, httpUrl, videoUrl } from './preview-dom.js';
+import { focusControl } from '../core/focus.js';
 
 const BlockEmbed = Quill.import('blots/block/embed');
 class Divider extends BlockEmbed { static blotName = 'divider'; static tagName = 'HR'; }
@@ -32,7 +33,7 @@ export default function editor(root) {
   const quill = new Quill(surface, { theme: 'snow', modules: { toolbar: false, table: true, history: { delay: 500, userOnly: true } }, placeholder: 'Start with a small observation…' });
   quill.root.setAttribute('role', 'textbox'); quill.root.setAttribute('aria-multiline', 'true');
   quill.root.setAttribute('aria-labelledby', `${root.dataset.editorId}-label`);
-  quill.root.setAttribute('aria-describedby', `${root.dataset.editorId}-help`);
+  quill.root.setAttribute('aria-describedby', `${root.dataset.editorId}-help ${root.dataset.editorId}-error`);
   // Prevent pasted remote images/video from contacting a third party without a deliberate action.
   const Delta = Quill.import('delta');
   quill.clipboard.addMatcher('IMG', node => localImage(node.getAttribute('src')) ? new Delta().insert({ image: localImage(node.getAttribute('src')) }) : new Delta());
@@ -98,7 +99,7 @@ export default function editor(root) {
     const invalid = quill.getText().trim().length < 20;
     if (invalid && [...form.querySelectorAll('input, select, textarea')].some(field => field.willValidate && !field.checkValidity())) return;
     root.querySelector('[data-editor-error]').hidden = !invalid; quill.root.setAttribute('aria-invalid', String(invalid));
-    if (invalid) { event.stopImmediatePropagation(); event.preventDefault(); quill.focus(); }
+    if (invalid) { event.stopImmediatePropagation(); event.preventDefault(); quill.focus(); focusControl(quill.root); }
   }, true);
   quill.history.clear(); updateToolbar(); changed();
 }

@@ -1,3 +1,7 @@
+import { initializeTheme } from '../components/theme-toggle.js';
+
+initializeTheme();
+
 const loaders = {
   dropdown: () => import('../components/dropdown.js'),
   modal: () => import('../components/modal.js'),

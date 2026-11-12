@@ -2,6 +2,6 @@
 <div {{ attributes }}>
     <label class="field-label" for="{{ id }}">{{ label }}{% if required %}<span class="text-danger" aria-hidden="true"> *</span>{% endif %}</label>
     {% block content %}{% endblock %}
-    {% if help %}<p id="{{ id }}-help" class="field-help">{{ help }}</p>{% endif %}
+    <p id="{{ id }}-help" class="field-help" {% if not help %}hidden{% endif %}>{{ help }}</p>
     <p id="{{ id }}-error" class="field-error" {% if not error %}hidden{% endif %}>{{ error }}</p>
 </div>

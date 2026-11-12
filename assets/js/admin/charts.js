@@ -3,16 +3,19 @@ Chart.register(...registerables);
 
 export default function charts(root) {
   const type = root.dataset.chartType;
-  const palette = ['#1c5b45', '#bb4527', '#647c9b', '#d1a54d', '#aa7290', '#6d8d71'];
+  const palette = () => document.documentElement.classList.contains('dark')
+    ? ['#88cba4', '#f79b76', '#97b6e0', '#e6c16b', '#dca0bd', '#b5c79b']
+    : ['#1c5b45', '#bb4527', '#526f95', '#947020', '#945b7c', '#526f56'];
   const isLine = type === 'line';
   const textColor = () => getComputedStyle(document.documentElement).getPropertyValue('--color-muted').trim();
+  const surfaceColor = () => `rgb(${getComputedStyle(document.documentElement).getPropertyValue('--color-surface').trim()})`;
   const chart = new Chart(root.querySelector('canvas'), {
     type,
     data: {
       labels: JSON.parse(root.dataset.chartLabels),
       datasets: [{ label: isLine ? 'Views' : 'Reader share (%)', data: JSON.parse(root.dataset.chartValues),
-        borderColor: isLine ? palette[0] : 'transparent', backgroundColor: isLine ? '#1c5b451a' : palette,
-        borderWidth: isLine ? 2 : 0, fill: isLine, tension: .3, pointRadius: 3 }],
+        borderColor: isLine ? palette()[0] : surfaceColor(), backgroundColor: isLine ? `${palette()[0]}1a` : palette(),
+        borderWidth: 2, fill: isLine, tension: .3, pointRadius: 3 }],
     },
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
@@ -27,6 +30,8 @@ export default function charts(root) {
   });
   new MutationObserver(() => {
     const color = `rgb(${textColor()})`;
+    chart.data.datasets[0].borderColor = isLine ? palette()[0] : surfaceColor();
+    chart.data.datasets[0].backgroundColor = isLine ? `${palette()[0]}1a` : palette();
     chart.options.plugins.legend.labels.color = color;
     if (isLine) { chart.options.scales.x.ticks.color = color; chart.options.scales.y.ticks.color = color; }
     chart.update('none');

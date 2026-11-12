@@ -6,6 +6,7 @@
 {% block intro %}A complete local editing preview. Reloading discards your changes; no story can be saved or published yet.{% endblock %}
 {% block actions %}<twig:Button variant="secondary" href="{{ path('admin_article_index') }}">All articles</twig:Button>{% if article.id %}<twig:Button variant="secondary" href="{{ path('admin_article_revisions', {id: article.id}) }}">Revisions</twig:Button>{% endif %}{% endblock %}
 {% block content %}
+<twig:PreviewStates state="{{ state }}">
 <twig:PreviewForm id="article-form" data-component="validate article-form" data-new-article="{{ article.id ? 'false' : 'true' }}" successMessage="Article validated locally. Nothing was saved, scheduled or published.">
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3"><p class="text-xs text-muted" role="status" aria-live="polite" data-autosave-status>Local preview ready · not persisted</p><div class="flex gap-2"><twig:Button variant="secondary" data-live-preview>Preview local changes</twig:Button><twig:Button type="submit">Validate draft</twig:Button></div></div>
     <twig:AdminFormLayout sidebarTitle="Story settings">
@@ -20,7 +21,7 @@
             <div class="grid gap-5 md:grid-cols-2"><twig:Field id="article-focus-keyword" label="Focus keyword"><twig:Input id="article-focus-keyword" name="focusKeyword" value="{{ article.seo.focusKeyword }}"/></twig:Field><twig:Field id="article-canonical" label="Canonical URL" help="Optional absolute HTTP(S) URL."><twig:Input id="article-canonical" name="canonicalUrl" type="url" value="{{ article.seo.canonicalUrl }}" placeholder="https://example.com/story"/></twig:Field></div>
             <twig:Choice id="article-noindex" name="noindex" label="Ask search engines not to index this story" checked="{{ article.seo.noindex }}"/>
             <div><p class="field-label">Open Graph image</p><div class="flex flex-wrap items-center gap-3"><img data-og-image hidden class="h-16 w-24 rounded-control object-cover" alt="Selected Open Graph image" width="96" height="64"><twig:Button variant="secondary" size="sm" data-dialog-open="media-picker" data-media-target="og">Choose sharing image</twig:Button><span class="text-xs text-muted" data-og-label>Uses featured image by default</span></div></div>
-            <div class="rounded-control bg-canvas p-4" aria-label="Search result preview"><p class="mb-2 text-[10px] uppercase tracking-wider text-muted">Search snippet preview · not submitted</p><p class="break-all text-xs text-muted" data-snippet-url>fieldnotes.example/blog/{{ article.slug }}</p><p class="mt-2 text-lg font-medium text-brand" data-snippet-title>{{ article.title ?: 'Your article title' }}</p><p class="mt-2 text-sm text-muted" data-snippet-description>{{ article.excerpt ?: 'A short description of your story will appear here.' }}</p></div>
+            <div class="rounded-control bg-canvas p-4" role="region" aria-label="Search result preview"><p class="mb-2 text-[10px] uppercase tracking-wider text-muted">Search snippet preview · not submitted</p><p class="break-all text-xs text-muted" data-snippet-url>fieldnotes.example/blog/{{ article.slug }}</p><p class="mt-2 text-lg font-medium text-brand" data-snippet-title>{{ article.title ?: 'Your article title' }}</p><p class="mt-2 text-sm text-muted" data-snippet-description>{{ article.excerpt ?: 'A short description of your story will appear here.' }}</p></div>
         </div></section></div>
         <twig:block name="sidebar"><div class="space-y-6">
             <twig:Field id="article-status" label="Status"><twig:Select id="article-status" name="status" value="{{ article.status }}" options="{{ {draft: 'Draft', pending_review: 'Pending review', scheduled: 'Scheduled', published: 'Published', unpublished: 'Unpublished'} }}"/></twig:Field>
@@ -38,4 +39,4 @@
 {% include 'admin/media/picker.html.twig' %}
 {% include 'admin/article/editor_dialogs.html.twig' %}
 <twig:Modal id="article-live-preview" title="Local article preview" class="max-w-4xl"><p class="mb-5 text-xs text-muted">Unsaved browser content. This is not a public URL.</p><h2 class="font-display text-3xl" data-live-title></h2><p class="mt-3 text-lg text-muted" data-live-subtitle></p><img data-live-image hidden alt="" width="1200" height="800" class="mt-6 aspect-video w-full rounded-card object-cover"><div class="prose prose-stone mt-6 max-w-none dark:prose-invert" data-live-content></div></twig:Modal>
-{% endblock %}
+</twig:PreviewStates>{% endblock %}

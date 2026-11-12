@@ -31,50 +31,50 @@ final class ArticleController extends AbstractController
     }
 
     #[Route('/new', name: 'create', methods: ['GET'])]
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->preview->requireEnabled();
 
-        return $this->render('admin/article/form.html.twig', $this->formData($this->data->newArticle()));
+        return $this->render('admin/article/form.html.twig', $this->formData($this->data->newArticle(), $request->query->getString('state')));
     }
 
     #[Route('/{id}/edit', name: 'edit', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function edit(int $id): Response
+    public function edit(int $id, Request $request): Response
     {
         $this->preview->requireEnabled();
 
-        return $this->render('admin/article/form.html.twig', $this->formData($this->findArticle($id)));
+        return $this->render('admin/article/form.html.twig', $this->formData($this->findArticle($id), $request->query->getString('state')));
     }
 
     #[Route('/{id}/preview', name: 'preview', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function preview(int $id): Response
+    public function preview(int $id, Request $request): Response
     {
         $this->preview->requireEnabled();
 
         return $this->render('admin/article/preview.html.twig', [
-            'currentUser' => $this->data->users()[0], 'article' => $this->findArticle($id),
+            'currentUser' => $this->data->users()[0], 'article' => $this->findArticle($id), 'state' => $request->query->getString('state'),
         ]);
     }
 
     #[Route('/{id}/revisions', name: 'revisions', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function revisions(int $id): Response
+    public function revisions(int $id, Request $request): Response
     {
         $this->preview->requireEnabled();
 
         return $this->render('admin/article/revisions.html.twig', [
-            'currentUser' => $this->data->users()[0], 'article' => $this->findArticle($id), 'revisions' => $this->data->revisions($id),
+            'currentUser' => $this->data->users()[0], 'article' => $this->findArticle($id), 'revisions' => $this->data->revisions($id), 'state' => $request->query->getString('state'),
         ]);
     }
 
     #[Route('/{id}/revisions/{revision}/compare', name: 'compare', requirements: ['id' => '\d+', 'revision' => '\d+'], methods: ['GET'])]
-    public function compare(int $id, int $revision): Response
+    public function compare(int $id, int $revision, Request $request): Response
     {
         $this->preview->requireEnabled();
         $article = $this->findArticle($id);
         foreach ($this->data->revisions($id) as $snapshot) {
             if ($snapshot['id'] === $revision) {
                 return $this->render('admin/article/compare.html.twig', [
-                    'currentUser' => $this->data->users()[0], 'article' => $article, 'revision' => $snapshot,
+                    'currentUser' => $this->data->users()[0], 'article' => $article, 'revision' => $snapshot, 'state' => $request->query->getString('state'),
                 ]);
             }
         }
@@ -91,10 +91,10 @@ final class ArticleController extends AbstractController
     /** @param array<string, mixed> $article
      * @return array<string, mixed>
      */
-    private function formData(array $article): array
+    private function formData(array $article, string $state): array
     {
         return [
-            'currentUser' => $this->data->users()[0], 'article' => $article,
+            'currentUser' => $this->data->users()[0], 'article' => $article, 'state' => $state,
             'authors' => $this->data->authors(), 'categories' => $this->data->categories(),
             'tags' => $this->data->tags(), 'media' => $this->data->media(),
         ];

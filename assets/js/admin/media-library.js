@@ -1,4 +1,5 @@
 import { notify } from '../components/toast.js';
+import { focusControl } from '../core/focus.js';
 
 export default function mediaLibrary(root) {
   const items = [...root.querySelectorAll('[data-media-item]')]; const removed = new Set();
@@ -32,13 +33,13 @@ export default function mediaLibrary(root) {
     files = [...next]; const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'text/plain']);
     const invalid = files.find(file => !allowed.has(file.type) || file.size > 10 * 1024 * 1024);
     error.textContent = invalid ? `${invalid.name}: unsupported type or larger than 10 MB.` : (files.length ? '' : 'Choose at least one file.');
-    error.hidden = !error.textContent; input.setCustomValidity(error.textContent); return error.hidden;
+    error.hidden = !error.textContent; input.setCustomValidity(error.textContent); input.setAttribute('aria-invalid', String(!error.hidden)); return error.hidden;
   }
   input.addEventListener('change', () => validateFiles(input.files));
   const zone = root.querySelector('[data-upload-zone]'); zone.addEventListener('dragover', event => { event.preventDefault(); zone.classList.add('border-brand'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('border-brand'));
   zone.addEventListener('drop', event => { event.preventDefault(); zone.classList.remove('border-brand'); validateFiles(event.dataTransfer.files); input.focus(); });
-  upload.addEventListener('submit', event => { if (!validateFiles(files)) { event.preventDefault(); event.stopImmediatePropagation(); input.focus(); } }, true);
+  upload.addEventListener('submit', event => { if (!validateFiles(files)) { event.preventDefault(); event.stopImmediatePropagation(); focusControl(input); } }, true);
   upload.addEventListener('preview:valid', () => {
     clearInterval(timer); root.querySelector('[data-upload-progress]').hidden = false; const progress = root.querySelector('progress'); progress.value = 0;
     const list = root.querySelector('[data-upload-files]'); list.replaceChildren(...files.map(file => { const li = document.createElement('li'); li.textContent = `${file.name} · ${file.size} bytes · local only`; return li; }));

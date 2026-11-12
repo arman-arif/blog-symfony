@@ -1,4 +1,5 @@
 import { notify } from './toast.js';
+import { focusControl } from '../core/focus.js';
 export default function validate(form) {
   form.noValidate = true;
   const check = (field) => {
@@ -12,7 +13,7 @@ export default function validate(form) {
     event.preventDefault();
     const fields = [...form.querySelectorAll('input, select, textarea')];
     const invalid = fields.filter((field) => !check(field));
-    if (invalid.length) { invalid[0].focus(); return; }
+    if (invalid.length) { focusControl(invalid[0]); return; }
     notify(form.dataset.successMessage || 'Form validated in preview. Nothing was saved or sent.');
     form.dispatchEvent(new CustomEvent('preview:valid', { bubbles: true }));
   });

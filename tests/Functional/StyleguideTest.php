@@ -27,5 +27,8 @@ final class StyleguideTest extends WebTestCase
         self::assertSelectorExists('[role="tab"][aria-selected="true"]');
         self::assertSelectorExists('table caption');
         self::assertSelectorNotExists('script[src^="https://"]');
+        self::assertSelectorCount(3, 'form fieldset[disabled][data-preview-fields]');
+        self::assertSelectorExists('#demo-category-help[hidden]');
+        self::assertSelectorExists('#modal-title-help[hidden]');
     }
 }
