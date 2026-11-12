@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('profile.manage.own')]
-final class ProfileController extends ContentPreviewController
+final class ProfileController extends AbstractController
 {
     #[Route('/admin/profile', name: 'admin_profile_index', methods: ['GET'])]
-    public function index(Request $request): Response
+    public function index(): Response
     {
-        return $this->screen($request, 'user', 'admin/profile/index.html.twig', 1);
+        return $this->redirectToRoute('app_profile');
     }
 }

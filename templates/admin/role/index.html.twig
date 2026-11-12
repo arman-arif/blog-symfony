@@ -1,3 +1,23 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}Roles{% endblock %}{% block breadcrumb %}Roles{% endblock %}{% block eyebrow %}System / Access design{% endblock %}{% block heading %}Clear responsibilities, thoughtful access.{% endblock %}{% block intro %}Roles group granular permission strings. These fixture assignments are not enforced authorization.{% endblock %}{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_permission_index') }}">Permission matrix</twig:Button><twig:Button href="{{ path('admin_role_create') }}">New role</twig:Button>{% endblock %}
-{% block content %}<twig:DataTable id="roles-table" caption="Roles" state="{{ state }}" columns="{{ [{key: 'name', label: 'Role', sortable: true}, {key: 'description', label: 'Description'}, {key: 'views', label: 'Permissions', sortable: true}, {key: 'users', label: 'Users'}] }}">{% for role in records %}<tr data-row data-id="{{ role.id }}" data-name="{{ role.name }}" data-views="{{ role.permissions|length }}" data-search="{{ role.name }} {{ role.description }}"><td><input type="checkbox" data-select-row disabled aria-label="Select {{ role.name }}"></td><td><a class="font-semibold text-brand" href="{{ path('admin_role_edit', {id: role.id}) }}">{{ role.name }}</a></td><td>{{ role.description }}</td><td>{{ role.permissions|length }}</td><td>{{ role.userCount }} <span class="text-xs text-muted">illustrative</span></td><td><div class="flex gap-2"><twig:Button variant="ghost" size="sm" href="{{ path('admin_role_edit', {id: role.id}) }}">Edit</twig:Button><twig:Button variant="ghost" size="sm" data-component="confirm" data-row-remove data-confirm-message="Remove this role from the local preview only? User access is unchanged.">Remove</twig:Button></div></td></tr>{% endfor %}</twig:DataTable>{% endblock %}
+{% block page_title %}Roles{% endblock %}
+{% block breadcrumb %}Roles{% endblock %}
+{% block eyebrow %}System / Access{% endblock %}
+{% block heading %}Give every person the right reach.{% endblock %}
+{% block intro %}Roles bundle permission codes. Voters read these permissions; Super Administrator always receives every capability.{% endblock %}
+{% block actions %}<twig:Button href="{{ path('admin_role_create') }}">New role</twig:Button>{% endblock %}
+{% block content %}
+<div class="table-shell"><table class="data-table" aria-label="Roles">
+<thead><tr><th>Role</th><th>Code</th><th>Permissions</th><th>Users</th><th>Type</th><th class="text-right">Actions</th></tr></thead>
+<tbody>
+{% for role in roles %}
+<tr>
+<td><a class="font-semibold text-brand" href="{{ path('admin_role_edit', {id: role.id}) }}">{{ role.name }}</a><p class="mt-1 max-w-sm text-xs text-muted">{{ role.description }}</p></td>
+<td><code class="text-xs">{{ role.code }}</code></td>
+<td>{{ role.permissions|length }}</td>
+<td>{{ role.users|length }}</td>
+<td><span class="badge {{ role.isSystem ? 'badge-info' : 'badge-neutral' }}">{{ role.isSystem ? 'System' : 'Custom' }}</span></td>
+<td class="text-right"><twig:Button href="{{ path('admin_role_edit', {id: role.id}) }}" variant="secondary" size="sm">Edit</twig:Button></td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endblock %}

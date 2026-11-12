@@ -1,1 +1,20 @@
-{% extends 'admin/content/index.html.twig' %}
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Menus{% endblock %}
+{% block breadcrumb %}Menus{% endblock %}
+{% block eyebrow %}Site / Navigation{% endblock %}
+{% block heading %}Shape the paths through the journal.{% endblock %}
+{% block intro %}Menus are stored in the database and rendered on the public site immediately after saving.{% endblock %}
+{% block actions %}<twig:Button href="{{ path('admin_menu_create') }}">New menu</twig:Button>{% endblock %}
+{% block content %}
+<div class="grid gap-6 md:grid-cols-2">
+{% for menu in menus %}
+    <section class="card p-6">
+        <div class="flex items-start justify-between gap-4"><div><p class="eyebrow">{{ menu.location.value|title }}</p><h2 class="mt-2 text-xl font-semibold">{{ menu.name }}</h2></div><span class="badge badge-neutral">{{ menu.items|length }} items</span></div>
+        <ol class="mt-5 space-y-2 text-sm text-muted">{% for item in menu.items|filter(i => i.parent is null)|sort((a, b) => a.position <=> b.position) %}<li>{{ item.label }} <span class="text-xs">· {{ item.type.value }}</span></li>{% else %}<li>No items yet.</li>{% endfor %}</ol>
+        <twig:Button class="mt-6" variant="secondary" href="{{ path('admin_menu_edit', {id: menu.id}) }}">Edit menu</twig:Button>
+    </section>
+{% else %}
+    <twig:EmptyState title="No menus yet" description="Create a header or footer menu to replace the default navigation."><twig:Button href="{{ path('admin_menu_create') }}">Create a menu</twig:Button></twig:EmptyState>
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,3 @@
+<div class="container-editorial">
+<section class="grid gap-12 border-y border-line py-12 sm:py-16 lg:grid-cols-2"><div><p class="eyebrow">Reader favourites</p><h2 class="section-title mt-3 mb-6">Worth your time</h2>{% for article in popular|slice(0, 3) %}<twig:ArticleCard article="{{ article }}" variant="minimal"/>{% endfor %}</div><div><p class="eyebrow">In the conversation</p><h2 class="section-title mt-3 mb-6">Trending now</h2><div class="space-y-7">{% for article in trending %}<twig:ArticleCard article="{{ article }}" variant="horizontal"/>{% endfor %}</div></div></section>
+</div>

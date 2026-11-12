@@ -109,7 +109,7 @@ final class SeoController extends AbstractController
             $item->tag(['sitemap']);
 
             return array_map(fn ($page): array => [
-                'loc' => $this->generateUrl('front_page', ['slug' => $page->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
+                'loc' => $this->generateUrl(in_array($page->getSlug(), ['about', 'contact', 'privacy', 'terms', 'cookies'], true) ? 'front_page' : 'front_page_show', ['slug' => $page->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL),
                 'lastmod' => $page->getUpdatedAt(),
             ], $pages->findForSitemap());
         });

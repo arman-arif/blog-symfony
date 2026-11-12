@@ -1,3 +1,19 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}{{ record.id ? 'Edit user' : 'New user' }}{% endblock %}{% block breadcrumb %}Users / {{ record.id ? 'Edit' : 'New' }}{% endblock %}{% block eyebrow %}System / Editorial team{% endblock %}{% block heading %}Make space for another perspective.{% endblock %}{% block intro %}Preview profile and role fields. No invitation, password or account is created. Do not enter real credentials.{% endblock %}{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_user_index') }}">All users</twig:Button>{% endblock %}
-{% block content %}<twig:PreviewStates state="{{ state }}"><twig:PreviewForm successMessage="User profile validated locally. No account or invitation was created."><twig:AdminFormLayout sidebarTitle="Account & access"><div class="space-y-5"><twig:Field id="user-name" label="Display name" required><twig:Input id="user-name" name="displayName" value="{{ record.displayName }}" required minlength="2" maxlength="100"/></twig:Field><twig:Field id="user-email" label="Email address" required><twig:Input id="user-email" name="email" type="email" value="{{ record.email }}" required/></twig:Field><twig:Field id="user-job" label="Job title"><twig:Input id="user-job" name="jobTitle" value="{{ record.jobTitle }}" maxlength="100"/></twig:Field><twig:Field id="user-bio" label="Biography"><twig:Textarea id="user-bio" name="bio" value="{{ record.bio }}" maxlength="1000" rows="5"/></twig:Field></div><twig:block name="sidebar"><div class="space-y-5"><fieldset><legend class="field-label">Assigned roles</legend>{% for role in roles %}<twig:Choice id="user-role-{{ role.id }}" name="roles[]" value="{{ role.id }}" label="{{ role.name }}" checked="{{ role.id in record.roles|map(item => item.id) }}"/>{% endfor %}</fieldset><twig:Choice id="user-active" name="isActive" label="Active account" type="toggle" checked="{{ record.isActive }}"/><twig:Button type="submit">Validate profile</twig:Button><p class="text-xs leading-relaxed text-muted">Role changes are visual only. Preventing higher-role edits and protecting the last Super Administrator are M4 backend rules.</p></div></twig:block></twig:AdminFormLayout></twig:PreviewForm></twig:PreviewStates>{% endblock %}
+{% block page_title %}{{ creating ? 'New user' : 'Edit user' }}{% endblock %}
+{% block breadcrumb %}Users / {{ creating ? 'New' : user.displayName }}{% endblock %}
+{% block eyebrow %}System / People{% endblock %}
+{% block heading %}{{ creating ? 'Add a new voice.' : 'Keep this account current.' }}{% endblock %}
+{% block intro %}Roles and permissions are enforced by voters. Super Administrators cannot be managed by regular administrators.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_user_index') }}">All users</twig:Button>{% endblock %}
+{% block content %}
+<div class="card max-w-4xl p-6 sm:p-8">
+{{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+{{ form_errors(form) }}
+<div class="grid gap-6 sm:grid-cols-2">{{ form_row(form.displayName) }}{{ form_row(form.email) }}{{ form_row(form.jobTitle) }}{{ form_row(form.temporaryPassword) }}</div>
+<div class="mt-5">{{ form_row(form.bio) }}</div>
+<fieldset class="mt-6 rounded-control border border-line p-4"><legend class="px-2 text-sm font-semibold">Roles</legend>{{ form_row(form.assignedRoles) }}</fieldset>
+<div class="mt-5 flex flex-wrap gap-6">{{ form_row(form.isActive) }}{{ form_row(form.isVerified) }}</div>
+<div class="mt-7 flex gap-3"><twig:Button type="submit">Save user</twig:Button><a class="btn btn-ghost" href="{{ path('admin_user_index') }}">Cancel</a></div>
+{{ form_end(form) }}
+</div>
+{% endblock %}

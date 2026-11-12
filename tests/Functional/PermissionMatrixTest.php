@@ -28,31 +28,31 @@ final class PermissionMatrixTest extends WebTestCase
             '/admin' => 200, '/admin/articles' => 200, '/admin/categories' => 200, '/admin/users' => 200,
             '/admin/roles' => 200, '/admin/permissions' => 200, '/admin/settings' => 200, '/admin/settings/smtp' => 200,
             '/admin/analytics' => 200, '/admin/newsletter' => 200, '/admin/activity' => 200, '/admin/pages' => 200,
-            '/admin/profile' => 200, '/profile' => 200,
+            '/admin/profile' => 302, '/profile' => 200,
         ]];
         yield 'administrator' => ['ROLE_ADMIN', [
             '/admin' => 200, '/admin/articles' => 200, '/admin/categories' => 200, '/admin/users' => 200,
             '/admin/roles' => 403, '/admin/permissions' => 403, '/admin/settings' => 200, '/admin/settings/smtp' => 403,
             '/admin/analytics' => 200, '/admin/newsletter' => 200, '/admin/activity' => 200, '/admin/pages' => 200,
-            '/admin/profile' => 200, '/profile' => 200,
+            '/admin/profile' => 302, '/profile' => 200,
         ]];
         yield 'editor' => ['ROLE_EDITOR', [
             '/admin' => 200, '/admin/articles' => 200, '/admin/categories' => 200, '/admin/users' => 403,
             '/admin/roles' => 403, '/admin/permissions' => 403, '/admin/settings' => 403, '/admin/settings/smtp' => 403,
             '/admin/analytics' => 200, '/admin/newsletter' => 403, '/admin/activity' => 403, '/admin/pages' => 403,
-            '/admin/profile' => 200, '/profile' => 200,
+            '/admin/profile' => 302, '/profile' => 200,
         ]];
         yield 'author' => ['ROLE_AUTHOR', [
             '/admin' => 200, '/admin/articles' => 200, '/admin/categories' => 403, '/admin/users' => 403,
             '/admin/roles' => 403, '/admin/permissions' => 403, '/admin/settings' => 403, '/admin/settings/smtp' => 403,
             '/admin/analytics' => 200, '/admin/newsletter' => 403, '/admin/activity' => 403, '/admin/pages' => 403,
-            '/admin/profile' => 200, '/profile' => 200,
+            '/admin/profile' => 302, '/profile' => 200,
         ]];
         yield 'contributor' => ['ROLE_CONTRIBUTOR', [
             '/admin' => 200, '/admin/articles' => 200, '/admin/categories' => 403, '/admin/users' => 403,
             '/admin/roles' => 403, '/admin/permissions' => 403, '/admin/settings' => 403, '/admin/settings/smtp' => 403,
             '/admin/analytics' => 403, '/admin/newsletter' => 403, '/admin/activity' => 403, '/admin/pages' => 403,
-            '/admin/profile' => 200, '/profile' => 200,
+            '/admin/profile' => 302, '/profile' => 200,
         ]];
     }
 

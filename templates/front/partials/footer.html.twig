@@ -1,18 +1,18 @@
 <footer class="container-editorial pb-8 pt-16">
     <div class="grid gap-10 border-b border-line pb-12 sm:grid-cols-2 lg:grid-cols-4">
         <div class="lg:col-span-2">
-            <a href="{{ path('front_home') }}" class="font-display text-4xl">fieldnotes<span class="text-accent">.</span></a>
-            <p class="mt-4 max-w-sm text-sm leading-6 text-muted">A collection of thoughtful stories, fresh perspectives and ideas for living a little more intentionally.</p>
-            <div class="mt-5 flex gap-5 text-sm"><a href="https://www.instagram.com/" rel="noopener noreferrer" class="text-muted hover:text-brand">Instagram</a><a href="https://www.linkedin.com/" rel="noopener noreferrer" class="text-muted hover:text-brand">LinkedIn</a><a href="{{ path('front_page', {slug: 'contact'}) }}" class="text-muted hover:text-brand">Get in touch</a></div>
+            <a href="{{ path('front_home') }}" class="font-display text-4xl">{{ setting('general.name')|lower }}<span class="text-accent">.</span></a>
+            <p class="mt-4 max-w-sm text-sm leading-6 text-muted">{{ setting('appearance.footer_text') }}</p>
+            <div class="mt-5 flex gap-5 text-sm">{% if setting('appearance.instagram_url') %}<a href="{{ setting('appearance.instagram_url') }}" rel="noopener noreferrer" class="text-muted hover:text-brand">Instagram</a>{% endif %}{% if setting('appearance.linkedin_url') %}<a href="{{ setting('appearance.linkedin_url') }}" rel="noopener noreferrer" class="text-muted hover:text-brand">LinkedIn</a>{% endif %}<a href="{{ path('front_page', {slug: 'contact'}) }}" class="text-muted hover:text-brand">Get in touch</a></div>
         </div>
         <nav aria-label="Discover Fieldnotes">
             <h2 class="text-sm font-semibold">Explore the journal</h2>
-            <ul class="mt-5 space-y-3 text-sm text-muted">{% for route, label in {front_blog: 'All stories', front_categories: 'Categories', front_tags: 'Topics', front_authors: 'Contributors', front_search: 'Search'} %}<li><a href="{{ path(route) }}" class="hover:text-brand">{{ label }}</a></li>{% endfor %}<li><a href="{{ path('front_page', {slug: 'about'}) }}">Our story</a></li></ul>
+            {% set footerMenu = public_menu('footer') %}<ul class="mt-5 space-y-3 text-sm text-muted">{% if footerMenu is not empty %}{% for item in footerMenu %}<li><a href="{{ item.url }}" class="hover:text-brand">{{ item.label }}</a></li>{% endfor %}{% else %}<li><a href="{{ path('front_blog') }}" class="hover:text-brand">All stories</a></li><li><a href="{{ path('front_categories') }}" class="hover:text-brand">Categories</a></li><li><a href="{{ path('front_tags') }}" class="hover:text-brand">Topics</a></li><li><a href="{{ path('front_page', {slug: 'about'}) }}" class="hover:text-brand">Our story</a></li>{% endif %}</ul>
         </nav>
         <div><h2 class="text-sm font-semibold">A note from us</h2><p class="my-4 text-xs leading-6 text-muted">One thoughtful email. No noise.</p><form method="post" action="{{ path('front_newsletter_subscribe') }}" class="space-y-3"><input type="hidden" name="_token" value="{{ csrf_token('newsletter_subscribe') }}"><div><label class="field-label" for="footer-email">Your email</label><input class="field-control" id="footer-email" name="email" type="email" required placeholder="you@example.com" autocomplete="email"></div><twig:Button type="submit" variant="secondary" class="w-full">Join the list</twig:Button><p class="text-xs text-muted">One thoughtful email. No noise.</p></form></div>
     </div>
     <div class="flex flex-col justify-between gap-4 pt-6 text-xs text-muted sm:flex-row">
-        <p>© {{ 'now'|date('Y') }} Fieldnotes. Made with care.</p>
+        <p>© {{ 'now'|date('Y') }} {{ setting('general.name') }}. Made with care.</p>
         <nav class="flex flex-wrap items-center gap-5" aria-label="Legal navigation">{% for slug, title in {privacy: 'Privacy', terms: 'Terms', cookies: 'Cookies'} %}<a href="{{ path('front_page', {slug: slug}) }}">{{ title }}</a>{% endfor %}<button type="button" data-consent-settings class="min-h-9">Cookie preferences</button></nav>
     </div>
 </footer>

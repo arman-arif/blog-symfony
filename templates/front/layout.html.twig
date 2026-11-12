@@ -1,18 +1,37 @@
 {% extends 'base.html.twig' %}
+{% block stylesheets %}{{ parent() }}<style id="custom-css">{{ setting('custom.css')|raw }}</style>{% endblock %}
+{% block javascripts %}{{ parent() }}{% if setting('custom.js') %}<script id="custom-js">{{ setting('custom.js')|raw }}</script>{% endif %}{% endblock %}
 {% block body %}
-<div class="border-b border-line bg-brand/5 py-2.5 text-center text-xs text-muted">An independent journal for curious minds. <a class="font-semibold text-brand underline underline-offset-4" href="#newsletter">A little inspiration, every Sunday <span aria-hidden="true">↗</span></a></div>
+{% if setting('appearance.show_header') %}
+<div class="border-b border-line bg-brand/5 py-2.5 text-center text-xs text-muted">{{ setting('appearance.header_tagline') }} <a class="font-semibold text-brand underline underline-offset-4" href="#newsletter">A little inspiration, every Sunday <span aria-hidden="true">↗</span></a></div>
 <header class="sticky top-0 z-30 border-b border-line bg-canvas/95 backdrop-blur">
 <div class="container-editorial flex h-20 items-center justify-between gap-4">
-<a href="{{ path('front_home') }}" class="font-display text-4xl font-medium tracking-tight" aria-label="Fieldnotes home">fieldnotes<span class="text-accent">.</span></a>
-<nav class="hidden items-center gap-7 lg:flex" aria-label="Main navigation"><a href="{{ path('front_blog') }}" class="text-sm font-semibold hover:text-brand">Journal</a><twig:Dropdown id="header-categories" label="Explore">{% for category in categories|slice(0, 6) %}<a class="dropdown-item" href="{{ path('front_category', {slug: category.slug}) }}">{{ category.name }}</a>{% endfor %}<a class="dropdown-item border-t border-line" href="{{ path('front_categories') }}">All categories</a><a class="dropdown-item" href="{{ path('front_tags') }}">Explore topics</a><a class="dropdown-item" href="{{ path('front_authors') }}">Our contributors</a></twig:Dropdown><a href="{{ path('front_page', {slug: 'about'}) }}" class="text-sm font-semibold hover:text-brand">Our story</a>{% if app.user %}<a href="{{ path('front_saved') }}" class="text-sm font-semibold hover:text-brand">Saved</a>{% endif %}</nav>
+{% set logo = setting('appearance.logo') %}<a href="{{ path('front_home') }}" class="font-display text-4xl font-medium tracking-tight" aria-label="{{ setting('general.name') }} home">{% if logo %}<img src="{{ logo starts with 'http' ? logo : asset(logo) }}" alt="{{ setting('general.name') }}" class="h-10 w-auto">{% else %}{{ setting('general.name')|lower }}<span class="text-accent">.</span>{% endif %}</a>
+{% set headerMenu = public_menu('header') %}<nav class="hidden items-center gap-7 lg:flex" aria-label="Main navigation">
+{% if headerMenu is not empty %}
+    {% for item in headerMenu %}
+        {% if item.children is not empty %}
+            <twig:Dropdown id="header-menu-{{ loop.index }}" label="{{ item.label }}">{% for child in item.children %}<a class="dropdown-item" href="{{ child.url }}">{{ child.label }}</a>{% endfor %}</twig:Dropdown>
+        {% else %}<a href="{{ item.url }}" class="text-sm font-semibold hover:text-brand">{{ item.label }}</a>{% endif %}
+    {% endfor %}
+{% else %}
+    <a href="{{ path('front_blog') }}" class="text-sm font-semibold hover:text-brand">Journal</a><twig:Dropdown id="header-categories" label="Explore">{% for category in categories|slice(0, 6) %}<a class="dropdown-item" href="{{ path('front_category', {slug: category.slug}) }}">{{ category.name }}</a>{% endfor %}<a class="dropdown-item" href="{{ path('front_tags') }}">Explore topics</a></twig:Dropdown><a href="{{ path('front_page', {slug: 'about'}) }}" class="text-sm font-semibold hover:text-brand">Our story</a>
+{% endif %}
+{% if app.user %}<a href="{{ path('front_saved') }}" class="text-sm font-semibold hover:text-brand">Saved</a>{% endif %}</nav>
 <div class="flex items-center gap-1 sm:gap-2"><twig:Button variant="ghost" size="icon" data-dialog-open="site-search" aria-label="Search stories"><twig:Icon name="search"/></twig:Button><twig:Button variant="ghost" size="icon" data-component="theme" aria-pressed="false" aria-label="Toggle dark mode"><twig:Icon name="sun"/></twig:Button><twig:Button href="#newsletter" class="hidden sm:inline-flex">Subscribe<twig:Icon name="arrow"/></twig:Button><twig:Button variant="ghost" size="icon" data-dialog-open="mobile-navigation" class="lg:hidden" aria-label="Open navigation"><twig:Icon name="menu"/></twig:Button></div>
-</div></header>
+</div></header>{% endif %}
 {{ render_ad('header') }}
 <main id="main-content">{% block content %}{% endblock %}</main>
 {{ render_ad('footer') }}
 {% include 'front/partials/newsletter.html.twig' %}
-{% include 'front/partials/footer.html.twig' %}
+{% if setting('appearance.show_footer') %}{% include 'front/partials/footer.html.twig' %}{% endif %}
 {% include 'front/partials/consent.html.twig' %}
-<twig:Modal id="mobile-navigation" title="Explore Fieldnotes" drawer><nav class="space-y-2" aria-label="Mobile navigation"><a class="dropdown-item" href="{{ path('front_blog') }}">All stories</a>{% for category in categories|slice(0, 6) %}<a class="dropdown-item" href="{{ path('front_category', {slug: category.slug}) }}">{{ category.name }}</a>{% endfor %}<a class="dropdown-item border-t border-line" href="{{ path('front_categories') }}">All categories</a><a class="dropdown-item" href="{{ path('front_tags') }}">Explore topics</a><a class="dropdown-item" href="{{ path('front_authors') }}">Our contributors</a><a class="dropdown-item" href="{{ path('front_page', {slug: 'about'}) }}">Our story</a><a class="dropdown-item" href="{{ path('front_page', {slug: 'contact'}) }}">Contact</a>{% if app.user %}<a class="dropdown-item" href="{{ path('front_saved') }}">Saved stories</a>{% endif %}</nav></twig:Modal>
+<twig:Modal id="mobile-navigation" title="Explore Fieldnotes" drawer><nav class="space-y-2" aria-label="Mobile navigation">
+{% if headerMenu is not empty %}
+    {% for item in headerMenu %}<a class="dropdown-item" href="{{ item.url }}">{{ item.label }}</a>{% for child in item.children %}<a class="dropdown-item pl-6" href="{{ child.url }}">{{ child.label }}</a>{% endfor %}{% endfor %}
+{% else %}
+    <a class="dropdown-item" href="{{ path('front_blog') }}">All stories</a>{% for category in categories|slice(0, 6) %}<a class="dropdown-item" href="{{ path('front_category', {slug: category.slug}) }}">{{ category.name }}</a>{% endfor %}<a class="dropdown-item border-t border-line" href="{{ path('front_categories') }}">All categories</a><a class="dropdown-item" href="{{ path('front_tags') }}">Explore topics</a><a class="dropdown-item" href="{{ path('front_authors') }}">Our contributors</a><a class="dropdown-item" href="{{ path('front_page', {slug: 'about'}) }}">Our story</a>
+{% endif %}
+<a class="dropdown-item" href="{{ path('front_page', {slug: 'contact'}) }}">Contact</a>{% if app.user %}<a class="dropdown-item" href="{{ path('front_saved') }}">Saved stories</a>{% endif %}</nav></twig:Modal>
 <twig:Modal id="site-search" title="Find your next great read"><form action="{{ path('front_search') }}" method="get" class="space-y-5"><twig:Field id="header-query" label="Search the journal" help="Try design, nature or creative work."><twig:Input id="header-query" name="q" type="search" placeholder="What are you curious about?"/></twig:Field><twig:Button type="submit">Search stories<twig:Icon name="search"/></twig:Button></form></twig:Modal>
 {% endblock %}

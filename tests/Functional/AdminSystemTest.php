@@ -16,11 +16,10 @@ final class AdminSystemTest extends AdminTestCase
     private static function paths(): array
     {
         return [
-            '/admin/users', '/admin/users/new', '/admin/users/1/edit', '/admin/users/6/edit',
-            '/admin/roles', '/admin/roles/new', '/admin/roles/1/edit', '/admin/permissions',
+            '/admin/users', '/admin/users/new',
+            '/admin/roles', '/admin/roles/new', '/admin/permissions',
 
-            '/admin/analytics', '/admin/appearance', '/admin/seo', '/admin/settings',
-            '/admin/settings/smtp', '/admin/activity', '/admin/profile',
+            '/admin/activity',
         ];
     }
 
@@ -45,83 +44,67 @@ final class AdminSystemTest extends AdminTestCase
         self::assertSelectorNotExists('main iframe, main script[src^="https:"]');
         $ids = $crawler->filter('[id]')->each(static fn (Crawler $node): string => $node->attr('id') ?? '');
         self::assertSame($ids, array_values(array_unique($ids)), 'Duplicate HTML IDs on '.$path);
-        foreach ($crawler->filter('form:not([role="search"]):not([action="/logout"])') as $form) {
-            self::assertCount(1, (new Crawler($form))->filter('fieldset[data-preview-fields][disabled]'), 'Unsafe preview form on '.$path);
-        }
     }
 
-    public function testUsersAndRoleAssignments(): void
+    public function testUserAndRoleScreensAreReal(): void
     {
         $client = self::createClient();
         $client->request('GET', '/admin/users');
-        self::assertSelectorCount(6, '#users-table [data-row]');
-        self::assertSelectorExists('[data-id="6"][data-status="inactive"]');
-        self::assertSelectorCount(6, '[data-toggle-local-status][disabled]');
-        $client->request('GET', '/admin/users/1/edit');
-        self::assertSelectorExists('#user-role-1[checked][name="roles[]"]');
-        self::assertSelectorExists('#user-email[type="email"][required]');
+        self::assertSelectorExists('#users-table');
+        self::assertSelectorCount(1, '#users-table [data-row]');
         $client->request('GET', '/admin/users/new');
-        self::assertSelectorExists('#user-name[value=""][required]');
-        self::assertSelectorNotExists('[name="password"]');
-        $client->request('GET', '/admin/roles/1/edit');
-        self::assertSelectorCount(count((new MockDataProvider())->permissions()), '[name="permissions[]"][checked]');
-        self::assertSelectorExists('#role-permission-article-edit-own');
-    }
-
-    public function testPermissionMatrixHasEveryRoleAndCapability(): void
-    {
-        $client = self::createClient();
+        self::assertSelectorExists('#user-name[required]');
+        self::assertSelectorExists('#user-email[type="email"][required]');
+        self::assertSelectorExists('input[name="admin_user_form[temporaryPassword]"][type="password"]');
+        $client->request('GET', '/admin/roles');
+        self::assertSelectorExists('table[aria-label="Roles"]');
         $client->request('GET', '/admin/permissions');
-        $data = new MockDataProvider();
-        self::assertSelectorCount(count($data->permissions()) * 5, '[data-permission-role]');
-        self::assertSelectorCount(5, '[data-select-permission-role]');
-        self::assertSelectorExists('[data-permission-role="1"][value="settings.smtp.manage"][checked]');
-        self::assertSelectorNotExists('[data-permission-role="2"][value="settings.system.manage"][checked]');
-        self::assertSelectorExists('[data-permission-summary][role="status"]');
+        self::assertSelectorExists('table[aria-label="Role permission matrix"]');
     }
 
-    public function testAppearanceAndSettingsContracts(): void
+    public function testRealSettingsRoutes(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/admin/appearance');
-        self::assertSelectorCount(8, '[data-appearance-section]');
-        self::assertSelectorCount(16, '[data-section-move]');
-        self::assertSelectorExists('#appearance-primary[type="color"]');
-        self::assertSelectorExists('[data-appearance-sample]');
-        self::assertSelectorCount(2, '[data-safe-url][type="url"]');
-        $client->request('GET', '/admin/settings');
-        self::assertSelectorExists('[name="logo"][value="1"]');
-        self::assertSelectorExists('[name="favicon"][value=""]');
-        foreach (['timezone', 'dateFormat', 'timeFormat', 'language', 'registration', 'comments', 'doubleOptIn', 'maintenance', 'uploadLimit', 'cacheTtl', 'customCss', 'customJavaScript'] as $name) {
-            self::assertSelectorExists('[name="'.$name.'"]');
+        foreach (['/admin/analytics', '/admin/settings', '/admin/appearance', '/admin/seo', '/admin/settings/smtp', '/admin/settings/code'] as $path) {
+            $crawler = $client->request('GET', $path);
+            self::assertResponseIsSuccessful($path);
+            self::assertSelectorExists('main h1');
+            self::assertSelectorNotExists('main form form');
+            $ids = $crawler->filter('[id]')->each(static fn (Crawler $node): string => $node->attr('id') ?? '');
+            self::assertSame($ids, array_values(array_unique($ids)), 'Duplicate HTML IDs on '.$path);
         }
-        self::assertSelectorTextContains('main', 'never executed or applied');
+
+        $client->request('GET', '/admin/appearance');
+        self::assertSelectorExists('#settings-appearance_primary_color[type="color"]');
+        self::assertSelectorExists('#settings-appearance_accent_color[type="color"]');
+        self::assertSelectorExists('#settings-appearance_homepage_sections');
+        self::assertSelectorExists('input[name="settings_form[appearance_sidebar_widgets][]"][value="about"]');
+        $client->request('GET', '/admin/settings');
+        self::assertSelectorExists('#settings-general_name[value="Fieldnotes"]');
+        self::assertSelectorExists('#settings-maintenance_enabled');
         $client->request('GET', '/admin/seo');
-        self::assertSelectorExists('#site-seo-title[maxlength="70"]');
-        self::assertSelectorExists('#seo-canonical[type="url"][data-safe-url]');
-        self::assertSelectorTextContains('#seo-robots', 'Disallow: /admin/');
-        self::assertSelectorExists('#seo-ga[pattern="G-[A-Z0-9]+"]');
-        self::assertSelectorExists('[data-redirect-rows] tr');
-        self::assertSelectorExists('#redirect-form [data-local-path]');
+        self::assertSelectorTextContains('#settings-seo_robots', 'Disallow: /admin/');
+        $client->request('GET', '/admin/settings/smtp');
+        self::assertSelectorExists('#settings-mail_password[type="password"]');
+        self::assertSelectorExists('#settings-mail_port[min="1"]');
+        self::assertSelectorExists('form[action="/admin/settings/smtp/test"]');
+        $client->request('GET', '/admin/settings/code');
+        self::assertSelectorExists('#settings-custom_css');
+        self::assertSelectorExists('#settings-custom_js');
     }
 
-    public function testSensitiveFormsAndReadOnlyActivity(): void
+    public function testProfileRedirectsToTheRealProfileAndActivityIsReadOnly(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/admin/settings/smtp');
-        self::assertSelectorExists('#smtp-password[type="password"][value=""][data-sensitive-preview]');
-        self::assertSelectorExists('#smtp-port[min="1"][max="65535"]');
-        self::assertSelectorExists('#smtp-test-dialog form fieldset[disabled]');
         $client->request('GET', '/admin/profile');
-        self::assertSelectorCount(4, '[data-sensitive-preview]');
-        self::assertSelectorExists('#password-confirm[data-password-confirm="password-new"]');
-        self::assertSelectorExists('#two-factor-code[pattern="[0-9]{6}"]');
-        self::assertSelectorExists('[role="img"][aria-label="QR code placeholder, not scannable"]');
-        self::assertSelectorTextContains('main', 'No password is sent or stored');
+        self::assertResponseRedirects('/profile');
+        $client->followRedirect();
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('main h1');
         $client->request('GET', '/admin/activity');
-        self::assertSelectorCount(5, '[data-activity-detail][disabled]');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('table[aria-label="Activity log"]');
         self::assertSelectorNotExists('[data-row-remove], [data-bulk-remove]');
-        self::assertSelectorExists('#activity-detail-dialog [data-activity-context]');
     }
 
     public function testSystemLinksReadOnlyMethodsAndMissingIds(): void
@@ -132,6 +115,9 @@ final class AdminSystemTest extends AdminTestCase
             $crawler = $client->request('GET', $path);
             self::assertResponseIsSuccessful();
             $links = array_merge($links, $crawler->filter('a[href^="/"]')->each(static fn (Crawler $node): string => explode('#', $node->attr('href') ?? '')[0]));
+            if (str_ends_with($path, '/new') || str_ends_with($path, '/permissions')) {
+                continue;
+            }
             $client->request('POST', $path);
             self::assertResponseStatusCodeSame(405);
         }

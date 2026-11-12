@@ -1,8 +1,53 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}{{ record.id ? 'Edit menu' : 'New menu' }}{% endblock %}
-{% block breadcrumb %}Navigation menus / {{ record.id ? 'Edit' : 'New' }}{% endblock %}
-{% block eyebrow %}Content / Navigation{% endblock %}
-{% block heading %}Give readers a thoughtful next step.{% endblock %}
-{% block intro %}Drag links onto another link’s nested area, or use Up, Down, Nest and Unnest. Entire branches move together. The public navigation is not changed.{% endblock %}
+{% block page_title %}{{ menu.id ? 'Edit menu' : 'New menu' }}{% endblock %}
+{% block breadcrumb %}Menus / {{ menu.id ? menu.name : 'New' }}{% endblock %}
+{% block eyebrow %}Site / Navigation{% endblock %}
+{% block heading %}Shape the paths through the journal.{% endblock %}
+{% block intro %}Add nested items with a parent, then drag to reorder. Changes appear on the public site after saving.{% endblock %}
 {% block actions %}<twig:Button variant="secondary" href="{{ path('admin_menu_index') }}">All menus</twig:Button>{% endblock %}
-{% block content %}<twig:PreviewStates state="{{ state }}"><twig:PreviewForm data-component="validate content-form menu-builder" successMessage="Menu validated locally. Its structure was not saved."><twig:AdminFormLayout sidebarTitle="Menu location"><div class="space-y-6"><twig:Field id="menu-name" label="Menu name" required><twig:Input id="menu-name" name="name" value="{{ record.name }}" required minlength="3" maxlength="100"/></twig:Field><div class="rounded-control bg-canvas p-5"><h2 class="mb-3 font-semibold">Add a link</h2><p class="mb-4 text-xs text-muted">Choose a suggested destination or enter a relative path / absolute HTTP(S) URL.</p><label for="menu-link-label" class="field-label">Link label</label><input id="menu-link-label" class="field-control mb-3" data-add-menu-label maxlength="80"><label for="menu-link-type" class="field-label">Type</label><select id="menu-link-type" class="field-control mb-3" data-add-menu-type><option value="custom">Custom URL</option><option value="page">Internal page</option><option value="category">Category</option><option value="article">Article</option></select><label for="menu-link-target" class="field-label">Destination</label><input id="menu-link-target" class="field-control mb-3" data-add-menu-target list="menu-destinations" placeholder="/about"><datalist id="menu-destinations">{% for page in pages %}<option value="{{ path('front_page', {slug: page.slug}) }}">{{ page.title }}</option>{% endfor %}{% for category in categories %}<option value="{{ path('front_category', {slug: category.slug}) }}">{{ category.name }}</option>{% endfor %}</datalist><twig:Button variant="secondary" data-add-menu-item>Add local link</twig:Button></div><p class="text-xs text-muted" role="status" aria-live="polite" data-menu-status>Drag and keyboard controls become available with JavaScript.</p><ol data-menu-list data-menu-root aria-label="Menu links" class="min-h-16 rounded-control border-2 border-dashed border-line bg-canvas p-3">{% for item in record.items|filter(item => not item.parent) %}{% include 'admin/menu/item.html.twig' %}{% endfor %}</ol><textarea data-menu-output name="items" hidden readonly></textarea></div><twig:block name="sidebar"><div class="space-y-6"><twig:Field id="menu-location" label="Location"><twig:Select id="menu-location" name="location" value="{{ record.location }}" options="{{ {header: 'Header', footer: 'Footer', sidebar: 'Sidebar'} }}"/></twig:Field><twig:Button type="submit">Validate menu</twig:Button><p class="text-xs text-muted">Maximum three preview levels. Menu-location uniqueness and link permissions are backend checks.</p></div></twig:block></twig:AdminFormLayout><template data-menu-template>{% include 'admin/menu/item.html.twig' with {item: {id: 'new', label: '', type: 'custom', target: ''}, record: {items: []}} %}</template></twig:PreviewForm></twig:PreviewStates>{% endblock %}
+{% block content %}
+<div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+<section class="card p-5 sm:p-7">
+    <h2 class="text-xl font-semibold">Menu details</h2>
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+    <div class="mt-5 grid gap-5 sm:grid-cols-2">{{ form_row(form.name) }}{{ form_row(form.location) }}</div>
+    <div class="mt-5"><twig:Button type="submit">Save menu</twig:Button></div>
+    {{ form_end(form) }}
+</section>
+{% if menu.id %}
+<section class="card p-5 sm:p-7" data-menu-sortable data-reorder-url="{{ path('admin_menu_reorder', {id: menu.id}) }}" data-csrf-token="{{ csrf_token('menu_reorder') }}">
+    <div class="flex items-center justify-between gap-3"><h2 class="text-xl font-semibold">Menu items</h2><p class="text-xs text-muted" data-menu-status>Drag to reorder</p></div>
+    {% macro items(menu, parent, depth) %}
+        <ol class="{{ depth > 0 ? 'ml-6 mt-2 border-l border-line pl-4' : 'mt-5' }} space-y-2">
+        {% for item in menu.items|filter(i => i.parent == parent)|sort((a, b) => a.position <=> b.position) %}
+            <li class="rounded-control border border-line bg-surface px-3 py-2" draggable="true" data-menu-item data-id="{{ item.id }}" data-parent-id="{{ item.parent ? item.parent.id : '' }}">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="cursor-grab text-muted" aria-hidden="true">⠿</span>
+                    <span class="text-sm font-semibold">{{ item.label }}</span>
+                    <span class="badge badge-neutral">{{ item.type.value }}</span>
+                    <span class="text-xs text-muted">{{ item.target }}</span>
+                    <div class="ml-auto flex items-center gap-1">
+                        <a class="btn btn-ghost btn-sm" href="{{ path('admin_menu_item_edit', {itemId: item.id}) }}">Edit</a>
+                        <form method="post" action="{{ path('admin_menu_item_delete', {itemId: item.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('menu_item_delete') }}"><button type="submit" class="btn btn-ghost btn-sm text-danger">Remove</button></form>
+                    </div>
+                </div>
+                {% if item.children is not empty %}{{ _self.items(menu, item, depth + 1) }}{% endif %}
+            </li>
+        {% endfor %}
+        </ol>
+    {% endmacro %}
+    {{ _self.items(menu, null, 0) }}
+    <p class="mt-4 text-xs text-muted">Nesting is changed on the item's edit screen. Drag reorders siblings.</p>
+</section>
+<section class="card h-fit p-5 sm:p-7">
+    <h2 class="text-xl font-semibold">Add an item</h2>
+    {{ form_start(itemForm, {action: path('admin_menu_item_create', {id: menu.id}), attr: {novalidate: 'novalidate'}}) }}
+    <div class="mt-5 space-y-4">{{ form_row(itemForm.label) }}{{ form_row(itemForm.type) }}{{ form_row(itemForm.target) }}{{ form_row(itemForm.parent) }}{{ form_row(itemForm.position) }}</div>
+    <twig:Button type="submit" class="mt-5">Add item</twig:Button>
+    {{ form_end(itemForm) }}
+</section>
+{% else %}
+<section class="card p-6"><twig:Alert tone="info" title="Save the menu first">Add items after creating the menu.</twig:Alert></section>
+{% endif %}
+</div>
+{% endblock %}

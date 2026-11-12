@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace App\Tests\Support;
 
+use App\Service\Settings\DatabaseSettingsService;
 use App\Service\Settings\DefaultSettingsService;
 use App\Service\Settings\SettingsServiceInterface;
 
 /** Mutable defaults for tests that need a setting to differ from the committed default. */
 final class InMemorySettingsService implements SettingsServiceInterface
 {
+    public function __construct(private readonly DatabaseSettingsService $database)
+    {
+    }
+
     /** @var array<string, mixed> */
     private static array $overrides = [];
 
@@ -62,6 +67,10 @@ final class InMemorySettingsService implements SettingsServiceInterface
             return self::$overrides[$key];
         }
 
-        return DefaultSettingsService::DEFAULTS[$key] ?? throw new \OutOfBoundsException('Unknown setting: '.$key);
+        try {
+            return $this->database->get($key);
+        } catch (\OutOfBoundsException) {
+            return DefaultSettingsService::DEFAULTS[$key] ?? throw new \OutOfBoundsException('Unknown setting: '.$key);
+        }
     }
 }

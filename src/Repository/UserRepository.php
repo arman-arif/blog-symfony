@@ -41,4 +41,41 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     {
         return $this->findOneBy(['slug' => $slug]);
     }
+
+    /** @param array{q?: string, role?: string, active?: string} $filters
+     * @return array{items: list<User>, total: int, pages: int}
+     */
+    public function paginateAdmin(array $filters, int $page, int $perPage = 20): array
+    {
+        $builder = $this->createQueryBuilder('user')
+            ->leftJoin('user.assignedRoles', 'role')->addSelect('role')
+            ->distinct();
+
+        if ('' !== ($filters['q'] ?? '')) {
+            $builder->andWhere('user.displayName LIKE :q OR user.email LIKE :q')
+                ->setParameter('q', '%'.$filters['q'].'%');
+        }
+        if ('' !== ($filters['role'] ?? '')) {
+            $builder->andWhere('role.code = :role')->setParameter('role', $filters['role']);
+        }
+        if ('' !== ($filters['active'] ?? '')) {
+            $builder->andWhere('user.isActive = :active')->setParameter('active', '1' === $filters['active']);
+        }
+
+        $total = (int) (clone $builder)->select('COUNT(DISTINCT user.id)')->resetDQLPart('orderBy')->getQuery()->getSingleScalarResult();
+        $items = $builder->orderBy('user.displayName', 'ASC')->setFirstResult(max(0, ($page - 1) * $perPage))->setMaxResults($perPage)->getQuery()->getResult();
+
+        return ['items' => $items, 'total' => $total, 'pages' => max(1, (int) ceil($total / $perPage))];
+    }
+
+    public function countSuperAdmins(): int
+    {
+        return (int) $this->createQueryBuilder('user')
+            ->select('COUNT(DISTINCT user.id)')
+            ->join('user.assignedRoles', 'role')
+            ->andWhere('role.code = :code')
+            ->setParameter('code', 'ROLE_SUPER_ADMIN')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

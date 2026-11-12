@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ setting('general.locale')|default('en') }}" class="{{ setting('appearance.theme') == 'dark' ? 'dark' : '' }}">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,8 @@
         <meta name="description" content="{% block description %}Thoughtful stories on design, technology and living well. Independent ideas for curious minds.{% endblock %}">
         {% include 'partials/seo_head.html.twig' %}
         <link rel="alternate" type="application/rss+xml" title="Fieldnotes RSS" href="{{ path('front_feed') }}">
-        <link rel="icon" href="{{ asset('icons/favicon.svg') }}" type="image/svg+xml">
+        {% set favicon = setting('appearance.favicon') %}<link rel="icon" href="{{ favicon ? (favicon starts with 'http' ? favicon : asset(favicon)) : asset('icons/favicon.svg') }}" type="image/svg+xml">
+        <style>{{ appearance_css() }}</style>
         {% block stylesheets %}
             <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
         {% endblock %}

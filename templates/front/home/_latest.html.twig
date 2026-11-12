@@ -1,0 +1,3 @@
+<div class="container-editorial">
+<section id="latest" class="scroll-mt-24 py-12 sm:py-16"><div class="mb-8 flex items-end justify-between gap-4"><div><p class="eyebrow">Fresh from the journal</p><h2 class="section-title mt-3">The latest stories</h2></div><a href="{{ path('front_blog') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-brand">View all<twig:Icon name="arrow"/></a></div><div class="grid gap-x-7 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">{% for article in articles|slice(1, 6) %}<twig:ArticleCard article="{{ article }}"/>{% endfor %}</div></section>
+</div>

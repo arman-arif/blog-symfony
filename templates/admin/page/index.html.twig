@@ -1,1 +1,22 @@
-{% extends 'admin/content/index.html.twig' %}
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Pages{% endblock %}
+{% block breadcrumb %}Pages{% endblock %}
+{% block eyebrow %}Content / Site pages{% endblock %}
+{% block heading %}The pages beyond the journal.{% endblock %}
+{% block intro %}About, contact, legal and other standalone pages are stored and sanitized like articles.{% endblock %}
+{% block actions %}<twig:Button href="{{ path('admin_page_create') }}">New page</twig:Button>{% endblock %}
+{% block content %}
+<div class="table-shell"><table class="data-table" aria-label="Pages">
+<thead><tr><th>Title</th><th>Slug</th><th>Status</th><th>Updated</th><th class="text-right">Actions</th></tr></thead>
+<tbody>
+{% for page in pages %}
+<tr>
+<td><a class="font-semibold text-brand" href="{{ path('admin_page_edit', {id: page.id}) }}">{{ page.title }}</a></td>
+<td class="text-xs text-muted">/{{ page.slug }}</td>
+<td><span class="badge {{ page.status.value == 'published' ? 'badge-success' : 'badge-neutral' }}">{{ page.status.value|title }}</span></td>
+<td class="text-xs text-muted">{{ page.updatedAt|date('M j, Y') }}</td>
+<td><div class="flex justify-end gap-2"><twig:Button href="{{ path('admin_page_edit', {id: page.id}) }}" variant="secondary" size="sm">Edit</twig:Button>{% if page.status.value == 'published' %}<a class="btn btn-ghost btn-sm" href="{{ path('front_page_show', {slug: page.slug}) }}">View</a>{% endif %}<form method="post" action="{{ path('admin_page_delete', {id: page.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('page_delete') }}"><button type="submit" class="btn btn-ghost btn-sm text-danger">Delete</button></form></div></td>
+</tr>
+{% else %}<tr><td colspan="5" class="py-10 text-center text-sm text-muted">No pages yet.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

@@ -108,3 +108,12 @@ The article, category and tag administration screens are now server-backed; rema
 - **Ads:** real advertisement CRUD, placement/schedule/priority selection, placement-ID caching with invalidation, `render_ad()` and in-article insertion after a configured paragraph.
 - **Sponsored/affiliate:** article sponsorship disclosure and automatic `rel="sponsored nofollow noopener"` for affiliate-enabled content.
 - **Extensions:** premium article flag plus `AccessPolicyInterface`; payment checkout/webhook contract with a disabled implementation. No payment credentials or external provider are bundled.
+
+## M13 settings, customization and admin completion
+
+- **Settings:** database-backed, cached and encrypted service replaces the preview settings; group-specific permissions and activity logging.
+- **SMTP:** `SettingsMailer` selects a saved SMTP/sendmail transport or the environment DSN, with test-email support.
+- **Appearance:** CSS variables, theme, branding, footer/social links, configurable homepage section order and article sidebar widgets.
+- **Maintenance/custom code:** request listener with admin bypass, restricted custom CSS/JS.
+- **Menus:** database-backed nested header/footer menus with drag reorder and public fallbacks.
+- **Admin completion:** users, roles, permission matrix, pages, activity and profile are real; no `ContentPreviewController` screens remain in the admin area.

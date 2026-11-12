@@ -1,3 +1,18 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}{{ record.id ? 'Edit role' : 'New role' }}{% endblock %}{% block breadcrumb %}Roles / {{ record.id ? 'Edit' : 'New' }}{% endblock %}{% block eyebrow %}System / Granular permissions{% endblock %}{% block heading %}Define a role with a clear purpose.{% endblock %}{% block intro %}Choose capabilities for this local preview. These selections never grant or revoke real access.{% endblock %}{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_role_index') }}">All roles</twig:Button>{% endblock %}
-{% block content %}<twig:PreviewStates state="{{ state }}"><twig:PreviewForm successMessage="Role validated locally. No permissions were saved or enforced."><div class="card space-y-6 p-6"><twig:Field id="role-name" label="Role name" required><twig:Input id="role-name" name="name" value="{{ record.name }}" required minlength="3" maxlength="100"/></twig:Field><twig:Field id="role-description" label="Description"><twig:Textarea id="role-description" name="description" value="{{ record.description }}" rows="3"/></twig:Field><div class="grid gap-6 md:grid-cols-2">{% for group in ['Workspace', 'Editorial', 'Audience', 'Site', 'System'] %}<fieldset class="rounded-control border border-line p-4"><legend class="px-2 font-semibold">{{ group }}</legend>{% for permission in permissions|filter(item => item.group == group) %}<twig:Choice id="role-permission-{{ permission.code|replace({'.': '-'}) }}" name="permissions[]" value="{{ permission.code }}" label="{{ permission.label }}" checked="{{ permission.code in record.permissions }}"/>{% endfor %}</fieldset>{% endfor %}</div><twig:Button type="submit">Validate role</twig:Button></div></twig:PreviewForm></twig:PreviewStates>{% endblock %}
+{% block page_title %}{{ role.id ? 'Edit role' : 'New role' }}{% endblock %}
+{% block breadcrumb %}Roles / {{ role.id ? role.name : 'New' }}{% endblock %}
+{% block eyebrow %}System / Access{% endblock %}
+{% block heading %}Define a clear scope of responsibility.{% endblock %}
+{% block intro %}Permission changes apply to every user with this role. The Super Administrator role is always kept complete.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_role_index') }}">All roles</twig:Button>{% endblock %}
+{% block content %}
+<div class="card max-w-4xl p-6 sm:p-8">
+{{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+{{ form_errors(form) }}
+<div class="grid gap-5 sm:grid-cols-2">{{ form_row(form.name) }}{{ form_row(form.code) }}</div>
+<div class="mt-5">{{ form_row(form.description) }}</div>
+<fieldset class="mt-6 rounded-control border border-line p-4"><legend class="px-2 text-sm font-semibold">Permissions</legend><div class="max-h-[32rem] space-y-1 overflow-auto">{{ form_row(form.permissions) }}</div></fieldset>
+<div class="mt-7"><twig:Button type="submit">Save role</twig:Button></div>
+{{ form_end(form) }}
+</div>
+{% endblock %}

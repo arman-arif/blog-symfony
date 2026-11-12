@@ -1,8 +1,17 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}{{ record.id ? 'Edit page' : 'New page' }}{% endblock %}
-{% block breadcrumb %}Static pages / {{ record.id ? 'Edit' : 'New' }}{% endblock %}
-{% block eyebrow %}Content / Evergreen pages{% endblock %}
-{% block heading %}A clear home for useful information.{% endblock %}
-{% block intro %}Use the shared rich-text editor to refine a page. Validating or previewing does not change the public website.{% endblock %}
+{% block page_title %}{{ page.id ? 'Edit page' : 'New page' }}{% endblock %}
+{% block breadcrumb %}Pages / {{ page.id ? page.title : 'New' }}{% endblock %}
+{% block eyebrow %}Content / Site pages{% endblock %}
+{% block heading %}A clear page, carefully kept.{% endblock %}
+{% block intro %}Slugs are generated from the title. Published content is sanitized before it reaches readers.{% endblock %}
 {% block actions %}<twig:Button variant="secondary" href="{{ path('admin_page_index') }}">All pages</twig:Button>{% endblock %}
-{% block content %}<twig:PreviewStates state="{{ state }}"><twig:PreviewForm data-component="validate content-form" successMessage="Page validated locally. Nothing was saved or published."><twig:AdminFormLayout sidebarTitle="Page settings"><div class="space-y-6"><twig:Field id="content-title" label="Page title" required><twig:Input id="content-title" name="title" value="{{ record.title }}" required minlength="5" maxlength="180" data-slug-source/></twig:Field><twig:Field id="content-slug" label="URL slug" required><twig:Input id="content-slug" name="slug" value="{{ record.slug }}" required pattern="[a-z0-9]+(-[a-z0-9]+)*" data-slug-value/></twig:Field><twig:RichEditor article="{{ record }}" label="Page content" contentTemplate="admin/page/editor_content.html.twig"/><twig:SeoFields seo="{{ record.seo }}"/></div><twig:block name="sidebar"><div class="space-y-6"><twig:Field id="content-status" label="Status"><twig:Select id="content-status" name="status" value="{{ record.status }}" options="{{ {draft: 'Draft', published: 'Published'} }}"/></twig:Field><twig:Button variant="secondary" data-content-preview>Preview local changes</twig:Button><twig:Button type="submit">Validate page</twig:Button><p class="text-xs text-muted">Content remains in this browser tab only. Server HTML sanitizing follows in M5.</p></div></twig:block></twig:AdminFormLayout></twig:PreviewForm></twig:PreviewStates>{% include 'admin/media/picker.html.twig' %}{% include 'admin/article/editor_dialogs.html.twig' %}<twig:Modal id="content-preview-dialog" title="Local page preview" class="max-w-4xl"><h2 class="font-display text-3xl" data-content-preview-title></h2><div class="prose prose-stone mt-6 max-w-none dark:prose-invert" data-content-preview-body></div></twig:Modal>{% endblock %}
+{% block content %}
+<div class="card p-6 sm:p-8">
+{{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+{{ form_errors(form) }}
+<div class="grid gap-5 sm:grid-cols-[minmax(0,1fr)_14rem]">{{ form_row(form.title) }}{{ form_row(form.status) }}</div>
+<div class="mt-5">{{ form_row(form.content, {attr: {rows: 16}}) }}</div>
+<div class="mt-6"><twig:Button type="submit">Save page</twig:Button></div>
+{{ form_end(form) }}
+</div>
+{% endblock %}

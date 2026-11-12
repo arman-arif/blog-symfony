@@ -20,11 +20,14 @@ services:
     App\:
         resource: '../src/'
 
-    App\Service\Settings\SettingsServiceInterface: '@App\Service\Settings\DefaultSettingsService'
+    App\Service\Settings\SettingsServiceInterface: '@App\Service\Settings\DatabaseSettingsService'
+    App\Service\Settings\DatabaseSettingsService:
+        public: true
     App\Service\Media\MediaStorageInterface: '@App\Service\Media\FlysystemMediaStorage'
     App\Service\Comment\SpamCheckerInterface: '@App\Service\Comment\NullSpamChecker'
     App\Monetization\AccessPolicyInterface: '@App\Monetization\DefaultAccessPolicy'
     App\Monetization\PaymentGatewayInterface: '@App\Monetization\DisabledPaymentGateway'
+    Symfony\Component\Mailer\MailerInterface: '@App\Service\Mail\SettingsMailer'
 
     # A runtime-selected adapter needs a factory; cache pools replace the namespace argument.
     app.optional_redis_adapter:
@@ -42,6 +45,4 @@ when@test:
             resource: '%kernel.project_dir%/tests/Support/'
             autowire: true
             autoconfigure: true
-        App\Tests\Support\InMemorySettingsService:
-            public: true
         App\Service\Settings\SettingsServiceInterface: '@App\Tests\Support\InMemorySettingsService'

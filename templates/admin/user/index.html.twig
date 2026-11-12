@@ -1,4 +1,29 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}Users{% endblock %}{% block breadcrumb %}Users{% endblock %}{% block eyebrow %}System / People{% endblock %}{% block heading %}Good work starts with good people.{% endblock %}{% block intro %}Review the fictional editorial team, role assignments and account status. Local activation does not grant access or change a real account.{% endblock %}
-{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_role_index') }}">Roles & permissions</twig:Button><twig:Button href="{{ path('admin_user_create') }}">New user</twig:Button>{% endblock %}
-{% block content %}<div data-component="system-actions"><twig:DataTable id="users-table" caption="Users" state="{{ state }}" columns="{{ [{key: 'name', label: 'Name', sortable: true}, {key: 'email', label: 'Email', sortable: true}, {key: 'role', label: 'Role'}, {key: 'status', label: 'Status', sortable: true}] }}" filters="{{ [{key: 'status', label: 'Statuses', options: [{value: 'active', label: 'Active'}, {value: 'inactive', label: 'Inactive'}]}] }}">{% for user in records %}<tr data-row data-id="{{ user.id }}" data-name="{{ user.displayName }}" data-email="{{ user.email }}" data-status="{{ user.isActive ? 'active' : 'inactive' }}" data-search="{{ user.displayName }} {{ user.email }} {{ user.roles[0].name }}"><td><input type="checkbox" data-select-row disabled aria-label="Select {{ user.displayName }}"></td><td><a class="font-semibold text-brand" href="{{ path('admin_user_edit', {id: user.id}) }}">{{ user.displayName }}</a><p class="mt-1 text-xs text-muted">Last login {{ user.lastLoginAt|date('M j, Y') }}</p></td><td>{{ user.email }}</td><td>{{ user.roles[0].name }}</td><td><span data-local-status-label class="badge badge-neutral">{{ user.isActive ? 'Active' : 'Inactive' }}</span></td><td><div class="flex gap-2"><twig:Button variant="ghost" size="sm" href="{{ path('admin_user_edit', {id: user.id}) }}">Edit</twig:Button><button type="button" class="btn btn-secondary btn-sm" data-toggle-local-status disabled>Toggle active</button><twig:Button variant="ghost" size="sm" data-component="confirm" data-row-remove data-confirm-message="Remove this fictional user from the local preview only? No account or access is changed.">Remove</twig:Button></div></td></tr>{% endfor %}</twig:DataTable></div>{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block breadcrumb %}Users{% endblock %}
+{% block eyebrow %}System / People{% endblock %}
+{% block heading %}The people behind the work.{% endblock %}
+{% block intro %}Invite, activate and assign roles. The last Super Administrator cannot be demoted.{% endblock %}
+{% block actions %}<twig:Button href="{{ path('admin_user_create') }}">New user</twig:Button>{% endblock %}
+{% block content %}
+<form method="get" action="{{ path('admin_user_index') }}" class="card mb-6 flex flex-wrap items-end gap-3 p-4" role="search">
+    <div class="min-w-52 flex-1"><label class="field-label" for="user-search">Search</label><input class="field-control" id="user-search" name="q" type="search" value="{{ filters.q }}" placeholder="Name or email"></div>
+    <div><label class="field-label" for="user-role-filter">Role</label><select class="field-control" id="user-role-filter" name="role"><option value="">All roles</option>{% for role in roles %}<option value="{{ role.code }}" {% if filters.role == role.code %}selected{% endif %}>{{ role.name }}</option>{% endfor %}</select></div>
+    <div><label class="field-label" for="user-active-filter">Status</label><select class="field-control" id="user-active-filter" name="active"><option value="">All</option><option value="1" {% if filters.active == '1' %}selected{% endif %}>Active</option><option value="0" {% if filters.active == '0' %}selected{% endif %}>Inactive</option></select></div>
+    <twig:Button type="submit" variant="secondary">Filter</twig:Button>
+</form>
+<div class="table-shell"><table class="data-table" id="users-table" aria-label="Users">
+<thead><tr><th>Person</th><th>Roles</th><th>Status</th><th>Last login</th><th class="text-right">Actions</th></tr></thead>
+<tbody>
+{% for user in users.items %}
+<tr data-row data-id="{{ user.id }}" data-status="{{ user.isActive ? 'active' : 'inactive' }}">
+    <td><a class="font-semibold text-brand" href="{{ path('admin_user_edit', {id: user.id}) }}">{{ user.displayName }}</a><p class="mt-1 text-xs text-muted">{{ user.email }}</p></td>
+    <td><div class="flex flex-wrap gap-1">{% for role in user.assignedRoles %}<span class="badge badge-neutral">{{ role.name }}</span>{% else %}<span class="text-xs text-muted">No admin role</span>{% endfor %}</div></td>
+    <td><span class="badge {{ user.isActive ? 'badge-success' : 'badge-neutral' }}">{{ user.isActive ? 'Active' : 'Inactive' }}</span></td>
+    <td class="text-xs text-muted">{{ user.lastLoginAt ? user.lastLoginAt|date('M j, Y H:i') : 'Never' }}</td>
+    <td class="text-right"><twig:Button href="{{ path('admin_user_edit', {id: user.id}) }}" variant="secondary" size="sm">Edit</twig:Button></td>
+</tr>
+{% else %}<tr><td colspan="5" class="py-10 text-center text-sm text-muted">No users match these filters.</td></tr>{% endfor %}
+</tbody></table></div>
+{% if users.pages > 1 %}<nav class="mt-6 flex items-center justify-center gap-2" aria-label="User pagination">{% for index in 1..users.pages %}<a class="btn {{ index == page ? 'btn-primary' : 'btn-secondary' }} btn-sm" href="{{ path('admin_user_index', {page: index, q: filters.q, role: filters.role, active: filters.active}) }}">{{ index }}</a>{% endfor %}</nav>{% endif %}
+{% endblock %}

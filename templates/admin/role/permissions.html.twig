@@ -1,3 +1,29 @@
 {% extends 'admin/layout.html.twig' %}
-{% block page_title %}Permission matrix{% endblock %}{% block breadcrumb %}Permissions{% endblock %}{% block eyebrow %}System / Access overview{% endblock %}{% block heading %}See every capability in context.{% endblock %}{% block intro %}An editable role × permission matrix. Own-resource and contributor-draft restrictions are enforced only when M4 voters are implemented.{% endblock %}{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_role_index') }}">Manage roles</twig:Button>{% endblock %}
-{% block content %}<twig:PreviewStates state="{{ state }}"><twig:PreviewForm data-component="validate permission-matrix" successMessage="Permission matrix validated locally. Access was not changed."><div class="table-shell" tabindex="0" role="region" aria-label="Permission matrix, scroll horizontally"><table class="data-table min-w-[950px]"><caption class="sr-only">Illustrative permission assignments, not enforced security</caption><thead><tr><th scope="col">Capability</th>{% for role in roles %}<th scope="col">{{ role.name }}<button type="button" class="mt-2 block text-xs normal-case underline" data-select-permission-role="{{ role.id }}">Toggle column</button></th>{% endfor %}</tr></thead><tbody>{% for permission in permissions %}<tr><th scope="row"><span class="block text-ink">{{ permission.label }}</span><code class="text-[10px] normal-case">{{ permission.code }}</code></th>{% for role in roles %}<td><input class="rounded border-line text-brand focus:ring-brand" type="checkbox" name="permissions[{{ role.id }}][]" value="{{ permission.code }}" data-permission-role="{{ role.id }}" {% if permission.code in role.permissions %}checked{% endif %} aria-label="{{ role.name }}: {{ permission.label }}"></td>{% endfor %}</tr>{% endfor %}</tbody></table></div><p class="text-xs text-muted" role="status" data-permission-summary></p><twig:Button type="submit">Validate matrix</twig:Button></twig:PreviewForm></twig:PreviewStates>{% endblock %}
+{% block page_title %}Permissions{% endblock %}
+{% block breadcrumb %}Roles / Permissions{% endblock %}
+{% block eyebrow %}System / Access{% endblock %}
+{% block heading %}See the whole permission map.{% endblock %}
+{% block intro %}Each checkbox is enforced server-side by voters. Super Administrator permissions stay complete.{% endblock %}
+{% block content %}
+<form method="post" action="{{ path('admin_permission_index') }}">
+<input type="hidden" name="_token" value="{{ csrf_token('permission_matrix') }}">
+<div class="table-shell">
+<table class="data-table" aria-label="Role permission matrix">
+<thead><tr><th>Permission</th>{% for role in roles %}<th class="text-center">{{ role.name }}</th>{% endfor %}</tr></thead>
+<tbody>
+{% for group, permissions in groups %}
+<tr><th colspan="{{ roles|length + 1 }}" class="bg-canvas text-xs uppercase tracking-wide text-muted">{{ group }}</th></tr>
+{% for permission in permissions %}
+<tr>
+    <th scope="row" class="font-normal"><span class="font-semibold">{{ permission.label }}</span><p class="mt-1 text-xs text-muted"><code>{{ permission.code }}</code></p></th>
+    {% for role in roles %}
+        <td class="text-center"><input type="checkbox" name="permissions[{{ role.id }}][]" value="{{ permission.code }}" id="permission-{{ role.id }}-{{ permission.id }}" {% if role.hasPermission(permission.code) %}checked{% endif %} {% if role.code == 'ROLE_SUPER_ADMIN' %}disabled{% endif %} aria-label="{{ permission.label }} for {{ role.name }}"></td>
+    {% endfor %}
+</tr>
+{% endfor %}
+{% endfor %}
+</tbody></table>
+</div>
+<div class="mt-6 flex items-center justify-between gap-4"><p class="text-xs text-muted">{{ permissionCount }} capabilities across {{ roles|length }} roles. Disabled cells belong to Super Administrator.</p><twig:Button type="submit">Save permission matrix</twig:Button></div>
+</form>
+{% endblock %}

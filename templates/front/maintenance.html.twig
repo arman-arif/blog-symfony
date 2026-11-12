@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ site_name }} · Taking a short pause{% endblock %}
+{% block body %}
+<main id="main-content" class="container-editorial flex min-h-screen flex-col items-center justify-center py-20 text-center">
+    <p class="eyebrow">{{ site_name }}</p>
+    <h1 class="mt-5 max-w-2xl font-display text-display">A short pause.</h1>
+    <p class="mt-6 max-w-lg text-lg leading-8 text-muted">{{ message }}</p>
+    <p class="mt-8 text-sm text-muted">Administrators can <a class="font-semibold text-brand underline" href="{{ path('app_login') }}">sign in</a> to continue working.</p>
+</main>
+{% endblock %}

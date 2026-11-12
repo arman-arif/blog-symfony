@@ -48,7 +48,7 @@ final readonly class SeoHeadFactory
             'front_category' => ($category = $this->categories->findOneBySlug($slug)) ? $this->forCollection('category', $category, $page) : $this->defaults($request),
             'front_tag' => ($tag = $this->tags->findOneBySlug($slug)) ? $this->forCollection('tag', $tag, $page) : $this->defaults($request),
             'front_author' => ($author = $this->users->findOneBySlug($slug)) ? $this->forCollection('author', $author, $page) : $this->defaults($request),
-            'front_page' => ($pageEntity = $this->pages->findPublishedBySlug($slug)) ? $this->forPage($pageEntity) : $this->defaults($request),
+            'front_page', 'front_page_show' => ($pageEntity = $this->pages->findPublishedBySlug($slug)) ? $this->forPage($pageEntity) : $this->defaults($request),
             'front_home' => $this->forHome(),
             'front_blog', 'front_search' => $this->forListing($route, $page, $request->query->all()),
             default => $this->defaults($request),
@@ -147,7 +147,8 @@ final readonly class SeoHeadFactory
     public function forPage(Page $page): array
     {
         $name = $this->settings->getString('general.name');
-        $url = $this->urls->generate('front_page', ['slug' => $page->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $route = in_array($page->getSlug(), ['about', 'contact', 'privacy', 'terms', 'cookies'], true) ? 'front_page' : 'front_page_show';
+        $url = $this->urls->generate($route, ['slug' => $page->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return $this->build(
             ($page->getSeo()->getTitle() ?: $page->getTitle()).' · '.$name,

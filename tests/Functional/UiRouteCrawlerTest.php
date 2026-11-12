@@ -35,7 +35,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
         $data = new MockDataProvider();
         $slugs = [
             'front_article' => $data->articles()[0]['slug'], 'front_author' => $data->authors()[0]['slug'],
-            'front_category' => $data->categories()[0]['slug'], 'front_tag' => $data->tags()[0]['slug'], 'front_page' => 'about',
+            'front_category' => $data->categories()[0]['slug'], 'front_tag' => $data->tags()[0]['slug'], 'front_page' => 'about', 'front_page_show' => 'about',
             'front_category_feed' => $data->categories()[0]['slug'],
         ];
 
@@ -49,6 +49,16 @@ final class UiRouteCrawlerTest extends AdminTestCase
         self::assertNotNull($campaign);
         $ad = self::getContainer()->get(\App\Repository\AdvertisementRepository::class)->findOneBy([]);
         self::assertNotNull($ad);
+        $menu = self::getContainer()->get(\App\Repository\MenuRepository::class)->findOneBy([]);
+        self::assertNotNull($menu);
+        $menuItem = self::getContainer()->get(\App\Repository\MenuItemRepository::class)->findOneBy([]);
+        self::assertNotNull($menuItem);
+        $page = self::getContainer()->get(\App\Repository\PageRepository::class)->findOneBy([]);
+        self::assertNotNull($page);
+        $role = self::getContainer()->get(\App\Repository\RoleRepository::class)->findOneBy([]);
+        self::assertNotNull($role);
+        $adminUser = self::getContainer()->get(\App\Repository\UserRepository::class)->findOneBy([]);
+        self::assertNotNull($adminUser);
         $revision = (new ArticleRevision())
             ->setArticle($article)
             ->setTitle($article->getTitle())
@@ -65,7 +75,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
             if ([] !== $route->getMethods() && !in_array('GET', $route->getMethods(), true)) {
                 continue;
             }
-            if (str_ends_with($name, '_autocomplete') || str_ends_with($name, '_picker') || str_contains($name, 'feed') || str_contains($name, 'sitemap') || str_contains($name, 'newsletter_confirm') || str_contains($name, 'newsletter_unsubscribe') || str_ends_with($name, '_export') || 'front_robots' === $name) {
+            if ('admin_profile_index' === $name || str_ends_with($name, '_autocomplete') || str_ends_with($name, '_picker') || str_contains($name, 'feed') || str_contains($name, 'sitemap') || str_contains($name, 'newsletter_confirm') || str_contains($name, 'newsletter_unsubscribe') || str_ends_with($name, '_export') || 'front_robots' === $name) {
                 continue;
             }
             $parameters = [];
@@ -79,9 +89,14 @@ final class UiRouteCrawlerTest extends AdminTestCase
                         str_starts_with($name, 'admin_comment_') => $comment->getId(),
                         'admin_newsletter_edit' === $name => $campaign->getId(),
                         'admin_ad_edit' === $name => $ad->getId(),
+                        'admin_menu_edit' === $name => $menu->getId(),
+                        'admin_page_edit' === $name => $page->getId(),
+                        'admin_user_edit' === $name => $adminUser->getId(),
+                        'admin_role_edit' === $name => $role->getId(),
                         default => 1,
                     },
                     'revision' => $revision->getId(),
+                    'itemId' => $menuItem->getId(),
                     'slug' => $slugs[$name],
                     'code' => 404,
                     '_format' => 'html',
@@ -89,7 +104,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
                 };
             }
             $paths[$router->generate($name, $parameters)] = match ($name) {
-                'admin_permission_denied' => 403, '_preview_error' => 404, 'front_maintenance_preview' => 503,
+                'admin_permission_denied' => 403, 'admin_profile_index' => 302, '_preview_error' => 404, 'front_maintenance_preview' => 503,
                 default => 200,
             };
         }
