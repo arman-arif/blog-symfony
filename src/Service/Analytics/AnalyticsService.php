@@ -106,7 +106,10 @@ final readonly class AnalyticsService
             $ids = array_column($topRows, 'articleId');
             $articles = [];
             foreach ($this->articles->findByIdsForAnalytics($ids) as $article) {
-                $articles[$article->getId()] = $article;
+                $articleId = $article->getId();
+                if (null !== $articleId) {
+                    $articles[$articleId] = $article;
+                }
             }
             $commentCounts = $this->comments->countsApprovedByArticleIds($ids);
             $bookmarkCounts = $this->bookmarks->countsByArticleIds($ids);

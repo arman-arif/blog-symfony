@@ -72,7 +72,7 @@ final readonly class DatabaseSettingsService implements SettingsServiceInterface
         foreach (SettingsCatalog::fieldsForGroup($group) as $key => $field) {
             $value = $this->get($key);
             if ('order' === $field['type']) {
-                $value = implode(', ', is_array($value) ? $value : []);
+                $value = implode(', ', is_array($value) ? array_map(static fn (mixed $part): string => is_scalar($part) ? (string) $part : '', $value) : []);
             }
             if ('password' === $field['type']) {
                 $value = '';
@@ -93,9 +93,11 @@ final readonly class DatabaseSettingsService implements SettingsServiceInterface
             }
             $value = $values[$formName];
             if ('order' === $field['type']) {
-                $value = is_array($value) ? array_values($value) : array_values(array_filter(array_map(trim(...), explode(',', (string) $value))));
+                $value = is_array($value)
+                    ? array_values($value)
+                    : array_values(array_filter(array_map(static fn (mixed $part): string => trim((string) $part), explode(',', is_scalar($value) ? (string) $value : ''))));
                 $allowed = ['hero', 'latest', 'favorites', 'categories', 'stories', 'recommended', 'authors'];
-                $value = array_values(array_filter($value, static fn (string $section): bool => in_array($section, $allowed, true)));
+                $value = array_values(array_filter($value, static fn (mixed $section): bool => is_string($section) && in_array($section, $allowed, true)));
             }
             if ('multiple' === $field['type']) {
                 $value = is_array($value) ? array_values($value) : [];
@@ -106,7 +108,7 @@ final readonly class DatabaseSettingsService implements SettingsServiceInterface
 
             $setting = $this->settings->findOneByKey($key) ?? (new Setting())->setKey($key);
             $setting->setGroupName($group)->setIsSensitive((bool) ($field['sensitive'] ?? false));
-            $setting->setValue(['value' => ($field['sensitive'] ?? false) ? $this->encryption->encrypt((string) $value) : $value]);
+            $setting->setValue(['value' => ($field['sensitive'] ?? false) ? $this->encryption->encrypt(is_scalar($value) ? (string) $value : '') : $value]);
             $this->entityManager->persist($setting);
         }
         $this->entityManager->flush();

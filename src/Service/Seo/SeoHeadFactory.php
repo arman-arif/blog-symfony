@@ -39,8 +39,8 @@ final readonly class SeoHeadFactory
     /** @return array<string, mixed> */
     public function forRequest(Request $request): array
     {
-        $route = (string) $request->attributes->get('_route');
-        $slug = (string) $request->attributes->get('slug', '');
+        $route = $request->attributes->getString('_route');
+        $slug = $request->attributes->getString('slug');
         $page = max(1, $request->query->getInt('page', 1));
 
         return match ($route) {

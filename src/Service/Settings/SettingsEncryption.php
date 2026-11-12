@@ -16,7 +16,8 @@ final readonly class SettingsEncryption
         #[Autowire('%env(default::SETTINGS_ENCRYPTION_KEY)%')]
         ?string $configuredKey,
     ) {
-        $this->key = hash('sha256', '' !== ($configuredKey ?? '') ? $configuredKey : $secret, true);
+        $keyMaterial = $configuredKey ?? '';
+        $this->key = hash('sha256', '' !== $keyMaterial ? $keyMaterial : $secret, true);
     }
 
     public function encrypt(string $plain): string

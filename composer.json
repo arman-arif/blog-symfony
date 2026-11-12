@@ -101,6 +101,7 @@
             "@lint",
             "@css",
             "@php vendor/bin/phpstan analyse --memory-limit=512M",
+            "@php vendor/bin/phpstan analyse -c phpstan-max.neon --memory-limit=512M",
             "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
             "@test",
             "@composer audit",

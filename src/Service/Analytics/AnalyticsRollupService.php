@@ -22,6 +22,7 @@ final readonly class AnalyticsRollupService
     {
         $since = (new \DateTimeImmutable('today'))->modify('-'.$days.' days');
         $connection = $this->entityManager->getConnection();
+        /** @var list<array{article_id: int|string, day: string, total: int|string}> $rows */
         $rows = $connection->fetchAllAssociative(
             'SELECT article_id, DATE(viewed_at) AS day, COUNT(*) AS total FROM article_view WHERE viewed_at >= :since GROUP BY article_id, DATE(viewed_at)',
             ['since' => $since->format('Y-m-d H:i:s')],
@@ -50,7 +51,8 @@ final readonly class AnalyticsRollupService
     {
         $cutoff = (new \DateTimeImmutable('today'))->modify('-'.$retentionDays.' days');
 
-        $deleted = (int) $this->entityManager->createQueryBuilder()
+        /** @var int|string $deleted */
+        $deleted = $this->entityManager->createQueryBuilder()
             ->delete(\App\Entity\ArticleView::class, 'view')
             ->andWhere('view.viewedAt < :cutoff')
             ->setParameter('cutoff', $cutoff)
@@ -58,6 +60,6 @@ final readonly class AnalyticsRollupService
             ->execute();
         $this->cache->invalidateTags(['analytics']);
 
-        return $deleted;
+        return (int) $deleted;
     }
 }

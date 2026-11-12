@@ -136,13 +136,13 @@ final readonly class CommentService
     {
         $byParent = [];
         foreach ($this->comments->findApprovedFlat($article) as $comment) {
-            $byParent[$comment->getParent()?->getId() ?? 0][] = $comment;
+            $byParent[(int) ($comment->getParent()?->getId() ?? 0)][] = $comment;
         }
 
         $build = function (Comment $comment) use (&$build, $byParent): array {
             return [
                 'comment' => $comment,
-                'replies' => array_map($build, $byParent[$comment->getId()] ?? []),
+                'replies' => array_map($build, $byParent[(int) $comment->getId()] ?? []),
             ];
         };
 

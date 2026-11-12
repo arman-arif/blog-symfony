@@ -230,3 +230,10 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Added `SecurityHardeningTest` (headers/nonce, caching, weak password, 2FA ciphertext) and `PerformanceTest` (bounded queries for public and admin lists with the demo dataset).
 - Tests: full suite passes with 220 tests / 20,415 assertions; PHPStan and CS Fixer clean. Browser checks showed 0 console errors.
 - Known issues: `style-src 'unsafe-inline'` remains for charts/component styles; trusted admin HTML/AdSense content requires trusted operators; HSTS only applies on HTTPS; query budgets are regression guards, not a full profiler benchmark.
+
+### 2026-11-12 — M15 QA consolidation
+- Ran `composer qa` end to end successfully: validation, lints, Tailwind, PHPStan, CS Fixer, PHPUnit, audit and tooling check.
+- Added max-level PHPStan analysis for `src/Service` and `src/Security` (`phpstan-max.neon`) and fixed all resulting issues; full-tree analysis stays at level 6 because test-container helpers intentionally use dynamic access.
+- Generated PCOV Clover coverage: Service 90.6%, Security 81.3%, whole `src` 87.6%, exceeding the ≥70% target. Documented the command in `docs/qa.md`.
+- Verified route/permission/query-budget suites and browser smoke paths (desktop dropdown, search, public/admin mobile drawers, quick create/draft) with 0 console errors under CSP.
+- Tests: 220 / 20,415 assertions. No code-level known issues beyond documented limitations (line coverage only, manual browser smoke, level-6 full-tree typing).

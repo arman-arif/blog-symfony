@@ -37,19 +37,22 @@ final readonly class PublicCatalog
         $categories = $this->categories->findTree();
         $categoryCounts = $this->articles->publishedCountsByCategory();
         foreach ($categories as $category) {
-            $category->setArticleCount($categoryCounts[$category->getId()] ?? 0);
+            $categoryId = $category->getId();
+            $category->setArticleCount(null !== $categoryId ? ($categoryCounts[$categoryId] ?? 0) : 0);
         }
 
         $tags = $this->tags->findBy([], ['name' => 'ASC']);
         $tagCounts = $this->articles->publishedCountsByTag();
         foreach ($tags as $tag) {
-            $tag->setArticleCount($tagCounts[$tag->getId()] ?? 0);
+            $tagId = $tag->getId();
+            $tag->setArticleCount(null !== $tagId ? ($tagCounts[$tagId] ?? 0) : 0);
         }
 
         $authors = $this->users->findBy(['isActive' => true], ['displayName' => 'ASC']);
         $authorCounts = $this->articles->publishedCountsByAuthor();
         foreach ($authors as $author) {
-            $author->setArticleCount($authorCounts[$author->getId()] ?? 0);
+            $authorId = $author->getId();
+            $author->setArticleCount(null !== $authorId ? ($authorCounts[$authorId] ?? 0) : 0);
         }
 
         return ['categories' => $categories, 'tags' => $tags, 'authors' => $authors];
@@ -109,7 +112,7 @@ final readonly class PublicCatalog
             $recommended = array_map(static fn (Article $article): ?int => $article->getId(), array_slice($latest, 4, 3));
 
             return [
-                'latest' => array_map(static fn (Article $article): ?int => $article->getId(), $latest),
+                'latest' => array_map(static fn (Article $article): int => (int) $article->getId(), $latest),
                 'popular' => $popularIds,
                 'trending' => $trendingIds,
                 'recommended' => $recommended,
@@ -118,9 +121,9 @@ final readonly class PublicCatalog
 
         return [
             'articles' => array_slice($this->articles->findPublishedByIds($ids['latest']), 0, 18),
-            'popular' => $this->articles->findPublishedByIds($ids['popular']),
-            'trending' => $this->articles->findPublishedByIds($ids['trending']),
-            'recommended' => $this->articles->findPublishedByIds($ids['recommended']),
+            'popular' => $this->articles->findPublishedByIds(array_map(intval(...), $ids['popular'])),
+            'trending' => $this->articles->findPublishedByIds(array_map(intval(...), $ids['trending'])),
+            'recommended' => $this->articles->findPublishedByIds(array_map(intval(...), $ids['recommended'])),
         ];
     }
 

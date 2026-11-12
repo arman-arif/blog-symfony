@@ -76,7 +76,7 @@ final readonly class MenuService
     {
         $byId = [];
         foreach ($menu->getItems() as $item) {
-            $byId[$item->getId()] = $item;
+            $byId[(int) $item->getId()] = $item;
         }
         foreach ($items as $row) {
             $item = $byId[(int) $row['id']] ?? null;

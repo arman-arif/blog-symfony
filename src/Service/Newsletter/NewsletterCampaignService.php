@@ -94,6 +94,7 @@ final readonly class NewsletterCampaignService
     public function sendDueCampaigns(?\DateTimeImmutable $now = null): int
     {
         $now ??= new \DateTimeImmutable();
+        /** @var list<NewsletterCampaign> $due */
         $due = $this->campaigns->createQueryBuilder('campaign')
             ->andWhere('campaign.status = :status')
             ->andWhere('campaign.scheduledAt IS NOT NULL')
