@@ -9,6 +9,7 @@ Target: **MySQL 8.4** with `utf8mb4`. Development in this workspace uses the own
 | `Version20261112110620` | Identity, access, settings | Users, roles, permissions, settings, redirects, activity log, Messenger table |
 | `Version20261112110744` | Content | Media, taxonomy, articles, revisions, pages, menus, advertisements, user avatar relation |
 | `Version20261112110829` | Engagement and email | Comments, likes, bookmarks, views, daily stats, subscribers, campaigns |
+| `Version20261112114159` | Account recovery | `reset_password_request` selector/token pairs with a cascading user relation |
 
 Every migration was generated from attribute mapping and verified up, down and up again on a fresh empty database.
 
@@ -38,6 +39,7 @@ erDiagram
     USER ||--o{ ARTICLE_LIKE : likes
     USER ||--o{ ARTICLE_BOOKMARK : saves
     USER ||--o{ ACTIVITY_LOG : performs
+    USER ||--o{ RESET_PASSWORD_REQUEST : requests
     MEDIA ||--o{ ARTICLE : featured_image
     MEDIA ||--o{ CATEGORY : image
     MEDIA ||--o{ ADVERTISEMENT : creative
@@ -230,6 +232,14 @@ erDiagram
         string setting_group
         bool is_sensitive
     }
+    RESET_PASSWORD_REQUEST {
+        int id PK
+        int user_id FK
+        string selector
+        string hashed_token
+        datetime requested_at
+        datetime expires_at
+    }
     REDIRECT {
         int id PK
         string source_path UK
@@ -259,6 +269,7 @@ erDiagram
 - `article_like UNIQUE(article_id, user_id)` and `article_bookmark UNIQUE(article_id, user_id)` make duplicate engagement impossible.
 - `media.storage_key`, `menu.location`, `setting.setting_key`, `redirect.source_path`, subscriber `email`/`token` and all slugs are unique.
 - `activity_log(created_at)` supports the audit feed.
+- `reset_password_request(user_id)` supports lookup and cascades when a user is removed.
 
 ## Fixtures and factories
 

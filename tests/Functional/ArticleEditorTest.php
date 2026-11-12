@@ -6,12 +6,11 @@ namespace App\Tests\Functional;
 
 use App\Mock\MockDataProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\TerminableInterface;
 
-final class ArticleEditorTest extends WebTestCase
+final class ArticleEditorTest extends AdminTestCase
 {
     /** @return iterable<string, array{string, int}> */
     public static function pages(): iterable
@@ -131,14 +130,15 @@ final class ArticleEditorTest extends WebTestCase
         }
     }
 
-    public function testNewEditorRoutesAreUnavailableInProduction(): void
+    public function testEditorRoutesRequireAuthenticationInProduction(): void
     {
         $kernel = self::bootKernel(['environment' => 'prod', 'debug' => false]);
         self::assertInstanceOf(TerminableInterface::class, $kernel);
         foreach (['/admin/articles/new', '/admin/articles/31/edit', '/admin/articles/31/preview', '/admin/articles/31/revisions', '/admin/articles/31/revisions/311/compare'] as $path) {
             $request = Request::create($path);
             $response = $kernel->handle($request);
-            self::assertSame(404, $response->getStatusCode());
+            self::assertSame(302, $response->getStatusCode());
+            self::assertStringContainsString('/login', (string) $response->headers->get('Location'));
             $kernel->terminate($request, $response);
         }
     }

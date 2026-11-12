@@ -16,7 +16,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 1 | M1.8 | UI Audit & Sign-off | Completed | Mock UI engineering audit complete; human approval still required before M2 |
 | 2 | M2 | Backend Architecture | Completed | Dev/test/prod boot, Doctrine, cache pools, messenger, logging, typed settings defaults verified |
 | 3 | M3 | Database | Completed | 22 entities + embeddable, 3 reversible migrations, fixtures and repository tests verified |
-| 4 | M4 | Authentication & Authorization | Pending | |
+| 4 | M4 | Authentication & Authorization | Completed | Entity auth, reset/verify, TOTP 2FA, voters, permission matrix, locked admin verified |
 | 5 | M5 | Core CMS | Pending | |
 | 6 | M6 | Media Management | Pending | |
 | 7 | M7 | Public Website Integration | Pending | |
@@ -137,3 +137,12 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Tests: full PHPUnit suite passes with 266 tests / 46,729 assertions, including repository coverage for published filtering, soft delete, duplicate-like rejection, approved-comment filtering, nested category bounds, role/permission exposure and subscriber tokens. Mapping validation, schema sync, container/Twig lint and PHPStan level 6 pass.
 - Known issues: this workspace verifies against MariaDB 12.3; MySQL 8.4 parity remains an M16 deployment check. Full-text search indexes are added in M7 with the search implementation.
 - Decisions: roles and permissions are data seeded idempotently, never hardcoded in authorization logic; JSON columns are limited to genuinely flexible payloads; category hierarchy uses Gedmo nested set rather than a custom parent walk.
+
+### 2026-11-12 — M4 authentication and authorization
+- Implemented entity-backed authentication on a single `main` firewall: login with CSRF, remember-me and 5/minute throttling; CSRF-protected logout; inactive/soft-deleted user rejection; `lastLoginAt` and audit logging. Removed the temporary `APP_UI_PREVIEW` gate entirely.
+- Added settings-gated registration with signed email verification, expiring/throttled password reset tokens (`reset_password_request` migration), profile editing, password change and optional TOTP enrollment, login challenge and disable flows.
+- Added `PermissionVoter`, `ArticleVoter`, `CommentVoter` and `UserVoter`; locked `/admin` to `admin.access`; applied per-module `#[IsGranted]` checks; filtered administration navigation by permission; added the idempotent `app:security:sync-permissions` command with the canonical 31-permission/5-role catalog.
+- Tests: full suite passes with 282 tests / 46,913 assertions. New coverage exercises login success/failure, inactive accounts, required 2FA, logout, registration + verification email, password reset, TOTP enrollment and challenge, anonymous admin redirects, navigation filtering, and a five-role × fourteen-route permission matrix with expected 200/403 results.
+- Fixed during verification: Symfony 8 voter/user-checker signatures, permission voter support for access-control requests, explicit logout route registration, preview-form test exclusion for the real logout form, and test settings/mailer wiring.
+- Known issues: TOTP secrets are stored as plaintext columns until the M14 encryption hardening; admin module screens still render M1 fixtures until M5/M7 connect persistence; registration is disabled by default and must be enabled by an administrator in M13.
+- Decisions: one main firewall plus access control is simpler and avoids duplicated 2FA configuration; permissions remain data-driven strings; Super Administrator bypasses granular checks; deployment must run the permission sync command.

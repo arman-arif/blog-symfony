@@ -7,8 +7,10 @@ namespace App\Controller\Admin;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/newsletter', name: 'admin_newsletter_')]
+#[IsGranted('newsletter.manage')]
 final class NewsletterController extends ContentPreviewController
 {
     #[Route('', name: 'index', methods: ['GET'])]

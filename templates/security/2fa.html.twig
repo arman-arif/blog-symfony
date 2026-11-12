@@ -1,0 +1,17 @@
+{% extends 'security/layout.html.twig' %}
+{% block title %}Two-factor verification · Fieldnotes{% endblock %}
+{% block page_title %}Two-factor verification{% endblock %}
+{% block eyebrow %}One more step{% endblock %}
+{% block heading %}Confirm it’s you.{% endblock %}
+{% block intro %}Enter the six-digit code from your authenticator app.{% endblock %}
+{% block content %}
+<form method="post" action="{{ path('2fa_login_check') }}" data-component="validate">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('two_factor') }}">
+    <div class="mb-5">
+        <label class="field-label" for="auth-code">Authentication code</label>
+        <input class="field-control" type="text" id="auth-code" name="_auth_code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus>
+    </div>
+    <twig:Button type="submit" class="w-full">Verify and continue</twig:Button>
+</form>
+{% endblock %}
+{% block footer %}<form method="post" action="{{ path('app_logout') }}" class="inline"><input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}"><button type="submit" class="font-semibold text-brand underline underline-offset-4">Cancel and sign out</button></form>{% endblock %}

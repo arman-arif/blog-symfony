@@ -1,0 +1,9 @@
+{% extends 'emails/layout.html.twig' %}
+{% block title %}Confirm your account{% endblock %}
+{% block content %}
+<h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:24px;color:#1f2a24;">Confirm your email address</h1>
+<p>Hello {{ user.displayName }},</p>
+<p>Thanks for joining {{ siteName }}. Confirm your email address to finish setting up your reader account.</p>
+<p style="margin:28px 0;"><a href="{{ signedUrl }}" style="display:inline-block;background:#1c5b45;color:#ffffff;text-decoration:none;padding:13px 22px;border-radius:6px;font-weight:bold;">Confirm email address</a></p>
+<p>This link expires in one hour. If it has expired, you can request a new one from the sign-in page.</p>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'security/layout.html.twig' %}
+{% block title %}Sign in · Fieldnotes{% endblock %}
+{% block page_title %}Sign in{% endblock %}
+{% block eyebrow %}Editorial workspace{% endblock %}
+{% block heading %}Welcome back.{% endblock %}
+{% block intro %}Sign in with your staff account to open the editorial workspace.{% endblock %}
+{% block content %}
+{% if error %}
+    <div class="alert alert-danger mb-6" role="alert"><twig:Icon name="alert"/><p>{{ error.messageKey|trans(error.messageData, 'security') }}</p></div>
+{% endif %}
+<form method="post" action="{{ path('app_login') }}" data-component="validate">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+    <div class="mb-5">
+        <label class="field-label" for="username">Email address</label>
+        <input class="field-control" type="email" id="username" name="_username" value="{{ last_username }}" autocomplete="email" required autofocus>
+    </div>
+    <div class="mb-5">
+        <label class="field-label" for="password">Password</label>
+        <input class="field-control" type="password" id="password" name="_password" autocomplete="current-password" required>
+    </div>
+    <label class="mb-6 flex items-center gap-3 text-sm">
+        <input class="h-4 w-4 rounded border-muted text-brand focus:ring-brand" type="checkbox" id="remember_me" name="_remember_me" value="on">
+        Keep me signed in on this device
+    </label>
+    <twig:Button type="submit" class="w-full">Sign in<twig:Icon name="arrow"/></twig:Button>
+</form>
+<p class="mt-6 text-sm"><a class="font-semibold text-brand underline underline-offset-4" href="{{ path('app_forgot_password_request') }}">Forgot your password?</a></p>
+{% endblock %}
+{% block footer %}Need an account? <a class="font-semibold text-brand underline underline-offset-4" href="{{ path('app_register') }}">Create a reader account</a>.{% endblock %}

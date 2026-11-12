@@ -1,0 +1,16 @@
+{% extends 'security/layout.html.twig' %}
+{% block title %}Create an account · Fieldnotes{% endblock %}
+{% block page_title %}Register{% endblock %}
+{% block eyebrow %}Join the journal{% endblock %}
+{% block heading %}A little more curiosity.{% endblock %}
+{% block intro %}Create a reader account to save stories, join conversations and manage your preferences.{% endblock %}
+{% block content %}
+{{ form_start(form) }}
+{{ form_row(form.displayName) }}
+{{ form_row(form.email) }}
+{{ form_row(form.plainPassword.first) }}
+{{ form_row(form.plainPassword.second) }}
+<twig:Button type="submit" class="w-full">Create account<twig:Icon name="arrow"/></twig:Button>
+{{ form_end(form) }}
+{% endblock %}
+{% block footer %}Already registered? <a class="font-semibold text-brand underline underline-offset-4" href="{{ path('app_login') }}">Sign in</a>.{% endblock %}

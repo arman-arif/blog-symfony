@@ -1,0 +1,68 @@
+{% extends 'security/layout.html.twig' %}
+{% block title %}My account · Fieldnotes{% endblock %}
+{% block page_title %}My account{% endblock %}
+{% block width %}max-w-3xl{% endblock %}
+{% block eyebrow %}Reader and staff account{% endblock %}
+{% block heading %}Hello, {{ user.displayName }}.{% endblock %}
+{% block intro %}Manage your profile, password and two-factor authentication.{% endblock %}
+{% block content %}
+<section aria-labelledby="profile-heading">
+    <h2 id="profile-heading" class="font-display text-2xl">Profile details</h2>
+    <p class="mt-2 text-sm text-muted">Your display name and biography appear on published stories.</p>
+    <div class="mt-6">
+        {{ form_start(profileForm, {action: path('app_profile')}) }}
+        {{ form_row(profileForm.displayName) }}
+        {{ form_row(profileForm.email) }}
+        {{ form_row(profileForm.jobTitle) }}
+        {{ form_row(profileForm.bio) }}
+        <twig:Button type="submit">Save profile</twig:Button>
+        {{ form_end(profileForm) }}
+    </div>
+</section>
+
+<section class="mt-10 border-t border-line pt-8" aria-labelledby="password-heading">
+    <h2 id="password-heading" class="font-display text-2xl">Change password</h2>
+    <p class="mt-2 text-sm text-muted">Use at least 10 characters. Changing your password does not sign out other devices.</p>
+    <div class="mt-6">
+        {{ form_start(passwordForm, {action: path('app_profile_password')}) }}
+        {{ form_row(passwordForm.currentPassword) }}
+        {{ form_row(passwordForm.newPassword.first) }}
+        {{ form_row(passwordForm.newPassword.second) }}
+        <twig:Button type="submit" variant="secondary">Update password</twig:Button>
+        {{ form_end(passwordForm) }}
+    </div>
+</section>
+
+<section id="two-factor" class="mt-10 border-t border-line pt-8" aria-labelledby="two-factor-heading">
+    <h2 id="two-factor-heading" class="font-display text-2xl">Two-factor authentication</h2>
+    {% if user.totpAuthenticationEnabled %}
+        <p class="mt-2 text-sm text-muted">Authenticator-app verification is <span class="badge badge-success">enabled</span>. You will be asked for a six-digit code after signing in.</p>
+        <form method="post" action="{{ path('app_profile_2fa_disable') }}" class="mt-6">
+            <input type="hidden" name="_token" value="{{ csrf_token('2fa_disable') }}">
+            <twig:Button type="submit" variant="danger">Disable two-factor authentication</twig:Button>
+        </form>
+    {% elseif pendingSecret %}
+        <p class="mt-2 text-sm text-muted">Add this setup key to your authenticator app, then confirm the six-digit code below. The key is shown only during setup.</p>
+        <div class="mt-4 rounded-control border border-line bg-canvas p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Setup key</p>
+            <code class="mt-2 block break-all text-sm" data-totp-secret>{{ pendingSecret }}</code>
+            {% if qrContent %}<p class="mt-3 break-all text-xs text-muted">otpauth URI: <code>{{ qrContent }}</code></p>{% endif %}
+        </div>
+        <form method="post" action="{{ path('app_profile_2fa_confirm') }}" class="mt-6" data-component="validate">
+            <input type="hidden" name="_token" value="{{ csrf_token('2fa_confirm') }}">
+            <div class="mb-5">
+                <label class="field-label" for="totp-code">Six-digit code</label>
+                <input class="field-control" id="totp-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+            </div>
+            <twig:Button type="submit">Confirm and enable</twig:Button>
+        </form>
+    {% else %}
+        <p class="mt-2 text-sm text-muted">Protect your account with an authenticator app. Two-factor authentication is optional until an administrator requires it.</p>
+        <form method="post" action="{{ path('app_profile_2fa_start') }}" class="mt-6">
+            <input type="hidden" name="_token" value="{{ csrf_token('2fa_start') }}">
+            <twig:Button type="submit" variant="secondary">Set up two-factor authentication</twig:Button>
+        </form>
+    {% endif %}
+    <p class="mt-4 text-xs text-muted">A QR code is not generated locally; copy the setup key or otpauth URI into your authenticator app.</p>
+</section>
+{% endblock %}

@@ -19,6 +19,8 @@ services:
     App\:
         resource: '../src/'
 
+    App\Service\Settings\SettingsServiceInterface: '@App\Service\Settings\DefaultSettingsService'
+
     # A runtime-selected adapter needs a factory; cache pools replace the namespace argument.
     app.optional_redis_adapter:
         class: Symfony\Component\Cache\Adapter\AdapterInterface
@@ -31,3 +33,10 @@ when@test:
             resource: '%kernel.project_dir%/tests/Factory/'
             autowire: true
             autoconfigure: true
+        App\Tests\Support\:
+            resource: '%kernel.project_dir%/tests/Support/'
+            autowire: true
+            autoconfigure: true
+        App\Tests\Support\InMemorySettingsService:
+            public: true
+        App\Service\Settings\SettingsServiceInterface: '@App\Tests\Support\InMemorySettingsService'

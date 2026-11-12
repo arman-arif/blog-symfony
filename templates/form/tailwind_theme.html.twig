@@ -1,0 +1,68 @@
+{% block form_row %}
+    <div class="mb-5">
+        {{ form_label(form) }}
+        {{ form_widget(form) }}
+        {{ form_help(form) }}
+        {{ form_errors(form) }}
+    </div>
+{% endblock %}
+
+{% block form_label %}
+    {% if label is not same as(false) %}
+        <label for="{{ id }}" class="field-label">{{ label|default(name|humanize) }}{% if required %}<span class="text-danger" aria-hidden="true"> *</span>{% endif %}</label>
+    {% endif %}
+{% endblock %}
+
+{% block form_help %}
+    {% if help is not empty %}<p id="{{ id }}-help" class="field-help">{{ help }}</p>{% endif %}
+{% endblock %}
+
+{% block form_errors %}
+    {% if errors|length > 0 %}
+        <ul id="{{ id }}-error" class="field-error" role="alert">
+            {% for error in errors %}<li>{{ error.message }}</li>{% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}
+
+{% block form_widget_simple %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' field-control')|trim}) %}
+    {% set attr = errors|length > 0 ? attr|merge({'aria-invalid': 'true', 'aria-describedby': id ~ '-error'}) : attr %}
+    <input type="{{ type|default('text') }}" {{ block('widget_attributes') }}{% if value is not empty %} value="{{ value }}"{% endif %}>
+{% endblock %}
+
+{% block textarea_widget %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' field-control')|trim}) %}
+    {% set attr = errors|length > 0 ? attr|merge({'aria-invalid': 'true', 'aria-describedby': id ~ '-error'}) : attr %}
+    <textarea {{ block('widget_attributes') }}>{{ value }}</textarea>
+{% endblock %}
+
+{% block choice_widget_collapsed %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' field-control')|trim}) %}
+    <select {{ block('widget_attributes') }}{% if multiple %} multiple="multiple"{% endif %}>
+        {% if placeholder is not none and placeholder is not same as(false) %}<option value="">{{ placeholder|trans({}, translation_domain) }}</option>{% endif %}
+        {% for choice in choices %}
+            <option value="{{ choice.value }}"{% if choice.attr %}{% for attrname, attrvalue in choice.attr %} {{ attrname }}="{{ attrvalue }}"{% endfor %}{% endif %}{% if choice is selectedchoice(value) %} selected="selected"{% endif %}>{{ choice.label|trans({}, translation_domain) }}</option>
+        {% endfor %}
+    </select>
+{% endblock %}
+
+{% block checkbox_row %}
+    <div class="mb-5 flex items-start gap-3">
+        {{ form_widget(form) }}
+        <div>
+            {{ form_label(form) }}
+            {{ form_help(form) }}
+            {{ form_errors(form) }}
+        </div>
+    </div>
+{% endblock %}
+
+{% block checkbox_widget %}
+    <input type="checkbox" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %} class="mt-1 h-4 w-4 rounded border-muted text-brand focus:ring-brand">
+{% endblock %}
+
+{% block repeated_row %}
+    {{ form_row(form.first) }}
+    {{ form_row(form.second) }}
+{% endblock %}

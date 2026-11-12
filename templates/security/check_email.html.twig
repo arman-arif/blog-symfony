@@ -1,0 +1,10 @@
+{% extends 'security/layout.html.twig' %}
+{% block title %}Check your email · Fieldnotes{% endblock %}
+{% block page_title %}Check your email{% endblock %}
+{% block eyebrow %}Account recovery{% endblock %}
+{% block heading %}The link is on its way.{% endblock %}
+{% block intro %}If an account exists for that address, a password reset link is waiting in your inbox. The link expires in one hour.{% endblock %}
+{% block content %}
+<p class="text-sm leading-relaxed text-muted">Didn’t receive it? Check your spam folder, or <a class="font-semibold text-brand underline underline-offset-4" href="{{ path('app_forgot_password_request') }}">request another link</a>.</p>
+{% endblock %}
+{% block footer %}<a class="font-semibold text-brand underline underline-offset-4" href="{{ path('app_login') }}">Return to sign in</a>{% endblock %}

@@ -17,6 +17,7 @@
     </head>
     <body>
         <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-5 focus:top-5 focus:z-50 focus:rounded-control focus:bg-surface focus:p-4">Skip to content</a>
+        {% include 'partials/flashes.html.twig' %}
         {% block body %}{% endblock %}
         {% include 'partials/feedback.html.twig' %}
     </body>

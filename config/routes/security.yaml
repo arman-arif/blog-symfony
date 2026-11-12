@@ -1,1 +1,1 @@
-# Logout route is registered in M4 together with the authentication firewall.
+# Authentication routes are declared on their controllers; the logout URI is handled by the firewall.

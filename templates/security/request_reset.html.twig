@@ -1,0 +1,13 @@
+{% extends 'security/layout.html.twig' %}
+{% block title %}Reset your password · Fieldnotes{% endblock %}
+{% block page_title %}Reset password{% endblock %}
+{% block eyebrow %}Account recovery{% endblock %}
+{% block heading %}Let’s get you back in.{% endblock %}
+{% block intro %}Enter the email address on your account and we will send a secure reset link.{% endblock %}
+{% block content %}
+{{ form_start(form) }}
+{{ form_row(form.email) }}
+<twig:Button type="submit" class="w-full">Send reset link</twig:Button>
+{{ form_end(form) }}
+{% endblock %}
+{% block footer %}<a class="font-semibold text-brand underline underline-offset-4" href="{{ path('app_login') }}">Return to sign in</a>{% endblock %}

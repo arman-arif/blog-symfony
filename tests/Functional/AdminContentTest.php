@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Mock\AdminPreview;
 use App\Mock\MockDataProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\TerminableInterface;
 
-final class AdminContentTest extends WebTestCase
+final class AdminContentTest extends AdminTestCase
 {
     /** @return list<string> */
     private static function paths(): array
@@ -158,19 +156,24 @@ final class AdminContentTest extends WebTestCase
         }
     }
 
-    public function testContentRoutesRequirePreviewAndAreUnavailableInProduction(): void
+    public function testContentRoutesRequireAuthenticationAndProductionRedirects(): void
     {
-        $client = self::createClient(['debug' => false]);
-        self::getContainer()->set(AdminPreview::class, new AdminPreview(false, 'test'));
-        $client->request('GET', '/admin/categories');
-        self::assertResponseStatusCodeSame(404);
+        self::ensureKernelShutdown();
+        $kernel = self::bootKernel();
+        self::assertInstanceOf(TerminableInterface::class, $kernel);
+        $request = Request::create('/admin/categories');
+        $response = $kernel->handle($request);
+        self::assertSame(302, $response->getStatusCode());
+        self::assertStringContainsString('/login', (string) $response->headers->get('Location'));
+        $kernel->terminate($request, $response);
         self::ensureKernelShutdown();
         $kernel = self::bootKernel(['environment' => 'prod', 'debug' => false]);
         self::assertInstanceOf(TerminableInterface::class, $kernel);
         foreach (self::paths() as $path) {
             $request = Request::create($path);
             $response = $kernel->handle($request);
-            self::assertSame(404, $response->getStatusCode(), $path);
+            self::assertSame(302, $response->getStatusCode(), $path);
+            self::assertStringContainsString('/login', (string) $response->headers->get('Location'));
             $kernel->terminate($request, $response);
         }
     }

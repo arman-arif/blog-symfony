@@ -18,3 +18,6 @@ when@test:
             transports:
                 async: 'in-memory://'
                 failed: 'in-memory://'
+                sync: 'sync://'
+            routing:
+                Symfony\Component\Mailer\Messenger\SendEmailMessage: sync

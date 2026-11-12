@@ -7,8 +7,10 @@ namespace App\Controller\Admin;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/categories', name: 'admin_category_')]
+#[IsGranted('category.manage')]
 final class CategoryController extends ContentPreviewController
 {
     #[Route('', name: 'index', methods: ['GET'])]

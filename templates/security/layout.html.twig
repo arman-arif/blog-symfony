@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+{% block title %}{% block page_title %}Account{% endblock %} · Fieldnotes{% endblock %}
+{% block body %}
+<div class="flex min-h-screen flex-col bg-canvas">
+    <header class="border-b border-line bg-surface">
+        <div class="container-editorial flex h-20 items-center justify-between">
+            <a href="{{ path('front_home') }}" class="font-display text-4xl font-medium tracking-tight" aria-label="Fieldnotes home">fieldnotes<span class="text-accent">.</span></a>
+            <nav class="flex items-center gap-4 text-sm font-semibold" aria-label="Account navigation">
+                <a class="hover:text-brand" href="{{ path('front_home') }}">Back to the journal</a>
+                {% if app.user %}<a class="hover:text-brand" href="{{ path('app_profile') }}">My account</a><form method="post" action="{{ path('app_logout') }}" class="inline"><input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}"><button type="submit" class="font-semibold hover:text-brand">Sign out</button></form>{% endif %}
+            </nav>
+        </div>
+    </header>
+    <main id="main-content" class="container-editorial flex flex-1 items-start justify-center py-10 sm:py-16">
+        <div class="w-full {% block width %}max-w-md{% endblock %}">
+            <p class="eyebrow mb-3">{% block eyebrow %}Your Fieldnotes account{% endblock %}</p>
+            <h1 class="font-display text-4xl tracking-tight sm:text-5xl">{% block heading %}Welcome back.{% endblock %}</h1>
+            <p class="mt-3 text-sm leading-relaxed text-muted">{% block intro %}Sign in to the editorial workspace or manage your reader account.{% endblock %}</p>
+            <div class="card mt-8 p-6 sm:p-8">{% block content %}{% endblock %}</div>
+            <p class="mt-6 text-center text-xs text-muted">{% block footer %}{% endblock %}</p>
+        </div>
+    </main>
+</div>
+{% endblock %}

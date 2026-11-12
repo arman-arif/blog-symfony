@@ -1,6 +1,6 @@
 # Administration preview patterns
 
-The workspace and article routes are available only in dev/test with `APP_UI_PREVIEW=1`. The committed default is off; production returns 404 even if the flag is accidentally enabled. This is **not authentication**. M4 replaces the temporary gate with Security and granular permission voters.
+The workspace routes require an authenticated session with the `admin.access` permission (M4). Each module additionally enforces a granular permission, and the sidebar only renders modules the current user may open. The screens still use presentation fixtures until the corresponding backend modules are connected; that is a data-source limitation, not an access bypass.
 
 ## Shared layout
 

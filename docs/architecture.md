@@ -30,7 +30,7 @@ Future persistence uses normalized MySQL, attribute-mapped Doctrine entities and
 The application boots in `dev`, `test` and `prod` with the same code path. Doctrine ORM 3.7 and Doctrine Migrations 4 are wired against `DATABASE_URL` (utf8mb4, underscore naming, attribute mapping from `src/Entity`). Test runs use DAMA's static connection and the `_test` database suffix.
 
 - **Configuration:** `.env` holds safe defaults only; `DATABASE_URL` has no credentials and is overridden by git-ignored local files. `.env.local.dist` documents the expected overrides. `tools/setup-development.php` can generate protected local credentials for the optional Docker MySQL 8.4/Mailpit/Redis stack; this workspace runs the user-provided local MariaDB 12.3 and Mailpit services instead. MySQL 8 remains the production target and must be verified in M16.
-- **Security:** firewall skeleton for `main` and `admin`, auto password hasher, in-memory placeholder provider. Authentication, voters and the `/admin` access rule arrive in M4; the `security.route_loader.logout` import is deferred with them.
+- **Security:** entity-backed user provider on a single lazy `main` firewall; `/admin` is protected by the `admin.access` permission and every module action has a granular `#[IsGranted]` check. Authentication and authorization are detailed below.
 - **HTTP errors:** `ApiExceptionSubscriber` converts failures below `/api` and `/admin/api` into RFC 9457 `application/problem+json`; HTML errors continue through Twig error templates.
 - **Logging:** Monolog channels `app`, `security`, `mail`, `audit`; JSON output and stderr handlers in production.
 - **Cache:** `cache.app` is filesystem-backed; `cache.content` is tag-aware with a 600 s default lifetime. `cache.redis` selects Redis only when `REDIS_URL` is non-empty, otherwise a filesystem adapter, so the application runs with or without Redis.
@@ -38,3 +38,13 @@ The application boots in `dev`, `test` and `prod` with the same code path. Doctr
 - **Settings:** `SettingsServiceInterface` with typed getters and a default implementation. M13 replaces it with the cached, database-backed implementation without changing consumers.
 - **Quality:** PHPUnit 12 with DAMA rollback, PHPStan level 6, PHP CS Fixer, and a PHP-only tooling guard.
 
+
+## M4 authentication and authorization
+
+- **Identity:** `App\Entity\User` implements Symfony's user, password and TOTP interfaces. The entity provider loads by email; inactive or soft-deleted users are rejected by `App\Security\UserChecker`.
+- **Firewall:** one lazy `main` firewall with form login (`/login`, CSRF, remember-me, 5 attempts/minute throttling), CSRF-protected logout (`POST /logout`), and TOTP two-factor authentication. `access_control` limits `/admin` to `admin.access`; authentication pages are public and `/profile` requires a fully authenticated session.
+- **Account flows:** registration is settings-gated (`registration.enabled`, default off), sends a signed verification link, and marks the address confirmed. Password reset requests use expiring selector/token pairs stored in `reset_password_request`; reset links expire after an hour and are throttled to one per minute. Profile updates, password changes and TOTP enrollment/disable actions are CSRF protected.
+- **Authorization:** permission codes are data (`Permission` ↔ `Role` ↔ `User`). `PermissionVoter` grants dotted codes such as `article.publish`; `ArticleVoter`, `CommentVoter` and `UserVoter` add own-vs-any and higher-role protections. Super Administrators bypass granular checks. Admin navigation hides modules the current user cannot open.
+- **Seeding:** `app:security:sync-permissions` idempotently creates or updates the canonical 31 permissions and five default roles from `PermissionCatalog`. Run it after deployment and after permission changes.
+- **Audit:** successful login updates `lastLoginAt` and writes a `user.login` activity entry; logout, registration, verification, password reset and TOTP changes are also recorded. Monolog channel `audit` receives the same events.
+- **Test strategy:** real entity users exercise login/logout, inactive accounts, registration + verification, reset, required 2FA and the full enrollment challenge. A role × route matrix asserts 200/403 access for all five default roles.

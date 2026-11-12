@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Settings;
 
-use Symfony\Component\DependencyInjection\Attribute\AsAlias;
-
 /** M2 defaults only. M13 supplies the cached, persisted implementation of the same contract. */
-#[AsAlias(SettingsServiceInterface::class)]
 final readonly class DefaultSettingsService implements SettingsServiceInterface
 {
     public const array DEFAULTS = [

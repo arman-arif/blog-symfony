@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\Mock\MockDataProvider;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Routing\RouterInterface;
 
-final class UiRouteCrawlerTest extends WebTestCase
+final class UiRouteCrawlerTest extends AdminTestCase
 {
     public function testEveryUiRouteAndItsInternalLinks(): void
     {
