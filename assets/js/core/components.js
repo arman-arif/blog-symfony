@@ -16,6 +16,11 @@ const loaders = {
   editor: () => import('../admin/editor.js'),
   'article-form': () => import('../admin/article-form.js'),
   'media-picker': () => import('../admin/media-picker.js'),
+  'content-form': () => import('../admin/content-form.js'),
+  'media-library': () => import('../admin/media-library.js'),
+  moderation: () => import('../admin/moderation.js'),
+  'menu-builder': () => import('../admin/menu-builder.js'),
+  'ad-form': () => import('../admin/ad-form.js'),
 };
 const initialized = new WeakMap();
 export async function enhance(root) {

@@ -1,7 +1,7 @@
 {% set route = app.request.attributes.get('_route') %}
 {% set groups = [
     {name: 'Workspace', items: [{label: 'Dashboard', route: 'admin_dashboard_index', icon: 'grid'}, {label: 'Articles', route: 'admin_article_index', icon: 'edit'}]},
-    {name: 'Content', items: [{label: 'Categories & tags', icon: 'list'}, {label: 'Media library', icon: 'image'}, {label: 'Comments', icon: 'mail'}, {label: 'Static pages', icon: 'copy'}, {label: 'Navigation menus', icon: 'menu'}, {label: 'Advertisements', icon: 'image'}]},
+    {name: 'Content', items: [{label: 'Categories', route: 'admin_category_index', icon: 'list'}, {label: 'Tags', route: 'admin_tag_index', icon: 'list'}, {label: 'Media library', route: 'admin_media_index', icon: 'image'}, {label: 'Comments', route: 'admin_comment_index', icon: 'mail'}, {label: 'Static pages', route: 'admin_page_index', icon: 'copy'}, {label: 'Navigation menus', route: 'admin_menu_index', icon: 'menu'}, {label: 'Advertisements', route: 'admin_ad_index', icon: 'image'}]},
     {name: 'Audience', items: [{label: 'Newsletter', icon: 'mail'}, {label: 'Analytics', icon: 'chart'}, {label: 'Users & roles', icon: 'user'}]},
     {name: 'System', items: [{label: 'Appearance', icon: 'sun'}, {label: 'SEO & settings', icon: 'settings'}, {label: 'Activity logs', icon: 'clock'}]}
 ] %}

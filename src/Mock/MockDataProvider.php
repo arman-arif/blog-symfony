@@ -35,6 +35,7 @@ final class MockDataProvider
             'description' => 'Fresh perspectives, practical ideas and stories worth your time from the world of '.strtolower($name).'.',
             'parent' => $id > 5 ? ['id' => 1, 'name' => 'Design', 'slug' => 'design'] : null,
             'image' => $this->media()[$id % 6], 'articleCount' => $id < 6 ? 5 : 2,
+            'seo' => ['title' => $name, 'description' => '', 'noindex' => false],
         ], $names, array_keys($names));
     }
 
@@ -43,7 +44,7 @@ final class MockDataProvider
     {
         $names = ['Creativity', 'Slow living', 'Web design', 'AI', 'Sustainability', 'Architecture', 'Photography', 'Books', 'Travel', 'Community', 'Mindfulness', 'Remote work', 'Typography', 'Open source', 'Food', 'Gardens', 'Craft', 'Cities', 'Learning', 'Writing', 'Research', 'Accessibility', 'Habits', 'Innovation', 'Interviews'];
 
-        return array_map(fn (string $name, int $id): array => ['id' => $id + 1, 'name' => $name, 'slug' => $this->slug($name), 'description' => 'Stories and perspectives about '.strtolower($name).'.', 'articleCount' => 2 + $id % 8], $names, array_keys($names));
+        return array_map(fn (string $name, int $id): array => ['id' => $id + 1, 'name' => $name, 'slug' => $this->slug($name), 'description' => 'Stories and perspectives about '.strtolower($name).'.', 'articleCount' => 2 + $id % 8, 'seo' => ['title' => $name, 'description' => '', 'noindex' => false]], $names, array_keys($names));
     }
 
     /** @return list<array<string, mixed>> */
@@ -251,6 +252,89 @@ final class MockDataProvider
         }
 
         return $pages;
+    }
+
+    /** Entity-shaped fixtures for the content administration screens only.
+     * @return list<array<string, mixed>>
+     */
+    public function contentRecords(string $module): array
+    {
+        return match ($module) {
+            'category' => $this->categories(),
+            'tag' => $this->tags(),
+            'media' => array_merge(array_map(fn (array $item): array => array_merge($item, ['uploadedBy' => $this->authors()[0]]), $this->media()), [[
+                'id' => 7, 'url' => 'media/editorial-guide.txt', 'filename' => 'editorial-guide.txt', 'originalName' => 'Editorial guide.txt',
+                'alt' => '', 'caption' => 'A short guide for our contributors.', 'mimeType' => 'text/plain', 'size' => 263,
+                'width' => null, 'height' => null, 'createdAt' => new \DateTimeImmutable('2026-11-01'), 'uploadedBy' => $this->authors()[1],
+            ]]),
+            'page' => array_values(array_map(static fn (array $page): array => array_merge($page, ['status' => 'published', 'seo' => ['title' => $page['title'], 'description' => $page['description'], 'noindex' => false]]), $this->pages())),
+            'comment' => $this->moderationComments(),
+            'menu' => $this->menus(),
+            'ad' => $this->advertisements(),
+            default => [],
+        };
+    }
+
+    /** Null id selects an empty, unsaved form; a missing existing id returns null.
+     * @return array<string, mixed>|null
+     */
+    public function contentRecord(string $module, ?int $id): ?array
+    {
+        if (null === $id) {
+            return [
+                'id' => null, 'name' => '', 'title' => '', 'slug' => '', 'description' => '', 'content' => '',
+                'parent' => null, 'image' => null, 'status' => 'draft', 'sections' => [], 'items' => [],
+                'location' => 'header', 'placement' => 'sidebar', 'type' => 'image', 'startsAt' => null, 'endsAt' => null,
+                'isActive' => false, 'priority' => 10, 'seo' => ['title' => '', 'description' => '', 'noindex' => false],
+            ];
+        }
+        foreach ($this->contentRecords($module) as $record) {
+            if ($record['id'] === $id) {
+                return $record;
+            }
+        }
+
+        return null;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function moderationComments(): array
+    {
+        $article = $this->articles()[0];
+        $comments = $this->comments();
+        $records = [$comments[0], $comments[0]['replies'][0], $comments[1]];
+        $records[] = ['id' => 4, 'guestName' => 'Taylor Reed', 'content' => 'This response was removed because it did not follow the community guidelines.', 'status' => 'rejected', 'createdAt' => new \DateTimeImmutable('2026-11-10'), 'parent' => null, 'replies' => []];
+        $records[] = ['id' => 5, 'guestName' => 'Promotion account', 'content' => 'An unsolicited promotional message held in the spam queue.', 'status' => 'spam', 'createdAt' => new \DateTimeImmutable('2026-11-09'), 'parent' => null, 'replies' => []];
+
+        return array_map(static fn (array $comment): array => array_merge($comment, ['article' => $article, 'guestEmail' => 'reader'.$comment['id'].'@example.test', 'reportCount' => 'rejected' === $comment['status'] ? 1 : 0]), $records);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function menus(): array
+    {
+        return [
+            ['id' => 1, 'name' => 'Primary navigation', 'location' => 'header', 'items' => [
+                ['id' => 1, 'label' => 'Journal', 'type' => 'page', 'target' => '/blog', 'parent' => null, 'position' => 0],
+                ['id' => 2, 'label' => 'Design', 'type' => 'category', 'target' => '/categories/design', 'parent' => ['id' => 1], 'position' => 0],
+                ['id' => 3, 'label' => 'Technology', 'type' => 'category', 'target' => '/categories/technology', 'parent' => ['id' => 1], 'position' => 1],
+                ['id' => 4, 'label' => 'Our story', 'type' => 'page', 'target' => '/about', 'parent' => null, 'position' => 1],
+            ]],
+            ['id' => 2, 'name' => 'Reader resources', 'location' => 'footer', 'items' => [
+                ['id' => 5, 'label' => 'Contributors', 'type' => 'page', 'target' => '/authors', 'parent' => null, 'position' => 0],
+                ['id' => 6, 'label' => 'Get in touch', 'type' => 'page', 'target' => '/contact', 'parent' => null, 'position' => 1],
+            ]],
+        ];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function advertisements(): array
+    {
+        return array_map(fn (string $name, int $index): array => [
+            'id' => $index + 1, 'name' => $name, 'placement' => ['sidebar', 'in_article', 'footer'][$index],
+            'type' => ['image', 'html', 'adsense'][$index], 'content' => 1 === $index ? '<p>Support independent writing.</p>' : '',
+            'image' => $this->media()[$index], 'startsAt' => new \DateTimeImmutable('2026-12-01'),
+            'endsAt' => new \DateTimeImmutable('2026-12-31'), 'isActive' => 0 === $index, 'priority' => 10 + $index,
+        ], ['Winter reading collection', 'Independent journal sponsorship', 'Footer network placement'], range(0, 2));
     }
 
     private function slug(string $value): string

@@ -1,0 +1,5 @@
+{% props state = '' %}
+{% if state == 'loading' %}<div class="card p-7" role="status" aria-label="Loading preview"><twig:Skeleton lines="5"/><p class="mt-5 text-sm text-muted">Loading example · no request is in progress.</p></div>
+{% elseif state == 'empty' %}<div class="card p-8"><twig:EmptyState title="A little room for something new" description="This is the empty-state preview. No records have been removed."/><a class="btn btn-secondary mt-5" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')) }}">Return to populated preview</a></div>
+{% elseif state == 'error' %}<twig:Alert tone="danger" title="This preview could not be loaded">A simulated error, not a failed save. <a class="underline" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')) }}">Try again</a>.</twig:Alert>
+{% else %}{% block content %}{% endblock %}{% endif %}

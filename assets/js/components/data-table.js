@@ -115,5 +115,6 @@ export default function dataTable(root) {
   root.querySelector('[data-page-prev]').addEventListener('click', () => { page--; selected.clear(); render(); });
   root.querySelector('[data-page-next]').addEventListener('click', () => { page++; selected.clear(); render(); });
   window.addEventListener('popstate', () => { fromUrl(); selected.clear(); render(false); });
+  root.addEventListener('table:changed', () => { selected.clear(); render(false); });
   fromUrl(); render();
 }

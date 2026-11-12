@@ -1,0 +1,7 @@
+{% props seo = {}, prefix = 'content' %}
+<section class="space-y-5 rounded-control border border-line p-5" aria-labelledby="{{ prefix }}-seo-heading">
+    <h2 class="text-lg font-semibold" id="{{ prefix }}-seo-heading">Search settings</h2>
+    <twig:Field id="{{ prefix }}-seo-title" label="SEO title" help="Leave blank to use the content title."><twig:Input id="{{ prefix }}-seo-title" name="seoTitle" value="{{ seo.title|default('') }}" maxlength="70"/></twig:Field><p class="text-xs text-muted" data-counter-for="{{ prefix }}-seo-title">{{ seo.title|default('')|length }} / 70 characters</p>
+    <twig:Field id="{{ prefix }}-seo-description" label="Meta description"><twig:Textarea id="{{ prefix }}-seo-description" name="seoDescription" value="{{ seo.description|default('') }}" maxlength="160" rows="3"/></twig:Field><p class="text-xs text-muted" data-counter-for="{{ prefix }}-seo-description">{{ seo.description|default('')|length }} / 160 characters</p>
+    <twig:Choice id="{{ prefix }}-noindex" name="noindex" label="Ask search engines not to index this content" checked="{{ seo.noindex|default(false) }}"/>
+</section>

@@ -89,6 +89,10 @@
   .ql-align-center { @apply text-center; }
   .ql-align-right { @apply text-right; }
   .ql-align-justify { @apply text-justify; }
+  .media-results[data-view=list] { @apply grid-cols-1; }
+  .media-results[data-view=list] button { @apply flex items-center; }
+  .media-results[data-view=list] button > img,
+  .media-results[data-view=list] button > span:first-child { @apply w-28 shrink-0; }
   @screen lg {
     .admin-shell.is-collapsed { @apply grid-cols-[5rem_minmax(0,1fr)]; }
     .is-collapsed .admin-sidebar .admin-brand,

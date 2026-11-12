@@ -1,0 +1,31 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}{{ record.id ? 'Edit advertisement' : 'New advertisement' }}{% endblock %}
+{% block breadcrumb %}Advertisements / {{ record.id ? 'Edit' : 'New' }}{% endblock %}
+{% block eyebrow %}Content / Partnerships{% endblock %}
+{% block heading %}A place for the right partnership.{% endblock %}
+{% block intro %}Define a creative, placement and schedule without executing HTML or contacting advertising providers. Nothing is saved or displayed publicly.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_ad_index') }}">All advertisements</twig:Button>{% endblock %}
+{% block content %}
+<twig:PreviewStates state="{{ state }}">
+    <twig:PreviewForm data-component="validate content-form ad-form" successMessage="Advertisement validated locally. No creative was saved or published.">
+        <twig:AdminFormLayout sidebarTitle="Placement & schedule">
+            <div class="space-y-6">
+                <twig:Field id="ad-name" label="Advertisement name" required><twig:Input id="ad-name" name="name" value="{{ record.name }}" required minlength="3" maxlength="120"/></twig:Field>
+                <twig:Field id="ad-type" label="Creative type"><twig:Select id="ad-type" name="type" value="{{ record.type }}" options="{{ {image: 'Image banner', html: 'HTML creative', adsense: 'AdSense / network code'} }}"/></twig:Field>
+                <div data-ad-image-panel><twig:MediaField image="{{ record.image }}" label="Banner image"/></div>
+                <div data-ad-code-panel><twig:Field id="ad-content" label="Creative code" help="Plain text only. Code is never executed in this preview."><twig:Textarea id="ad-content" name="content" value="{{ record.content }}" rows="8" maxlength="10000"/></twig:Field></div>
+                <div class="rounded-control bg-canvas p-5"><p class="eyebrow mb-3">Safe creative preview</p><p class="text-sm text-muted" data-ad-preview>Choose a creative type to preview its configuration.</p><pre class="mt-3 overflow-auto whitespace-pre-wrap break-all text-xs" data-ad-code-preview></pre></div>
+            </div>
+            <twig:block name="sidebar"><div class="space-y-6">
+                <twig:Field id="ad-placement" label="Placement"><twig:Select id="ad-placement" name="placement" value="{{ record.placement }}" options="{{ {header: 'Header', in_article: 'Within an article', sidebar: 'Sidebar', footer: 'Footer'} }}"/></twig:Field>
+                <twig:Field id="ad-start" label="Start date & time" help="UTC preview."><twig:Input id="ad-start" name="startsAt" type="datetime-local" value="{{ record.startsAt ? record.startsAt|date('Y-m-d\\TH:i') : '' }}"/></twig:Field>
+                <twig:Field id="ad-end" label="End date & time"><twig:Input id="ad-end" name="endsAt" type="datetime-local" value="{{ record.endsAt ? record.endsAt|date('Y-m-d\\TH:i') : '' }}"/></twig:Field>
+                <twig:Field id="ad-priority" label="Priority" help="Higher priority is shown first."><twig:Input id="ad-priority" name="priority" type="number" value="{{ record.priority }}" min="0" max="100" required/></twig:Field>
+                <twig:Choice id="ad-active" name="isActive" type="toggle" label="Enable placement" checked="{{ record.isActive }}"/>
+                <twig:Button type="submit">Validate advertisement</twig:Button><p class="text-xs text-muted">Enabling or scheduling only changes form values. No ad network or publishing worker runs.</p>
+            </div></twig:block>
+        </twig:AdminFormLayout>
+    </twig:PreviewForm>
+</twig:PreviewStates>
+{% include 'admin/media/picker.html.twig' %}
+{% endblock %}
