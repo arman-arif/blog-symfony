@@ -24,3 +24,10 @@ services:
         class: Symfony\Component\Cache\Adapter\AdapterInterface
         factory: ['@App\Infrastructure\Cache\OptionalRedisCacheFactory', 'create']
         arguments: ['fieldnotes', 600]
+
+when@test:
+    services:
+        App\Tests\Factory\:
+            resource: '%kernel.project_dir%/tests/Factory/'
+            autowire: true
+            autoconfigure: true

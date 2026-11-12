@@ -15,7 +15,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 1 | M1.7b | Admin System Pages | Completed | Mock audience, access, analytics, settings and profile screens verified |
 | 1 | M1.8 | UI Audit & Sign-off | Completed | Mock UI engineering audit complete; human approval still required before M2 |
 | 2 | M2 | Backend Architecture | Completed | Dev/test/prod boot, Doctrine, cache pools, messenger, logging, typed settings defaults verified |
-| 3 | M3 | Database | Pending | |
+| 3 | M3 | Database | Completed | 22 entities + embeddable, 3 reversible migrations, fixtures and repository tests verified |
 | 4 | M4 | Authentication & Authorization | Pending | |
 | 5 | M5 | Core CMS | Pending | |
 | 6 | M6 | Media Management | Pending | |
@@ -129,3 +129,11 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Tests: full PHPUnit suite passes with 259 tests / 46,713 assertions, including new integration coverage for settings, cache without Redis, Doctrine connectivity, in-memory async transport and problem+json errors. Container/Twig/YAML lint, PHPStan level 6, PHP CS Fixer and Tailwind build pass; dev, test and prod containers boot.
 - Known issues: this workspace verifies against the owner-provided MariaDB 12.3 service; MySQL 8.4 production parity is deferred to M16. Redis-backed mode is configuration-selected but not exercised until a Redis instance is enabled.
 - Decisions: application defaults stay credential-free in `.env`; local overrides are git-ignored. `SettingsServiceInterface` stays the stable consumer contract for the M13 persisted implementation.
+
+### 2026-11-12 — M3 database design and implementation
+- Implemented 22 attribute-mapped entities plus the `SeoMetadata` embeddable and 10 backed enums: users/roles/permissions, articles/revisions, categories (Gedmo nested tree), tags, comments, likes/bookmarks/views/daily stats, media, pages, menus/items, newsletter subscribers/campaigns, advertisements, settings, redirects and activity logs. Timestampable on all entities; soft delete on users, articles, comments, pages and media; unique slugs, engagement constraints and query indexes as documented.
+- Generated three migrations by logical group and verified a full up → down → up cycle on a fresh empty database. Fixed a real down-order defect where `media` was dropped before the `app_user.avatar_id` foreign key was removed.
+- Added `DemoFixtures` reproducing the M1 contract: 6 users, 5 roles, 31 permissions, 8 categories (2 nested), 25 tags, 36 articles (30 published, 6 non-public), 6 media records, 5 moderated comments, 5 pages, 2 menus with 6 items, 3 advertisements, 18 subscribers, 3 campaigns, 5 activity records and 1 redirect. Added seven Foundry factories under `tests/Factory`.
+- Tests: full PHPUnit suite passes with 266 tests / 46,729 assertions, including repository coverage for published filtering, soft delete, duplicate-like rejection, approved-comment filtering, nested category bounds, role/permission exposure and subscriber tokens. Mapping validation, schema sync, container/Twig lint and PHPStan level 6 pass.
+- Known issues: this workspace verifies against MariaDB 12.3; MySQL 8.4 parity remains an M16 deployment check. Full-text search indexes are added in M7 with the search implementation.
+- Decisions: roles and permissions are data seeded idempotently, never hardcoded in authorization logic; JSON columns are limited to genuinely flexible payloads; category hierarchy uses Gedmo nested set rather than a custom parent walk.
