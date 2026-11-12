@@ -1,0 +1,23 @@
+[Unit]
+Description=Fieldnotes scheduler worker
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=fieldnotes
+Group=www-data
+WorkingDirectory=/var/www/fieldnotes
+Environment=APP_ENV=prod
+Environment=APP_DEBUG=0
+EnvironmentFile=-/etc/fieldnotes/fieldnotes.env
+ExecStart=/usr/bin/php /var/www/fieldnotes/bin/console messenger:consume scheduler_default --time-limit=3600 --memory-limit=256M
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=60
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,6 @@
 # Database design
 
-Target: **MySQL 8.4** with `utf8mb4`. Development in this workspace uses the owner-provided MariaDB 12.3 service, and production parity is re-verified in M16. Schema changes are applied only through Doctrine migrations.
+Target: **MySQL 8.4** with `utf8mb4`. M16 verified a fresh MySQL 8.4 migration run and the full test suite (220 tests / 20,415 assertions); MariaDB 12.3 remains the local development service. Schema changes are applied only through Doctrine migrations.
 
 ## Migration groups
 
@@ -14,7 +14,7 @@ Target: **MySQL 8.4** with `utf8mb4`. Development in this workspace uses the own
 | `Version20261112174153` | Redirects | Shorten `redirect.source_path` to 512 chars so its unique index fits MySQL 8/InnoDB limits |
 | `Version20261112185703` | Monetization | Ad destination/paragraph targeting and article sponsored/affiliate/premium flags |
 
-Every migration was generated from attribute mapping and verified up, down and up again on a fresh empty database.
+Every migration was generated from attribute mapping and verified up, down and up again on a fresh empty database. `redirect.source_path` is created as `VARCHAR(512)` from the initial migration so its unique index fits MySQL 8/InnoDB utf8mb4 limits (the later redirect migration remains a no-op for fresh installs).
 
 ## Conventions
 

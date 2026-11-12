@@ -25,16 +25,16 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 10 | M10 | Newsletter | Completed | Double opt-in, campaigns, batching, CSV and scheduler verified |
 | 11 | M11 | Analytics | Completed | Hourly rollups, real dashboard, reports, CSV, cache and 100k-view benchmark verified |
 | 12 | M12 | Monetization | Completed | Ads, sponsorship/affiliate handling and extension interfaces verified |
-| 13 | M13 | Website Settings | Pending | |
-| 14 | M14 | Security & Performance | Pending | |
-| 15 | M15 | Testing | Pending | |
-| 16 | M16 | Deployment & Documentation | Pending | |
+| 13 | M13 | Website Settings | Completed | Persisted settings, appearance, menus, maintenance and full admin completion verified |
+| 14 | M14 | Security & Performance | Completed | CSP/headers, password policy, encrypted TOTP, caching and query budgets verified |
+| 15 | M15 | Testing | Completed | 220 tests, coverage targets, route/permission/query sweeps and QA pipeline green |
+| 16 | M16 | Deployment & Documentation | Completed | README, install/deploy/operations docs, server/worker configs and MySQL 8.4 parity verified |
 
 ## Phase 1 review gate
 
 - **Phase 1 engineering status: Completed** — mock-data interfaces and their audit only.
 - **Human UI approval: Waived by owner instruction** to continue implementation through the remaining phases without stopping.
-- **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are now being implemented in milestone order. Production parity on MySQL 8 still needs a dedicated verification run in M16; this workspace currently uses the owner-provided local MariaDB 12.3 service for development.
+- **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
 
@@ -237,3 +237,10 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Generated PCOV Clover coverage: Service 90.6%, Security 81.3%, whole `src` 87.6%, exceeding the ≥70% target. Documented the command in `docs/qa.md`.
 - Verified route/permission/query-budget suites and browser smoke paths (desktop dropdown, search, public/admin mobile drawers, quick create/draft) with 0 console errors under CSP.
 - Tests: 220 / 20,415 assertions. No code-level known issues beyond documented limitations (line coverage only, manual browser smoke, level-6 full-tree typing).
+
+### 2026-11-12 — M16 deployment and documentation
+- Rewrote `README.md` with features, requirements, quick start, architecture, roles, QA evidence and a documentation map; removed the stale “implementation in progress” claim.
+- Added `docs/installation.md` (clean Ubuntu/Debian, packages, DB, environment, assets, smoke test), `docs/deployment.md` (Nginx/Apache, PHP-FPM, systemd workers, cron fallback, deploy/rollback) and `docs/operations.md` (backups/restore, permissions, cache, queues, upgrades, incident checks) plus `deploy.sh`.
+- Added production samples: `deploy/nginx.conf`, `deploy/apache-vhost.conf`, `deploy/php-fpm/fieldnotes.conf`, `deploy/systemd/fieldnotes-worker@.service` and `deploy/systemd/fieldnotes-scheduler.service`. Web configs deny PHP execution in uploads and expose only `public/`; the deploy script performs install → migrations → Tailwind → AssetMapper → cache warmup → optional worker restart.
+- MySQL 8.4 parity uncovered a portability bug: the initial redirect table used a 2048-char utf8mb4 unique index, rejected by MySQL 8/InnoDB. The initial migration now creates `VARCHAR(512)` (later redirect migration remains safe). A fresh MySQL 8.4 database migrated successfully and the full 220-test suite passed.
+- Documented the operator runbook and MySQL 8.4/MariaDB 12.3 verification. All milestones M0–M16 are now complete.

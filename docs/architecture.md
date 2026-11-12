@@ -124,3 +124,8 @@ The article, category and tag administration screens are now server-backed; rema
 - **Passwords/2FA:** 12-character common-password rejection and encrypted TOTP secrets at rest.
 - **Caching:** public GET caching headers with cookie variation; private responses for authenticated/session requests; tag-based invalidation.
 - **Query budgets:** `PerformanceTest` enforces bounded eager-loaded public and admin queries.
+
+
+## Deployment
+
+Production serves only `public/`, routes `index.php` to PHP-FPM, denies executable uploads and runs two supervised Messenger workers (`async`, `scheduler_default`). `deploy.sh` installs production dependencies, migrates, compiles Tailwind/AssetMapper, warms caches and optionally restarts workers. See `docs/installation.md`, `docs/deployment.md` and `docs/operations.md`.
