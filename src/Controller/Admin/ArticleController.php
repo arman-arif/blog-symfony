@@ -24,9 +24,79 @@ final class ArticleController extends AbstractController
         $this->preview->requireEnabled();
 
         return $this->render('admin/article/index.html.twig', [
-            'currentUser' => $this->data->users()[0], 'articles' => $this->data->articles(),
+            'currentUser' => $this->data->users()[0], 'articles' => array_merge($this->data->articles(), $this->data->trashedArticles()),
             'categories' => $this->data->categories(), 'authors' => $this->data->authors(),
             'state' => $request->query->getString('state'),
         ]);
+    }
+
+    #[Route('/new', name: 'create', methods: ['GET'])]
+    public function create(): Response
+    {
+        $this->preview->requireEnabled();
+
+        return $this->render('admin/article/form.html.twig', $this->formData($this->data->newArticle()));
+    }
+
+    #[Route('/{id}/edit', name: 'edit', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function edit(int $id): Response
+    {
+        $this->preview->requireEnabled();
+
+        return $this->render('admin/article/form.html.twig', $this->formData($this->findArticle($id)));
+    }
+
+    #[Route('/{id}/preview', name: 'preview', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function preview(int $id): Response
+    {
+        $this->preview->requireEnabled();
+
+        return $this->render('admin/article/preview.html.twig', [
+            'currentUser' => $this->data->users()[0], 'article' => $this->findArticle($id),
+        ]);
+    }
+
+    #[Route('/{id}/revisions', name: 'revisions', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function revisions(int $id): Response
+    {
+        $this->preview->requireEnabled();
+
+        return $this->render('admin/article/revisions.html.twig', [
+            'currentUser' => $this->data->users()[0], 'article' => $this->findArticle($id), 'revisions' => $this->data->revisions($id),
+        ]);
+    }
+
+    #[Route('/{id}/revisions/{revision}/compare', name: 'compare', requirements: ['id' => '\d+', 'revision' => '\d+'], methods: ['GET'])]
+    public function compare(int $id, int $revision): Response
+    {
+        $this->preview->requireEnabled();
+        $article = $this->findArticle($id);
+        foreach ($this->data->revisions($id) as $snapshot) {
+            if ($snapshot['id'] === $revision) {
+                return $this->render('admin/article/compare.html.twig', [
+                    'currentUser' => $this->data->users()[0], 'article' => $article, 'revision' => $snapshot,
+                ]);
+            }
+        }
+
+        throw $this->createNotFoundException();
+    }
+
+    /** @return array<string, mixed> */
+    private function findArticle(int $id): array
+    {
+        return $this->data->adminArticle($id) ?? throw $this->createNotFoundException();
+    }
+
+    /** @param array<string, mixed> $article
+     * @return array<string, mixed>
+     */
+    private function formData(array $article): array
+    {
+        return [
+            'currentUser' => $this->data->users()[0], 'article' => $article,
+            'authors' => $this->data->authors(), 'categories' => $this->data->categories(),
+            'tags' => $this->data->tags(), 'media' => $this->data->media(),
+        ];
     }
 }

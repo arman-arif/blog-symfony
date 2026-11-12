@@ -81,7 +81,7 @@ final class MockDataProvider
                 'id' => $id + 1, 'title' => $title, 'slug' => $this->slug($title),
                 'subtitle' => 'Small observations. New perspectives. A more considered way forward.',
                 'excerpt' => 'In a world that asks us to move faster, there is value in pausing to notice. We explore the people, practices and ideas helping us make space for what matters.',
-                'content' => '', 'status' => $status, 'author' => $authors[$id % 6],
+                'content' => '', 'status' => $status, 'visibility' => 'public', 'deletedAt' => null, 'author' => $authors[$id % 6],
                 'categories' => [$categories[$id % 6]], 'tags' => [$tags[$id % 25], $tags[($id + 4) % 25]],
                 'featuredImage' => $media[$id % 6], 'publishedAt' => 'published' === $status ? new \DateTimeImmutable('2026-11-11 -'.$id.' days') : null,
                 'scheduledAt' => 'scheduled' === $status ? new \DateTimeImmutable('2026-12-01') : null,
@@ -93,6 +93,58 @@ final class MockDataProvider
         }
 
         return $articles;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function trashedArticles(): array
+    {
+        return array_map(static fn (array $article, int $index): array => array_merge($article, [
+            'id' => 37 + $index, 'title' => ['An earlier direction for the journal', 'Notes from a retired series'][$index],
+            'slug' => 'retired-preview-'.($index + 1), 'status' => 'draft',
+            'deletedAt' => new \DateTimeImmutable('2026-11-09'),
+        ]), array_slice($this->articles(), 0, 2), range(0, 1));
+    }
+
+    /** @return array<string, mixed>|null */
+    public function adminArticle(int $id): ?array
+    {
+        foreach (array_merge($this->articles(), $this->trashedArticles()) as $article) {
+            if ($article['id'] === $id) {
+                return $article;
+            }
+        }
+
+        return null;
+    }
+
+    /** Empty form values only; does not create an article.
+     * @return array<string, mixed>
+     */
+    public function newArticle(): array
+    {
+        return array_merge($this->articles()[0], [
+            'id' => null, 'title' => '', 'slug' => '', 'subtitle' => '', 'excerpt' => '', 'content' => '',
+            'status' => 'draft', 'publishedAt' => null, 'scheduledAt' => null, 'featuredImage' => null,
+            'categories' => [], 'tags' => [], 'viewCount' => 0, 'likeCount' => 0, 'allowComments' => true,
+            'seo' => ['title' => '', 'description' => '', 'focusKeyword' => '', 'canonicalUrl' => null, 'noindex' => false],
+        ]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function revisions(int $articleId): array
+    {
+        $article = $this->adminArticle($articleId);
+        if (null === $article) {
+            return [];
+        }
+
+        return array_map(static fn (int $index): array => [
+            'id' => $articleId * 10 + $index, 'article' => ['id' => $articleId],
+            'title' => 1 === $index ? 'A first observation from the notebook' : $article['title'],
+            'content' => 1 === $index ? 'Good work begins when we leave enough room to pay attention.' : $article['excerpt'],
+            'createdBy' => $article['author'], 'createdAt' => new \DateTimeImmutable('2026-11-11 15:00 -'.(3 - $index).' hours'),
+            'isAutosave' => 2 === $index,
+        ], range(1, 3));
     }
 
     /** @return list<array<string, mixed>> */

@@ -13,6 +13,9 @@ const loaders = {
   'admin-shell': () => import('../admin/shell.js'),
   'data-table': () => import('../components/data-table.js'),
   charts: () => import('../admin/charts.js'),
+  editor: () => import('../admin/editor.js'),
+  'article-form': () => import('../admin/article-form.js'),
+  'media-picker': () => import('../admin/media-picker.js'),
 };
 const initialized = new WeakMap();
 export async function enhance(root) {

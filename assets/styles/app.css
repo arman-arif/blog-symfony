@@ -70,6 +70,25 @@
   .admin-nav-item svg { @apply shrink-0; }
   .admin-workspace { @apply flex min-h-dvh flex-col; }
   .admin-workspace main { @apply flex-1; }
+  [data-table-tab][aria-current=page] { @apply bg-brand/10 text-brand; }
+  .rich-editor .ql-container.ql-snow { @apply border-line p-0 font-sans text-base; }
+  .rich-editor .ql-editor { @apply min-h-80 p-5 leading-relaxed; overflow-wrap: anywhere; }
+  .rich-editor .ql-editor.ql-blank::before { @apply text-muted; }
+  .rich-editor .ql-editor h2 { @apply my-5 font-display text-2xl; }
+  .rich-editor .ql-editor h3 { @apply my-4 font-display text-xl; }
+  .rich-editor .ql-editor p { @apply mb-3; }
+  .rich-editor .ql-editor a { @apply break-all text-brand underline; }
+  .rich-editor .ql-editor blockquote { @apply border-l-4 border-brand pl-4 text-muted; }
+  .rich-editor .ql-editor .ql-code-block-container { @apply my-4 rounded-control bg-ink p-4 text-sm text-canvas; }
+  .rich-editor .ql-editor table td { @apply border border-line p-2; }
+  .rich-editor .ql-editor figure { @apply my-5; }
+  .rich-editor .ql-editor figure img { @apply h-auto max-w-full rounded-control; }
+  .rich-editor .ql-editor figcaption { @apply mt-2 text-xs text-muted; }
+  .rich-editor .ql-editor .editor-video { @apply rounded-control border border-line bg-canvas p-4 text-sm; }
+  [data-editor-format][aria-pressed=true], [data-editor-list][aria-pressed=true], [data-media-select][aria-pressed=true] { @apply border-brand bg-brand/10 text-brand; }
+  .ql-align-center { @apply text-center; }
+  .ql-align-right { @apply text-right; }
+  .ql-align-justify { @apply text-justify; }
   @screen lg {
     .admin-shell.is-collapsed { @apply grid-cols-[5rem_minmax(0,1fr)]; }
     .is-collapsed .admin-sidebar .admin-brand,

@@ -1,0 +1,8 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Revision history{% endblock %}
+{% block breadcrumb %}Articles / Revisions{% endblock %}
+{% block eyebrow %}Editorial history / Mock snapshots{% endblock %}
+{% block heading %}Every story has a process.{% endblock %}
+{% block intro %}{{ article.title }} — illustrative manual saves and autosave snapshots. Nothing is recorded or restored yet.{% endblock %}
+{% block actions %}<twig:Button href="{{ path('admin_article_edit', {id: article.id}) }}">Back to editor</twig:Button><twig:Button variant="secondary" href="{{ path('admin_article_preview', {id: article.id}) }}">Preview story</twig:Button>{% endblock %}
+{% block content %}<twig:Table caption="Article revision history" columns="{{ ['Snapshot', 'Edited by', 'Created', 'Compare'] }}">{% for revision in revisions|reverse %}<tr><td><p class="font-semibold">{{ revision.title }}</p><div class="mt-2"><twig:Badge tone="{{ revision.isAutosave ? 'neutral' : 'info' }}">{{ revision.isAutosave ? 'Autosave example' : 'Manual save example' }}</twig:Badge></div></td><td>{{ revision.createdBy.displayName }}</td><td><time datetime="{{ revision.createdAt|date('c') }}">{{ revision.createdAt|date('M j, Y · H:i') }}</time></td><td><twig:Button variant="secondary" size="sm" href="{{ path('admin_article_compare', {id: article.id, revision: revision.id}) }}">Compare with current</twig:Button></td></tr>{% endfor %}</twig:Table>{% endblock %}

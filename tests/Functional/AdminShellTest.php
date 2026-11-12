@@ -56,14 +56,14 @@ final class AdminShellTest extends WebTestCase
     {
         $client = self::createClient();
         $client->request('GET', '/admin/articles?q=notebook&status=draft');
-        self::assertSelectorCount(36, '#articles-table [data-row]');
+        self::assertSelectorCount(38, '#articles-table [data-row]');
         self::assertSelectorCount(5, '#articles-table th[aria-sort="none"]');
         self::assertSelectorExists('[data-filter="status"] option[value="pending_review"]');
         self::assertSelectorExists('[data-filter="category"] option[value="architecture"]');
         self::assertSelectorExists('[data-filter="author"] option[value="maya-chen"]');
         self::assertSelectorExists('[data-select-all][disabled]');
         self::assertSelectorExists('[data-bulk-remove][data-component="confirm"]');
-        self::assertSelectorCount(36, '[data-row-remove]');
+        self::assertSelectorCount(38, '[data-row-remove]');
         self::assertSelectorExists('[data-table-no-results][hidden]');
         self::assertSelectorExists('[data-table-error][hidden]');
         self::assertSelectorExists('[data-table-loading][hidden]');
