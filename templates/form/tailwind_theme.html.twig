@@ -73,6 +73,11 @@
     <input type="checkbox" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %} class="mt-1 h-4 w-4 rounded border-muted text-brand focus:ring-brand">
 {% endblock %}
 
+{% block file_widget %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' field-control file:mr-4 file:rounded-control file:border-0 file:bg-brand file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white')|trim}) %}
+    <input type="file" {{ block('widget_attributes') }}>
+{% endblock %}
+
 {% block repeated_row %}
     {{ form_row(form.first) }}
     {{ form_row(form.second) }}

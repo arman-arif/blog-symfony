@@ -1,0 +1,10 @@
+flysystem:
+    storages:
+        media.storage:
+            adapter: 'local'
+            options:
+                directory: '%kernel.project_dir%/public/uploads/media'
+        media.cache.storage:
+            adapter: 'local'
+            options:
+                directory: '%kernel.project_dir%/public/uploads/media/cache'

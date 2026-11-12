@@ -1,0 +1,45 @@
+{% extends 'admin/layout.html.twig' %}
+{% block page_title %}Edit media{% endblock %}
+{% block breadcrumb %}Media / Edit{% endblock %}
+{% block eyebrow %}Content / Media{% endblock %}
+{% block heading %}{{ media.originalName }}{% endblock %}
+{% block intro %}Manage alternative text and the caption used when this file is embedded.{% endblock %}
+{% block actions %}<twig:Button variant="secondary" href="{{ path('admin_media_index') }}">All media</twig:Button>{% endblock %}
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <section class="card overflow-hidden" aria-label="Media preview">
+        {% if media.mimeType starts with 'image/' %}
+            <img class="w-full object-contain" src="{{ media_url(media, 'medium') }}" alt="{{ media.alt ?: media.originalName }}" width="{{ media.width ?: 800 }}" height="{{ media.height ?: 600 }}">
+        {% else %}
+            <div class="flex aspect-video items-center justify-center bg-canvas text-sm font-semibold text-muted">Document preview is not available</div>
+        {% endif %}
+        <div class="p-5">
+            <dl class="grid grid-cols-2 gap-3 text-xs text-muted">
+                <div><dt class="font-semibold text-ink">Type</dt><dd>{{ media.mimeType }}</dd></div>
+                <div><dt class="font-semibold text-ink">Size</dt><dd>{{ (media.size / 1024)|round }} KB</dd></div>
+                <div><dt class="font-semibold text-ink">Dimensions</dt><dd>{{ media.width ? media.width ~ ' × ' ~ media.height : '—' }}</dd></div>
+                <div><dt class="font-semibold text-ink">Uploaded</dt><dd>{{ media.createdAt|date('M j, Y H:i') }}</dd></div>
+                <div class="col-span-2"><dt class="font-semibold text-ink">Storage key</dt><dd class="break-all">{{ media.storageKey }}</dd></div>
+            </dl>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <a class="btn btn-secondary btn-sm" href="{{ media_url(media) }}" target="_blank" rel="noopener">Open original</a>
+                {% if media.mimeType starts with 'image/' %}<a class="btn btn-secondary btn-sm" href="{{ media_url(media, 'large') }}" target="_blank" rel="noopener">Open large</a><a class="btn btn-secondary btn-sm" href="{{ media_url(media, 'webp') }}" target="_blank" rel="noopener">Open WebP</a>{% endif %}
+            </div>
+        </div>
+    </section>
+    <section class="card p-5" aria-labelledby="metadata-heading">
+        <h2 id="metadata-heading" class="font-display text-2xl">Metadata</h2>
+        {{ form_start(form, {attr: {novalidate: 'novalidate', 'data-component': 'validate'}}) }}
+        {{ form_errors(form) }}
+        {{ form_row(form.alt) }}
+        {{ form_row(form.caption) }}
+        <twig:Button type="submit">Save details</twig:Button>
+        {{ form_end(form) }}
+        <form method="post" action="{{ path('admin_media_delete', {id: media.id}) }}" class="mt-6 border-t border-line pt-5">
+            <input type="hidden" name="_token" value="{{ csrf_token('media_delete') }}">
+            <twig:Button type="submit" variant="danger">Delete file</twig:Button>
+            <p class="mt-2 text-xs text-muted">Deletion is refused while the file is used by an article, category, advertisement or profile.</p>
+        </form>
+    </section>
+</div>
+{% endblock %}

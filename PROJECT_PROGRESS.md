@@ -18,7 +18,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 3 | M3 | Database | Completed | 22 entities + embeddable, 3 reversible migrations, fixtures and repository tests verified |
 | 4 | M4 | Authentication & Authorization | Completed | Entity auth, reset/verify, TOTP 2FA, voters, permission matrix, locked admin verified |
 | 5 | M5 | Core CMS | Completed | Article workflow, sanitizer, revisions/autosave, taxonomy, scheduler and CMS tests verified |
-| 6 | M6 | Media Management | Pending | |
+| 6 | M6 | Media Management | Completed | Validated uploads, Flysystem, Liip derivatives, library and picker verified |
 | 7 | M7 | Public Website Integration | Pending | |
 | 8 | M8 | Comments & Engagement | Pending | |
 | 9 | M9 | SEO | Pending | |
@@ -156,3 +156,11 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Browser: verified login, real article list/edit/preview screens, Quill toolbar initialization, media picker, SEO counters, no console errors, and a live autosave that created a revision in MySQL.
 - Known issues: media, comments, pages, menus, advertisements, users/roles and settings screens remain presentation fixtures until their milestones; slug-change redirects arrive in M9; public FULLTEXT search arrives in M7; scheduled publishing requires a running `scheduler_default` worker.
 - Decisions: fixture-free production screens use explicit empty_data; autosave stores sanitized snapshots only; the CMS uses Symfony Form validation as the single server-side validation path.
+
+### 2026-11-12 — M6 media management
+- Implemented Flysystem-backed local storage with a storage interface for future S3 adapters, randomized filenames, date folders, size limits from settings and MIME/finfo validation. Uploads reject disguised MIME types, executable/double extensions and oversized files; SVG remains blocked.
+- Added GD re-encoding to strip image metadata, record dimensions, and LiipImagine thumbnail/medium/large/WebP filter sets served through `/media/cache/resolve/...`. Added `media_url()` for bundled fixtures and uploaded files.
+- Replaced the mock media screen with a real library: upload form, grid, search/type/date filters, pagination, detail alt/caption editing, usage-protected deletion and a JSON picker API. Ownership checks allow authors to manage their own uploads; `media.manage.any` can manage all.
+- Tests: full suite passes with 252 tests / 24,480 assertions. New media tests cover valid uploads with variants, mismatched MIME, disguised `.php.png`, oversized files, metadata edits, deletion blocked by article usage then succeeding after reference removal, derivative generation and picker metadata.
+- Browser: uploaded a PNG through the real form, verified metadata editing/no console errors, and confirmed LiipImagine generated a derivative file. Added web-server hardening guidance for `/uploads`.
+- Known issues: uploaded media is excluded from version control as intended; deletion removes originals but Liip cache files are pruned independently; S3 remains a documented adapter swap, not an installed integration.

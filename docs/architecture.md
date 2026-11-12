@@ -58,3 +58,11 @@ The article, category and tag administration screens are now server-backed; rema
 - **Workflow:** `config/packages/workflow.yaml` defines the article state machine. Invalid transitions surface as form errors rather than silent status changes.
 - **Async:** scheduled publishing uses Symfony Scheduler + Messenger; the `scheduler_default` transport must be consumed in production.
 - **Search:** admin filtering uses indexed columns and `LIKE`; public FULLTEXT search is added in M7.
+
+## M6 media management
+
+- **Storage abstraction:** `MediaStorageInterface` + `FlysystemMediaStorage`; local adapter today, S3-compatible adapter by configuration later. Uploaded files live under `public/uploads/media`, derivatives under its `cache` subdirectory.
+- **Upload pipeline:** `MediaUploader` validates size, executable/double extensions, detected MIME and extension/MIME agreement; re-encodes images with GD to strip metadata and records dimensions; random 32-hex filenames and date folders prevent guessing and collisions.
+- **Derivatives:** LiipImagine filter sets `thumbnail`, `medium`, `large` and `webp`; URLs resolve through `/media/cache/resolve/{filter}/{key}`.
+- **Library:** media index, upload form, metadata editing, filters/pagination, JSON picker API and usage-protected deletion. The old mock media screen is gone.
+- **URLs:** the `media_url()` Twig function resolves bundled fixture illustrations through AssetMapper and uploaded files through the storage abstraction.

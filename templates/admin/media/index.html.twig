@@ -2,12 +2,56 @@
 {% block page_title %}Media library{% endblock %}
 {% block breadcrumb %}Media library{% endblock %}
 {% block eyebrow %}Content / Media{% endblock %}
-{% block heading %}A library of visual possibilities.{% endblock %}
-{% block intro %}Browse original local illustrations and documents, refine descriptions and try the upload experience. Selected files never leave your device.{% endblock %}
-{% block content %}<twig:PreviewStates state="{{ state }}"><section data-component="media-library">
-<div class="card mb-6 p-6"><h2 class="mb-3 text-lg font-semibold">Add to your library · simulation</h2><twig:PreviewForm id="media-upload-form" successMessage="Files checked locally. The progress below is simulated; nothing is uploaded."><div data-upload-zone class="rounded-control border-2 border-dashed border-line bg-canvas p-6"><label for="media-files" class="field-label">Choose images or documents, or drop them here</label><input id="media-files" class="field-control" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain" aria-describedby="media-files-help media-files-error"><p id="media-files-help" class="field-help">JPG, PNG, WebP, GIF, PDF or TXT · 10 MB maximum per file. SVG uploads are not accepted; existing illustrations are trusted bundled assets.</p><p id="media-files-error" class="field-error" data-upload-error hidden></p></div><twig:Button type="submit">Simulate upload</twig:Button></twig:PreviewForm><div data-upload-progress hidden class="mt-5"><label for="media-progress" class="field-label">Simulated upload progress</label><progress id="media-progress" max="100" value="0" class="h-3 w-full accent-brand"></progress><p class="mt-2 text-sm text-muted" role="status" data-upload-status></p><ul data-upload-files class="mt-2 text-sm text-muted"></ul></div></div>
-<div class="card p-5"><div class="mb-6 flex flex-wrap items-end gap-4"><div class="min-w-0 flex-1"><label for="media-search" class="field-label">Search media</label><input id="media-search" type="search" class="field-control" data-media-search placeholder="Search names and captions"></div><div><label for="media-type" class="field-label">File type</label><select id="media-type" class="field-control" data-media-type><option value="">All types</option><option value="image">Images</option><option value="document">Documents</option></select></div><div><label for="media-date" class="field-label">Uploaded</label><select id="media-date" class="field-control" data-media-date><option value="">Any time</option><option value="2026-11">November 2026</option><option value="2026-10">October 2026</option></select></div><div class="flex gap-2" role="group" aria-label="Media layout"><twig:Button variant="secondary" data-media-view="grid" aria-pressed="true">Grid</twig:Button><twig:Button variant="secondary" data-media-view="list" aria-pressed="false">List</twig:Button></div></div><p class="mb-4 text-xs text-muted" data-media-summary role="status">{{ records|length }} mock files</p>
-<div class="media-results grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-media-results data-view="grid">{% for item in records %}<article data-media-item data-id="{{ item.id }}" data-name="{{ item.originalName }}" data-caption="{{ item.caption }}" data-alt="{{ item.alt }}" data-url="{{ asset(item.url) }}" data-type="{{ item.mimeType starts with 'image/' ? 'image' : 'document' }}" data-mime="{{ item.mimeType }}" data-date="{{ item.createdAt|date('Y-m') }}" data-size="{{ item.size }}" data-width="{{ item.width }}" data-height="{{ item.height }}" data-uploader="{{ item.uploadedBy.displayName }}" class="min-w-0 overflow-hidden rounded-control border border-line"><button type="button" data-media-details data-dialog-open="media-detail-drawer" class="block w-full text-left">{% if item.mimeType starts with 'image/' %}<img src="{{ asset(item.url) }}" alt="{{ item.alt }}" width="1200" height="800" loading="lazy" class="aspect-video w-full object-cover">{% else %}<span class="flex aspect-video items-center justify-center bg-canvas text-brand"><twig:Icon name="copy" size="48"/><span class="ml-3 font-semibold">TXT</span></span>{% endif %}<span class="block p-4"><strong class="block break-words text-sm">{{ item.originalName }}</strong><span class="mt-1 block text-xs text-muted">{{ item.mimeType }} · {{ item.createdAt|date('M j, Y') }}</span></span></button></article>{% endfor %}</div><div data-media-no-results hidden><twig:EmptyState title="No matching media" description="Try another name, date or file type."/></div><noscript><p class="mt-5 text-sm text-muted">All files are readable. Enable JavaScript to try upload, filtering and metadata editing.</p></noscript></div>
-</section></twig:PreviewStates>
-<twig:Modal id="media-detail-drawer" title="Media details" drawer><img data-detail-image hidden alt="" width="1200" height="800" class="mb-5 aspect-video w-full rounded-control object-cover"><h3 data-detail-name class="mb-2 break-words font-semibold"></h3><p data-detail-meta class="mb-5 text-xs leading-relaxed text-muted"></p><twig:PreviewForm id="media-detail-form" successMessage="Media descriptions changed locally. Nothing was saved."><twig:Field id="media-alt" label="Alternative text" help="Describe the purpose of an image for readers who cannot see it."><twig:Input id="media-alt" name="alt" maxlength="250"/></twig:Field><twig:Field id="media-caption" label="Caption"><twig:Textarea id="media-caption" name="caption" maxlength="500" rows="3"/></twig:Field><twig:Button type="submit">Apply locally</twig:Button></twig:PreviewForm><a data-detail-download href="#" class="btn btn-secondary mt-4" download>Download bundled file</a><twig:Button variant="danger" class="mt-4" data-component="confirm" data-media-delete data-confirm-message="Remove this file from the local library preview? The bundled file is not deleted.">Remove locally</twig:Button></twig:Modal>
+{% block heading %}Images and documents, in one place.{% endblock %}
+{% block intro %}Uploads are validated, re-encoded to strip image metadata, and stored with randomized filenames.{% endblock %}
+{% block actions %}<twig:Button href="#media-upload">Upload a file</twig:Button>{% endblock %}
+{% block content %}
+<section id="media-upload" class="card mb-6 p-5" aria-labelledby="upload-heading">
+    <h2 id="upload-heading" class="font-display text-2xl">Upload</h2>
+    <p class="mt-1 text-sm text-muted">JPEG, PNG, WebP, GIF, PDF, TXT, CSV or DOCX. SVG and executable formats are rejected.</p>
+    {{ form_start(uploadForm, {attr: {class: 'mt-5', novalidate: 'novalidate', 'data-component': 'validate'}}) }}
+    {{ form_errors(uploadForm) }}
+    <div class="grid gap-4 md:grid-cols-3">{{ form_row(uploadForm.file) }}{{ form_row(uploadForm.alt) }}{{ form_row(uploadForm.caption) }}</div>
+    <twig:Button type="submit">Upload file</twig:Button>
+    {{ form_end(uploadForm) }}
+</section>
+<form method="get" action="{{ path('admin_media_index') }}" class="card mb-6 grid gap-4 p-4 md:grid-cols-4" role="search">
+    <div><label class="field-label" for="media-query">Search</label><input class="field-control" id="media-query" type="search" name="q" value="{{ filters.q }}" placeholder="Name, alt or caption"></div>
+    <div><label class="field-label" for="media-type">Type</label><select class="field-control" id="media-type" name="type"><option value="">All types</option><option value="image" {% if filters.type == 'image' %}selected{% endif %}>Images</option><option value="document" {% if filters.type == 'document' %}selected{% endif %}>Documents</option></select></div>
+    <div><label class="field-label" for="media-date">Uploaded on</label><input class="field-control" id="media-date" type="date" name="date" value="{{ filters.date }}"></div>
+    <div class="flex items-end gap-2"><twig:Button type="submit" variant="secondary">Filter</twig:Button><a class="btn btn-ghost" href="{{ path('admin_media_index') }}">Reset</a></div>
+</form>
+{% if mediaItems is empty %}
+    <p class="card p-10 text-center text-sm text-muted">No media matches these filters. Upload a file to get started.</p>
+{% else %}
+<div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+    {% for media in mediaItems %}
+        <article class="card overflow-hidden" data-media-item data-type="{{ media.mimeType starts with 'image/' ? 'image' : 'document' }}">
+            {% if media.mimeType starts with 'image/' %}
+                <a href="{{ path('admin_media_edit', {id: media.id}) }}"><img class="aspect-video w-full object-cover" src="{{ media_url(media, 'thumbnail') }}" alt="{{ media.alt ?: media.originalName }}" width="320" height="180" loading="lazy"></a>
+            {% else %}
+                <div class="flex aspect-video items-center justify-center bg-canvas text-xs font-semibold uppercase tracking-wide text-muted">{{ media.mimeType == 'application/pdf' ? 'PDF document' : 'Document' }}</div>
+            {% endif %}
+            <div class="p-4">
+                <h2 class="truncate text-sm font-semibold">{{ media.originalName }}</h2>
+                <p class="mt-1 text-xs text-muted">{{ (media.size / 1024)|round }} KB · {{ media.createdAt|date('M j, Y') }}</p>
+                <div class="mt-3 flex flex-wrap gap-1">
+                    <twig:Button href="{{ path('admin_media_edit', {id: media.id}) }}" variant="secondary" size="sm">Edit</twig:Button>
+                    <form method="post" action="{{ path('admin_media_delete', {id: media.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('media_delete') }}"><twig:Button type="submit" variant="danger" size="sm">Delete</twig:Button></form>
+                </div>
+            </div>
+        </article>
+    {% endfor %}
+</div>
+{% set pages = ((total - 1) // 24) + 1 %}
+{% if total > 24 %}
+<nav class="mt-6 flex items-center justify-between text-sm" aria-label="Media pagination">
+    <span class="text-muted">{{ total }} files · page {{ page }} of {{ pages }}</span>
+    <div class="flex gap-2">
+        {% if page > 1 %}<a class="btn btn-secondary btn-sm" href="{{ path('admin_media_index', app.request.query.all|merge({page: page - 1})) }}">Previous</a>{% endif %}
+        {% if page < pages %}<a class="btn btn-secondary btn-sm" href="{{ path('admin_media_index', app.request.query.all|merge({page: page + 1})) }}">Next</a>{% endif %}
+    </div>
+</nav>
+{% endif %}
+{% endif %}
 {% endblock %}

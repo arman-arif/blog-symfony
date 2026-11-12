@@ -8,6 +8,7 @@ use App\Entity\ArticleRevision;
 use App\Mock\MockDataProvider;
 use App\Tests\Factory\ArticleFactory;
 use App\Tests\Factory\CategoryFactory;
+use App\Tests\Factory\MediaFactory;
 use App\Tests\Factory\TagFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DomCrawler\Crawler;
@@ -29,6 +30,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
         $article = ArticleFactory::createOne(['author' => self::authenticatedUser()]);
         $category = CategoryFactory::createOne(['name' => 'Crawler category']);
         $tag = TagFactory::createOne(['name' => 'Crawler tag']);
+        $media = MediaFactory::createOne(['uploadedBy' => self::authenticatedUser()]);
         $revision = (new ArticleRevision())
             ->setArticle($article)
             ->setTitle($article->getTitle())
@@ -45,7 +47,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
             if ([] !== $route->getMethods() && !in_array('GET', $route->getMethods(), true)) {
                 continue;
             }
-            if (str_ends_with($name, '_autocomplete')) {
+            if (str_ends_with($name, '_autocomplete') || str_ends_with($name, '_picker')) {
                 continue;
             }
             $parameters = [];
@@ -55,6 +57,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
                         str_starts_with($name, 'admin_category_') => $category->getId(),
                         str_starts_with($name, 'admin_tag_') => $tag->getId(),
                         str_starts_with($name, 'admin_article_') => $article->getId(),
+                        str_starts_with($name, 'admin_media_') => $media->getId(),
                         default => 1,
                     },
                     'revision' => $revision->getId(),
@@ -126,7 +129,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
                 self::assertFalse(str_starts_with(strtolower($href), 'javascript:'), $path);
                 if (str_starts_with($href, '#') && '#' !== $href) {
                     self::assertContains(substr($href, 1), $ids, 'Broken fragment '.$href.' on '.$path);
-                } elseif (str_starts_with($href, '/') && !str_starts_with($href, '//') && !preg_match('#^/(admin/(articles|categories|tags)/\d+)#', $href)) {
+                } elseif (str_starts_with($href, '/') && !str_starts_with($href, '//') && !str_starts_with($href, '/uploads/') && !str_starts_with($href, '/media/cache/') && !preg_match('#^/(admin/(articles|categories|tags)/\d+)#', $href)) {
                     $links[] = explode('#', $href)[0];
                 }
             }

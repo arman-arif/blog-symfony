@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Media;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /** @extends ServiceEntityRepository<Media> */
@@ -19,5 +20,57 @@ class MediaRepository extends ServiceEntityRepository
     public function findOneByStorageKey(string $storageKey): ?Media
     {
         return $this->findOneBy(['storageKey' => $storageKey]);
+    }
+
+    /**
+     * @param array{q?: string, type?: string, date?: string} $filters
+     *
+     * @return array{items: list<Media>, total: int}
+     */
+    public function findForAdmin(array $filters, int $page, int $perPage): array
+    {
+        $builder = $this->createQueryBuilder('media')->orderBy('media.createdAt', 'DESC');
+
+        if ('' !== ($filters['q'] ?? '')) {
+            $builder->andWhere('media.originalName LIKE :query OR media.alt LIKE :query OR media.caption LIKE :query')
+                ->setParameter('query', '%'.$filters['q'].'%');
+        }
+        if ('image' === ($filters['type'] ?? '')) {
+            $builder->andWhere('media.mimeType LIKE :image')->setParameter('image', 'image/%');
+        } elseif ('document' === ($filters['type'] ?? '')) {
+            $builder->andWhere('media.mimeType NOT LIKE :image')->setParameter('image', 'image/%');
+        }
+        if (1 === preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($filters['date'] ?? ''))) {
+            $start = new \DateTimeImmutable($filters['date'].' 00:00:00');
+            $builder->andWhere('media.createdAt >= :start AND media.createdAt < :end')
+                ->setParameter('start', $start)
+                ->setParameter('end', $start->modify('+1 day'));
+        }
+
+        $query = $builder->getQuery()
+            ->setFirstResult(max(0, ($page - 1) * $perPage))
+            ->setMaxResults($perPage);
+        $paginator = new Paginator($query);
+        /** @var list<Media> $items */
+        $items = iterator_to_array($paginator->getIterator());
+
+        return ['items' => $items, 'total' => count($paginator)];
+    }
+
+    /** @return list<Media> */
+    public function findForPicker(string $query, int $limit = 40): array
+    {
+        $builder = $this->createQueryBuilder('media')
+            ->andWhere('media.mimeType LIKE :image')
+            ->setParameter('image', 'image/%')
+            ->orderBy('media.createdAt', 'DESC')
+            ->setMaxResults($limit);
+
+        if ('' !== $query) {
+            $builder->andWhere('media.originalName LIKE :query OR media.alt LIKE :query')
+                ->setParameter('query', '%'.$query.'%');
+        }
+
+        return $builder->getQuery()->getResult();
     }
 }

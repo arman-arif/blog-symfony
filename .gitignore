@@ -25,3 +25,10 @@
 ###< phpunit/phpunit ###
 /.playwright-mcp/
 /.commandcode/
+
+###> liip/imagine-bundle ###
+/public/media/cache/
+###< liip/imagine-bundle ###
+
+# Uploaded media and generated image cache
+/public/uploads/

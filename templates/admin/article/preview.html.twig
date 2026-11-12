@@ -13,7 +13,7 @@
     {% if article.publishedAt %}<span>Published {{ article.publishedAt|date('M j, Y') }}</span>{% endif %}
     {% if article.deletedAt %}<span class="badge badge-danger">In trash</span>{% endif %}
 </div>
-{% if article.featuredImage %}<img class="mb-8 aspect-video w-full rounded-card object-cover" src="{{ asset(article.featuredImage.storageKey) }}" alt="{{ article.featuredImage.alt }}" width="{{ article.featuredImage.width ?: 1200 }}" height="{{ article.featuredImage.height ?: 800 }}">{% endif %}
+{% if article.featuredImage %}<img class="mb-8 aspect-video w-full rounded-card object-cover" src="{{ media_url(article.featuredImage) }}" alt="{{ article.featuredImage.alt }}" width="{{ article.featuredImage.width ?: 1200 }}" height="{{ article.featuredImage.height ?: 800 }}">{% endif %}
 <div class="prose prose-stone max-w-none dark:prose-invert">{{ article.content|raw }}</div>
 {% if article.tags is not empty %}<ul class="mt-8 flex flex-wrap gap-2" aria-label="Tags">{% for tag in article.tags %}<li class="badge badge-neutral">{{ tag.name }}</li>{% endfor %}</ul>{% endif %}
 <p class="mt-8 rounded-control bg-canvas p-4 text-xs text-muted">Admin preview of server-sanitized content. It is not a public URL and is visible only to authorized staff.</p>
