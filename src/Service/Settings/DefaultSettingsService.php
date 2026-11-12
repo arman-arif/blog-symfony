@@ -35,6 +35,8 @@ final readonly class DefaultSettingsService implements SettingsServiceInterface
         'seo.title_suffix' => 'Fieldnotes',
         'seo.description' => 'Independent stories about thoughtful work, culture and everyday life.',
         'seo.robots' => "User-agent: *\nAllow: /\nDisallow: /admin/\n",
+        'seo.ga_id' => '',
+        'seo.gsc_verification' => '',
         'analytics.retention_days' => 90,
     ];
 

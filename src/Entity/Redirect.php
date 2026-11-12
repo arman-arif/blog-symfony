@@ -17,7 +17,7 @@ class Redirect
     use IdentifiableTrait;
     use TimestampableTrait;
 
-    #[ORM\Column(type: Types::STRING, length: 2048, unique: true)]
+    #[ORM\Column(type: Types::STRING, length: 512, unique: true)]
     private string $sourcePath;
 
     #[ORM\Column(type: Types::STRING, length: 2048)]

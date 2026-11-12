@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Enum\ArticleStatus;
 use App\Repository\ArticleRepository;
 use App\Repository\ArticleRevisionRepository;
+use App\Repository\RedirectRepository;
 use App\Security\PermissionChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -23,6 +24,7 @@ final readonly class ArticleService
         private EntityManagerInterface $entityManager,
         private ArticleRepository $articles,
         private ArticleRevisionRepository $revisions,
+        private RedirectRepository $redirects,
         private ContentProcessor $processor,
         private SluggerInterface $slugger,
         private PermissionChecker $permissions,
@@ -48,7 +50,7 @@ final readonly class ArticleService
         return $article;
     }
 
-    public function update(Article $article, User $editor, ?ArticleStatus $target = null, bool $recordRevision = true): Article
+    public function update(Article $article, User $editor, ?ArticleStatus $target = null, bool $recordRevision = true, ?string $previousSlug = null): Article
     {
         $this->prepareContent($article);
         $this->entityManager->flush();
@@ -60,6 +62,9 @@ final readonly class ArticleService
         if ($recordRevision) {
             $this->recordRevision($article, $editor, false);
             $this->entityManager->flush();
+        }
+        if (null !== $previousSlug && '' !== $previousSlug && $previousSlug !== $article->getSlug()) {
+            $this->createSlugRedirect($previousSlug, $article->getSlug());
         }
         $this->invalidatePublicCache();
 
@@ -215,7 +220,22 @@ final readonly class ArticleService
 
     private function invalidatePublicCache(): void
     {
-        $this->publicCache->invalidateTags(['articles', 'homepage']);
+        $this->publicCache->invalidateTags(['articles', 'homepage', 'sitemap', 'redirects']);
+    }
+
+    private function createSlugRedirect(string $oldSlug, string $newSlug): void
+    {
+        $source = '/blog/'.$oldSlug;
+        $target = '/blog/'.$newSlug;
+        if ($source === $target) {
+            return;
+        }
+
+        $redirect = $this->redirects->findOneBySourcePath($source) ?? new \App\Entity\Redirect();
+        $redirect->setSourcePath($source)->setTargetUrl($target)->setStatusCode(301);
+        $this->entityManager->persist($redirect);
+        $this->entityManager->flush();
+        $this->publicCache->invalidateTags(['redirects']);
     }
 
     private function prepareContent(Article $article): void

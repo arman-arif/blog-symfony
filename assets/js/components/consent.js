@@ -5,6 +5,7 @@ export default function consent(banner) {
   banner.querySelectorAll('[data-consent-choice]').forEach(button => button.addEventListener('click', () => {
     const choice = button.dataset.consentChoice;
     try { localStorage.setItem('fieldnotes-consent', choice); } catch { /* No optional tracking is active. */ }
+    try { document.cookie = `fieldnotes_consent=${choice}; Path=/; Max-Age=31536000; SameSite=Lax`; } catch { /* Cookie consent remains local. */ }
     banner.hidden = true;
     document.dispatchEvent(new CustomEvent('app:consent', { detail: { optional: choice === 'all' } }));
   }));

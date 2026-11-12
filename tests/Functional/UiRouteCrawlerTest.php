@@ -61,7 +61,7 @@ final class UiRouteCrawlerTest extends AdminTestCase
             if ([] !== $route->getMethods() && !in_array('GET', $route->getMethods(), true)) {
                 continue;
             }
-            if (str_ends_with($name, '_autocomplete') || str_ends_with($name, '_picker') || str_contains($name, 'feed')) {
+            if (str_ends_with($name, '_autocomplete') || str_ends_with($name, '_picker') || str_contains($name, 'feed') || str_contains($name, 'sitemap') || 'front_robots' === $name) {
                 continue;
             }
             $parameters = [];

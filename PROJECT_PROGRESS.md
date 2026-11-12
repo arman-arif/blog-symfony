@@ -21,7 +21,7 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 6 | M6 | Media Management | Completed | Validated uploads, Flysystem, Liip derivatives, library and picker verified |
 | 7 | M7 | Public Website Integration | Completed | Real catalog, FULLTEXT search, feeds, caching and public visibility tests verified |
 | 8 | M8 | Comments & Engagement | Completed | Real comments, spam controls, moderation, likes/bookmarks and view tracking verified |
-| 9 | M9 | SEO | Pending | |
+| 9 | M9 | SEO | Completed | Metadata/JSON-LD, sitemaps, robots, redirects and consent-gated analytics verified |
 | 10 | M10 | Newsletter | Pending | |
 | 11 | M11 | Analytics | Pending | |
 | 12 | M12 | Monetization | Pending | |
@@ -182,3 +182,12 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - Tests: full suite passes with 265 tests / 24,717 assertions. New coverage includes guest pending comments + notification mail, honeypot/min-time/link/blocked-word/rate-limit rejection, global comment disable, like/bookmark auth + idempotency + saved page, view de-duplication and bot filtering, report counts, and moderation approval appearing publicly.
 - Browser: posted a guest comment (pending + Mailpit notification), logged in, liked/bookmarked a story, confirmed the saved page, and opened the real moderation queue with zero console errors.
 - Known issues: optional third-party spam adapters are interfaces only; view raw rows are pruned/rolled up in M11; async email/view workers are required in production.
+
+### 2026-11-12 — M9 SEO
+- Added `SeoHeadFactory` and a shared SEO head partial: canonical URLs, robots directives, Open Graph, Twitter cards and a JSON-LD graph with Organization, WebSite/SearchAction, BlogPosting, Person and BreadcrumbList. Search/filtered pages are noindex; admin/account pages default to noindex.
+- Added sitemap index and article/category/tag/author/page sub-sitemaps, filtered to public/indexable content and cached with tag invalidation; added dynamic `/robots.txt`.
+- Added cached public redirect listener with hit counting and automatic 301 creation when an article slug changes. Reduced `redirect.source_path` to 512 characters so its unique index is valid on MySQL 8.
+- Added consent-gated GA4 injection and GSC verification metadata; the consent banner now mirrors its choice into a cookie so the server can respect it. Updated the database migration log.
+- Tests: full suite passes with 273 tests / 24,756 assertions. New SEO coverage checks canonical/OG/Twitter data, JSON-LD graph structure and article headline/author, noindex search, sitemaps excluding drafts/noindex content, robots output, redirect status/hit counting, automatic slug-change redirects, and GA consent gating.
+- Browser: verified homepage/article canonical + JSON-LD, sitemap index and robots output with zero console errors.
+- Known issues: no image sitemap or news sitemap; sitemap cache TTL is one hour; Page/Category/Tag admin changes are not all wired yet but invalidate sitemap tags when their services are used; consent remains a first-party cookie/local preference.

@@ -20,4 +20,15 @@ class RedirectRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['sourcePath' => $sourcePath]);
     }
+
+    public function incrementHits(string $sourcePath): void
+    {
+        $this->createQueryBuilder('redirect')
+            ->update()
+            ->set('redirect.hits', 'redirect.hits + 1')
+            ->andWhere('redirect.sourcePath = :source')
+            ->setParameter('source', $sourcePath)
+            ->getQuery()
+            ->execute();
+    }
 }

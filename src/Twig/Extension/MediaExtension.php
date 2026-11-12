@@ -5,18 +5,14 @@ declare(strict_types=1);
 namespace App\Twig\Extension;
 
 use App\Entity\Media;
-use App\Service\Media\MediaStorageInterface;
-use Symfony\Component\Asset\Packages;
+use App\Service\Media\MediaUrlResolver;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
 final class MediaExtension extends AbstractExtension
 {
-    public function __construct(
-        private readonly MediaStorageInterface $storage,
-        #[\Symfony\Component\DependencyInjection\Attribute\Autowire(service: 'assets.packages')]
-        private readonly Packages $assets,
-    ) {
+    public function __construct(private readonly MediaUrlResolver $urls)
+    {
     }
 
     public function getFunctions(): array
@@ -26,16 +22,6 @@ final class MediaExtension extends AbstractExtension
 
     public function mediaUrl(Media|string|null $media, string $variant = 'original'): string
     {
-        $key = $media instanceof Media ? $media->getStorageKey() : $media;
-        if (null === $key || '' === $key) {
-            return '';
-        }
-
-        // Seed fixtures reference bundled illustrations served by AssetMapper.
-        if (str_starts_with($key, 'images/')) {
-            return $this->assets->getUrl($key);
-        }
-
-        return $this->storage->url($key, $variant);
+        return $this->urls->url($media, $variant);
     }
 }

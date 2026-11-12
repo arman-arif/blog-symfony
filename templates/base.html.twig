@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}Welcome!{% endblock %}</title>
         <meta name="description" content="{% block description %}Thoughtful stories on design, technology and living well. Independent ideas for curious minds.{% endblock %}">
+        {% include 'partials/seo_head.html.twig' %}
         <link rel="alternate" type="application/rss+xml" title="Fieldnotes RSS" href="{{ path('front_feed') }}">
         <link rel="icon" href="{{ asset('icons/favicon.svg') }}" type="image/svg+xml">
         {% block stylesheets %}

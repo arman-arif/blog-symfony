@@ -109,6 +109,7 @@ final class ArticleController extends AbstractController
         $article = $this->findArticle($id);
         $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $article);
         $previousStatus = $article->getStatus();
+        $previousSlug = $article->getSlug();
         $form = $this->createForm(ArticleFormType::class, $article);
         $form->handleRequest($request);
 
@@ -119,7 +120,7 @@ final class ArticleController extends AbstractController
                 $this->assertTransitionAllowed($target);
                 $this->assertScheduleComplete($article, $target);
                 $article->setStatus($previousStatus);
-                $this->articleService->update($article, $this->currentUser(), $target);
+                $this->articleService->update($article, $this->currentUser(), $target, true, $previousSlug);
                 $this->activityLogger->log('article.updated', 'Article', $article->getId(), ['summary' => 'Updated “'.$article->getTitle().'”']);
                 $this->addFlash('success', 'Article saved.');
 

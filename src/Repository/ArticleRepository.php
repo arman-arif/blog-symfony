@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Article;
 use App\Enum\ArticleStatus;
+use App\Enum\ArticleVisibility;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -382,5 +383,18 @@ class ArticleRepository extends ServiceEntityRepository
             ->getArrayResult();
 
         return array_column($rows, 'total', 'authorId');
+    }
+
+    /** @return list<Article> */
+    public function findForSitemap(): array
+    {
+        return $this->publishedBuilder()
+            ->andWhere('article.visibility = :public')
+            ->andWhere('article.seo.noindex = false')
+            ->setParameter('public', ArticleVisibility::Public)
+            ->distinct()
+            ->orderBy('article.updatedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 }

@@ -21,4 +21,16 @@ class PageRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['slug' => $slug, 'status' => PageStatus::Published]);
     }
+
+    /** @return list<Page> */
+    public function findForSitemap(): array
+    {
+        return $this->createQueryBuilder('page')
+            ->andWhere('page.status = :published')
+            ->andWhere('page.seo.noindex = false')
+            ->setParameter('published', PageStatus::Published)
+            ->orderBy('page.updatedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }

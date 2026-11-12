@@ -80,3 +80,11 @@ The article, category and tag administration screens are now server-backed; rema
 - **Spam controls:** honeypot, submit timing, per-IP rate limiting, link cap, blocked words and a pluggable `SpamCheckerInterface`.
 - **Engagement:** authenticated JSON like/bookmark toggles backed by unique constraints, a saved-stories page, real share/copy actions and asynchronous de-duplicated view tracking with bot filtering.
 - **Front behavior:** the reader JavaScript now calls real endpoints and changes ARIA state/counts; the comment form submits a real Symfony form with reply context.
+
+## M9 SEO
+
+- **Metadata:** `SeoHeadFactory` resolves title/description/canonical/robots from entity SEO, content fallbacks and settings; `partials/seo_head.html.twig` renders OG, Twitter and JSON-LD for every page.
+- **Structured data:** Organization, WebSite/SearchAction, BlogPosting, Person and BreadcrumbList graphs.
+- **Discovery:** sitemap index plus article/category/tag/author/page sitemaps, all tag-cached and filtered to public/indexable content; dynamic robots.txt.
+- **Redirects:** cached public request listener with hit counting, plus automatic 301 creation when an article slug changes.
+- **Consent:** GA4 is injected only after explicit optional consent; GSC verification is metadata only.

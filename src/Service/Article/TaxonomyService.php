@@ -10,6 +10,7 @@ use App\Repository\CategoryRepository;
 use App\Repository\TagRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final readonly class TaxonomyService
 {
@@ -18,6 +19,7 @@ final readonly class TaxonomyService
         private CategoryRepository $categories,
         private TagRepository $tags,
         private SluggerInterface $slugger,
+        private TagAwareCacheInterface $publicCache,
     ) {
     }
 
@@ -26,6 +28,7 @@ final readonly class TaxonomyService
         $category->setSlug($this->uniqueCategorySlug($category->getName(), $category->getId()));
         $this->entityManager->persist($category);
         $this->entityManager->flush();
+        $this->publicCache->invalidateTags(['sitemap']);
 
         return $category;
     }
@@ -38,6 +41,7 @@ final readonly class TaxonomyService
 
         $this->entityManager->remove($category);
         $this->entityManager->flush();
+        $this->publicCache->invalidateTags(['sitemap']);
     }
 
     public function saveTag(Tag $tag): Tag
@@ -45,6 +49,7 @@ final readonly class TaxonomyService
         $tag->setSlug($this->uniqueTagSlug($tag->getName(), $tag->getId()));
         $this->entityManager->persist($tag);
         $this->entityManager->flush();
+        $this->publicCache->invalidateTags(['sitemap']);
 
         return $tag;
     }
@@ -53,6 +58,7 @@ final readonly class TaxonomyService
     {
         $this->entityManager->remove($tag);
         $this->entityManager->flush();
+        $this->publicCache->invalidateTags(['sitemap']);
     }
 
     public function findOrCreateTag(string $name): Tag
