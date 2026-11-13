@@ -20,7 +20,7 @@ class ArticleRevisionRepository extends ServiceEntityRepository
     /** @return list<ArticleRevision> */
     public function findForArticle(Article $article): array
     {
-        return $this->findBy(['article' => $article], ['createdAt' => 'DESC']);
+        return $this->findBy(['article' => $article], ['createdAt' => 'DESC', 'id' => 'DESC']);
     }
 
     public function findOneForArticle(Article $article, int $id): ?ArticleRevision
@@ -35,6 +35,7 @@ class ArticleRevisionRepository extends ServiceEntityRepository
             ->andWhere('revision.isAutosave = true')
             ->setParameter('article', $article)
             ->orderBy('revision.createdAt', 'DESC')
+            ->addOrderBy('revision.id', 'DESC')
             ->setFirstResult($keep)
             ->getQuery()
             ->getResult();
@@ -42,6 +43,5 @@ class ArticleRevisionRepository extends ServiceEntityRepository
         foreach ($old as $revision) {
             $this->getEntityManager()->remove($revision);
         }
-        $this->getEntityManager()->flush();
     }
 }

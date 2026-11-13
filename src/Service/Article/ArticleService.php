@@ -35,37 +35,55 @@ final readonly class ArticleService
     ) {
     }
 
-    public function create(Article $article, User $author, ArticleStatus $target = ArticleStatus::Draft): Article
+    public function create(Article $article, User $actor, ArticleStatus $target = ArticleStatus::Draft, ?User $author = null): Article
     {
-        $article->setAuthor($author);
-        $this->prepareContent($article);
-        $this->entityManager->persist($article);
-        $this->entityManager->flush();
-
-        if (ArticleStatus::Draft !== $target) {
-            $this->applyStatus($article, $target, $author);
+        $author ??= $actor;
+        if (!$this->permissions->can($actor, 'article.create')) {
+            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException('You cannot create articles.');
         }
+        $this->assertAuthorAssignable($author, $actor);
+        $article->setAuthor($author);
+        $article->setStatus(ArticleStatus::Draft);
+        $transition = $this->transitionFor($article, $target, $actor);
+        $this->prepareContent($article);
+        $this->entityManager->wrapInTransaction(function () use ($article, $actor, $target, $transition): void {
+            $this->changeStatus($article, $target, $transition);
+            $this->entityManager->persist($article);
+            $this->recordRevision($article, $actor, false);
+        });
         $this->invalidatePublicCache();
 
         return $article;
     }
 
-    public function update(Article $article, User $editor, ?ArticleStatus $target = null, bool $recordRevision = true, ?string $previousSlug = null): Article
+    public function update(Article $article, User $editor, ?ArticleStatus $target = null, bool $recordRevision = true, ?string $previousSlug = null, ?Article $details = null): Article
     {
-        $this->prepareContent($article);
-        $this->entityManager->flush();
-
-        if (null !== $target) {
-            $this->applyStatus($article, $target, $editor);
+        $details ??= $article;
+        $candidate = clone $details;
+        $candidate->setStatus($article->getStatus());
+        $target ??= $article->getStatus();
+        $previousSlug ??= $article->getSlug();
+        try {
+            $this->assertAuthorAssignable($candidate->getAuthor(), $editor);
+            $transition = $this->transitionFor($candidate, $target, $editor);
+            $this->prepareContent($candidate);
+        } catch (\DomainException|\Symfony\Component\Security\Core\Exception\AccessDeniedException $exception) {
+            // Legacy callers may have edited the managed object directly.
+            if ($details === $article && $this->entityManager->contains($article)) {
+                $this->entityManager->refresh($article);
+            }
+            throw $exception;
         }
-
-        if ($recordRevision) {
-            $this->recordRevision($article, $editor, false);
-            $this->entityManager->flush();
-        }
-        if (null !== $previousSlug && '' !== $previousSlug && $previousSlug !== $article->getSlug()) {
-            $this->createSlugRedirect($previousSlug, $article->getSlug());
-        }
+        $this->entityManager->wrapInTransaction(function () use ($article, $candidate, $editor, $target, $transition, $recordRevision, $previousSlug): void {
+            $this->copyEditableFields($candidate, $article);
+            $this->changeStatus($article, $target, $transition);
+            if ($recordRevision) {
+                $this->recordRevision($article, $editor, false);
+            }
+            if ('' !== $previousSlug && $previousSlug !== $article->getSlug()) {
+                $this->createSlugRedirect($previousSlug, $article->getSlug());
+            }
+        });
         $this->invalidatePublicCache();
 
         return $article;
@@ -73,8 +91,27 @@ final readonly class ArticleService
 
     public function applyStatus(Article $article, ArticleStatus $target, ?User $actor = null): void
     {
-        if ($article->getStatus() === $target) {
+        $transition = $this->transitionFor($article, $target, $actor);
+        if (null === $transition) {
             return;
+        }
+        $this->entityManager->wrapInTransaction(function () use ($article, $target, $transition, $actor): void {
+            $this->changeStatus($article, $target, $transition);
+            if (null !== $actor) {
+                $this->recordRevision($article, $actor, false);
+            }
+        });
+        $this->invalidatePublicCache();
+    }
+
+    private function transitionFor(Article $article, ArticleStatus $target, ?User $actor): ?string
+    {
+        if ($article->getStatus() === $target) {
+            if (ArticleStatus::Scheduled === $target && null === $article->getScheduledAt()) {
+                throw new \DomainException('A scheduled article needs a publication time.');
+            }
+
+            return null;
         }
 
         $transition = null;
@@ -100,14 +137,28 @@ final readonly class ArticleService
         };
 
         if (null !== $actor && !$this->permissions->can($actor, $requiredPermission)) {
-            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException('You cannot perform this publishing transition.');
+            $action = match ($requiredPermission) {
+                'article.publish' => 'publish or unpublish',
+                'article.schedule' => 'schedule',
+                'article.submit' => 'submit',
+                default => 'perform this transition on',
+            };
+            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException('You cannot '.$action.' articles.');
         }
 
         if (ArticleStatus::Scheduled === $target && null === $article->getScheduledAt()) {
             throw new \DomainException('A scheduled article needs a publication time.');
         }
 
-        $this->publishingWorkflow->apply($article, $transition->getName());
+        return $transition->getName();
+    }
+
+    private function changeStatus(Article $article, ArticleStatus $target, ?string $transition): void
+    {
+        if (null === $transition) {
+            return;
+        }
+        $this->publishingWorkflow->apply($article, $transition);
 
         if (ArticleStatus::Published === $target && null === $article->getPublishedAt()) {
             $article->setPublishedAt(new \DateTimeImmutable());
@@ -115,9 +166,6 @@ final readonly class ArticleService
         if (ArticleStatus::Published === $target) {
             $article->setScheduledAt(null);
         }
-
-        $this->entityManager->flush();
-        $this->invalidatePublicCache();
     }
 
     public function delete(Article $article): void
@@ -167,30 +215,27 @@ final readonly class ArticleService
             ->setOgImageUrl($article->getSeo()->getOgImageUrl());
         $copy->setSlug($this->uniqueSlug($copy->getTitle()));
 
-        $this->entityManager->persist($copy);
-        $this->entityManager->flush();
-        $this->invalidatePublicCache();
-
-        return $copy;
+        return $this->create($copy, $author);
     }
 
     public function restoreRevision(Article $article, ArticleRevision $revision, User $editor): void
     {
-        $article->setTitle($revision->getTitle());
-        $article->setContent($revision->getContent());
-        $this->prepareContent($article);
-        $this->entityManager->flush();
-        $this->recordRevision($article, $editor, false);
-        $this->entityManager->flush();
-        $this->invalidatePublicCache();
+        if ($revision->getArticle()->getId() !== $article->getId()) {
+            throw new \DomainException('This revision belongs to another article.');
+        }
+        $details = clone $article;
+        $details->setTitle($revision->getTitle())->setContent($revision->getContent());
+        $this->update($article, $editor, details: $details);
     }
 
     public function autosave(Article $article, string $title, string $content, User $editor): ArticleRevision
     {
         $revision = $this->recordRevisionValues($article, $title, $this->processor->sanitize($content, $article->hasAffiliateLinks()), $editor, true);
-        $this->entityManager->persist($revision);
-        $this->entityManager->flush();
-        $this->revisions->pruneAutosaves($article);
+        $this->entityManager->wrapInTransaction(function () use ($article, $revision): void {
+            // Keep nine existing snapshots plus this one, with one atomic flush.
+            $this->revisions->pruneAutosaves($article, 9);
+            $this->entityManager->persist($revision);
+        });
 
         return $revision;
     }
@@ -200,8 +245,12 @@ final readonly class ArticleService
         $now ??= new \DateTimeImmutable();
         $published = 0;
         foreach ($this->articles->findScheduledDue($now) as $article) {
-            $article->setPublishedAt($now);
-            $this->applyStatus($article, ArticleStatus::Published, null);
+            $transition = $this->transitionFor($article, ArticleStatus::Published, null);
+            $this->entityManager->wrapInTransaction(function () use ($article, $now, $transition): void {
+                $article->setPublishedAt($now);
+                $this->changeStatus($article, ArticleStatus::Published, $transition);
+            });
+            $this->invalidatePublicCache();
             ++$published;
         }
 
@@ -237,8 +286,40 @@ final readonly class ArticleService
         $redirect = $this->redirects->findOneBySourcePath($source) ?? new \App\Entity\Redirect();
         $redirect->setSourcePath($source)->setTargetUrl($target)->setStatusCode(301);
         $this->entityManager->persist($redirect);
-        $this->entityManager->flush();
-        $this->publicCache->invalidateTags(['redirects']);
+    }
+
+    private function assertAuthorAssignable(User $author, User $actor): void
+    {
+        if ($author->getId() !== $actor->getId() && !$this->permissions->can($actor, 'article.edit.any')) {
+            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException('You cannot assign this article to another author.');
+        }
+    }
+
+    private function copyEditableFields(Article $source, Article $target): void
+    {
+        $target->setTitle($source->getTitle())->setSubtitle($source->getSubtitle())
+            ->setSlug($source->getSlug())->setExcerpt($source->getExcerpt())->setContent($source->getContent())
+            ->setVisibility($source->getVisibility())->setScheduledAt($source->getScheduledAt())
+            ->setAuthor($source->getAuthor())->setFeaturedImage($source->getFeaturedImage())
+            ->setAllowComments($source->isAllowComments())->setIsSponsored($source->isSponsored())
+            ->setAffiliateLinks($source->hasAffiliateLinks())->setReadingTime($source->getReadingTime())
+            ->setSeo(clone $source->getSeo());
+        foreach ($target->getCategories()->toArray() as $category) {
+            if (!$source->getCategories()->contains($category)) {
+                $target->removeCategory($category);
+            }
+        }
+        foreach ($source->getCategories() as $category) {
+            $target->addCategory($category);
+        }
+        foreach ($target->getTags()->toArray() as $tag) {
+            if (!$source->getTags()->contains($tag)) {
+                $target->removeTag($tag);
+            }
+        }
+        foreach ($source->getTags() as $tag) {
+            $target->addTag($tag);
+        }
     }
 
     private function prepareContent(Article $article): void

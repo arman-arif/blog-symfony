@@ -86,7 +86,7 @@ final class ArticleController extends AbstractController
                 $this->assertTransitionAllowed($target);
                 $this->assertScheduleComplete($article, $target);
                 $article->setStatus(ArticleStatus::Draft);
-                $this->articleService->create($article, $article->getAuthor(), $target);
+                $this->articleService->create($article, $this->currentUser(), $target, $article->getAuthor());
                 $this->activityLogger->log('article.created', 'Article', $article->getId(), ['summary' => 'Created “'.$article->getTitle().'”']);
                 $this->addFlash('success', 'Article created. You can keep editing it below.');
 
@@ -109,19 +109,17 @@ final class ArticleController extends AbstractController
     {
         $article = $this->findArticle($id);
         $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $article);
-        $previousStatus = $article->getStatus();
         $previousSlug = $article->getSlug();
-        $form = $this->createForm(ArticleFormType::class, $article);
+        $details = clone $article;
+        $form = $this->createForm(ArticleFormType::class, $details);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $this->assertAuthorAssignable($article);
-                $target = $article->getStatus();
-                $this->assertTransitionAllowed($target);
-                $this->assertScheduleComplete($article, $target);
-                $article->setStatus($previousStatus);
-                $this->articleService->update($article, $this->currentUser(), $target, true, $previousSlug);
+                $this->assertAuthorAssignable($details);
+                $target = $details->getStatus();
+                $this->assertScheduleComplete($details, $target);
+                $this->articleService->update($article, $this->currentUser(), $target, true, $previousSlug, $details);
                 $this->activityLogger->log('article.updated', 'Article', $article->getId(), ['summary' => 'Updated “'.$article->getTitle().'”']);
                 $this->addFlash('success', 'Article saved.');
 
@@ -133,7 +131,7 @@ final class ArticleController extends AbstractController
 
         return $this->render('admin/article/manage.html.twig', [
             'form' => $form,
-            'article' => $article,
+            'article' => $details,
             'authors' => $users->findBy([], ['displayName' => 'ASC']),
             'media' => $this->mediaChoices(),
         ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));

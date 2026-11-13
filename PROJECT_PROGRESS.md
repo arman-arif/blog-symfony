@@ -38,7 +38,7 @@ The completion table and earlier logs are historical implementation claims. The 
 |---|---|
 | M2 settings/default parity | Fixed; full QA passed, including production-service regression coverage |
 | M4 authorization and TOTP | Fixed; full QA and production listener registration verified |
-| M5 atomic article saves, attribution, revisions and taxonomy | Pending |
+| M5 atomic article saves, attribution, revisions and taxonomy | Fixed; full QA and injected rollback regressions verified |
 | M6 media references, deletion and decoding limits | Pending |
 | M7 public visibility, fetch joins and discovery ranking | Pending |
 | M8 async view routing | Pending |
@@ -60,6 +60,14 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, mi
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-13 — M5 review remediation
+- Bound article edit forms to isolated copies, including SEO and taxonomy collections, without loading revision history. Invalid forms and rejected workflow/permission changes cannot leak into later flushes; submitted values remain visible for correction.
+- Made creation, manual saves, status changes and revision restoration transactional with revision/redirect writes and post-success cache invalidation. Injected revision-insert failures verify rollback and disposal of the failed UnitOfWork.
+- Separated the acting editor from the assigned author for creation permissions and revision attribution. Creation and duplication now retain initial restorable snapshots; autosave pruning and insertion use one flush with deterministic ordering.
+- Preserved manual taxonomy slugs, including after renaming, while resolving collisions and generating missing slugs.
+- Verification: `composer qa` passed (**250 tests / 20,771 assertions**), both PHPStan analyses, lints, style, standalone CSS, dependency audit and tooling check. Evidence: `/tmp/opencode/blog-remediation-m5-qa.log`; new caller-level coverage is in `tests/Functional/ArticleSaveRegressionTest.php`.
+- Limitations: simultaneous article edits/autosaves have not been independently stress-tested. Remaining review findings and deployment/runtime/scale verification gaps above are unchanged.
 
 ### 2026-11-13 — M4 review remediation
 - Restricted user management and role assignment: Administrators cannot manage either administrative role or grant custom capabilities they do not hold. Invalid account forms bind to copies and cannot persist rejected changes on a later flush.

@@ -110,6 +110,16 @@ class Article
         $this->seo = new SeoMetadata();
     }
 
+    /** An editing copy must not share mutable form data with the managed entity. */
+    public function __clone()
+    {
+        $this->seo = clone $this->seo;
+        $this->categories = new ArrayCollection($this->categories->toArray());
+        $this->tags = new ArrayCollection($this->tags->toArray());
+        // Editing copies never carry persistence-owned revision history.
+        $this->revisions = new ArrayCollection();
+    }
+
     public function getTitle(): string
     {
         return $this->title;

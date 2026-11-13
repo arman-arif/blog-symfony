@@ -25,7 +25,8 @@ final readonly class TaxonomyService
 
     public function saveCategory(Category $category): Category
     {
-        $category->setSlug($this->uniqueCategorySlug($category->getName(), $category->getId()));
+        $source = '' === trim($category->getSlug()) ? $category->getName() : $category->getSlug();
+        $category->setSlug($this->uniqueCategorySlug($source, $category->getId()));
         $this->entityManager->persist($category);
         $this->entityManager->flush();
         $this->publicCache->invalidateTags(['sitemap']);
@@ -46,7 +47,8 @@ final readonly class TaxonomyService
 
     public function saveTag(Tag $tag): Tag
     {
-        $tag->setSlug($this->uniqueTagSlug($tag->getName(), $tag->getId()));
+        $source = '' === trim($tag->getSlug()) ? $tag->getName() : $tag->getSlug();
+        $tag->setSlug($this->uniqueTagSlug($source, $tag->getId()));
         $this->entityManager->persist($tag);
         $this->entityManager->flush();
         $this->publicCache->invalidateTags(['sitemap']);
