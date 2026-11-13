@@ -40,7 +40,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M4 authorization and TOTP | Fixed; full QA and production listener registration verified |
 | M5 atomic article saves, attribution, revisions and taxonomy | Fixed; full QA and injected rollback regressions verified |
 | M6 media references, deletion and decoding limits | Fixed; full QA, migration and production schema/command wiring verified |
-| M7 public visibility, fetch joins and discovery ranking | Pending |
+| M7 public visibility, fetch joins and discovery ranking | Fixed; full QA and HTTP/query/cardinality regressions verified |
 | M8 async view routing | Pending |
 | M9 sitemap invalidation | Pending |
 | M10 newsletter eligibility, retries, delivery accounting and SMTP | Pending |
@@ -60,6 +60,13 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, mi
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-13 — M7 review remediation
+- Centralized public article criteria and applied private/premium/status/date/trash filtering to public listings, detail lookup, search, feeds, counts and discovery candidates before ranking limits.
+- Separated taxonomy filter joins from fetch joins; limited distinct articles before hydrating complete categories/tags for related, popular and adjacent results. Eager-loaded author avatars and retained bounded-query regressions.
+- Ranked related/recommended stories by shared taxonomy count; homepage popularity uses actual 30-day views, while trending compares the last 24 hours against the preceding six-day baseline. Empty activity no longer fabricates lifetime or latest-story rankings; bumped the homepage cache version.
+- Verification: `composer qa` passed (**278 tests / 21,278 assertions**), both PHPStan analyses, lints, style, standalone CSS, audit and tooling check. New `tests/Functional/PublicDiscoveryRegressionTest.php` covers hidden HTTP/query surfaces, complete filtered collections, result cardinality, overlap ordering and recent-activity ranking. Evidence: `/tmp/opencode/blog-remediation-m7-qa.log`; focused run: **29 tests / 340 assertions**.
+- Limitations: large-catalog search/ranking benchmarks and browser/Lighthouse rechecks remain pending. Popularity depends on the retained 30-day raw-view window; deployments changing retention below that window require a rollup-backed ranking design. Remaining remediation and independent runtime/deployment gaps above remain open.
 
 ### 2026-11-13 — M6 review remediation
 - Protected relational and inline media references in articles, pages, revisions/restorable trash, newsletters, advertisements, SEO images and website settings including logo/favicon. Candidate reads are streamed; exact storage-key boundaries avoid blocking deletion for lookalike filenames.

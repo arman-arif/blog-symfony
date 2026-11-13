@@ -96,20 +96,14 @@ final readonly class PublicCatalog
     /** @return array{articles: list<Article>, popular: list<Article>, trending: list<Article>, recommended: list<Article>} */
     public function homepage(): array
     {
-        $ids = $this->cache->get('public.homepage.v1', function (ItemInterface $item): array {
+        $ids = $this->cache->get('public.homepage.v2', function (ItemInterface $item): array {
             $item->expiresAfter(300);
             $item->tag(['articles', 'homepage']);
 
             $latest = $this->articles->paginatePublished([], 1, 18)['items'];
             $popularIds = $this->views->topArticleIdsSince(new \DateTimeImmutable('-30 days'), 3);
-            if ([] === $popularIds) {
-                $popularIds = array_map(static fn (Article $article): ?int => $article->getId(), $this->articles->mostViewedPublished(3));
-            }
-            $trendingIds = $this->views->topArticleIdsSince(new \DateTimeImmutable('-7 days'), 3);
-            if ([] === $trendingIds) {
-                $trendingIds = array_map(static fn (Article $article): ?int => $article->getId(), array_slice($latest, 0, 3));
-            }
-            $recommended = array_map(static fn (Article $article): ?int => $article->getId(), array_slice($latest, 4, 3));
+            $trendingIds = $this->views->trendingArticleIds(new \DateTimeImmutable(), 3);
+            $recommended = [] === $latest ? [] : array_map(static fn (Article $article): ?int => $article->getId(), $this->articles->findRelated($latest[0], 3));
 
             return [
                 'latest' => array_map(static fn (Article $article): int => (int) $article->getId(), $latest),

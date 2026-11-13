@@ -41,15 +41,7 @@ class ArticleRepository extends ServiceEntityRepository
     /** @return list<Article> */
     public function findPublished(int $limit = 10): array
     {
-        return $this->createQueryBuilder('article')
-            ->andWhere('article.status = :status')
-            ->andWhere('article.publishedAt <= :now')
-            ->setParameter('status', ArticleStatus::Published)
-            ->setParameter('now', new \DateTimeImmutable())
-            ->orderBy('article.publishedAt', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+        return $this->limitedPublished($this->publishedBuilder()->orderBy('article.publishedAt', 'DESC')->addOrderBy('article.id', 'DESC'), $limit);
     }
 
     /**
@@ -88,7 +80,8 @@ class ArticleRepository extends ServiceEntityRepository
                 $builder->andWhere('author.id = :author')->setParameter('author', $filters['author']);
             }
             if (isset($filters['category'])) {
-                $builder->andWhere('category.id = :category')->setParameter('category', $filters['category']);
+                $builder->join('article.categories', 'filterCategory')
+                    ->andWhere('filterCategory.id = :category')->setParameter('category', $filters['category']);
             }
 
             $query = $builder->getQuery()
@@ -151,19 +144,39 @@ class ArticleRepository extends ServiceEntityRepository
         return (int) $builder->getQuery()->getSingleScalarResult();
     }
 
-    private function publishedBuilder(): QueryBuilder
+    private function publishedCriteriaBuilder(): QueryBuilder
     {
         return $this->createQueryBuilder('article')
-            ->leftJoin('article.author', 'author')->addSelect('author')
-            ->leftJoin('article.categories', 'category')->addSelect('category')
-            ->leftJoin('article.tags', 'tag')->addSelect('tag')
-            ->leftJoin('article.featuredImage', 'featuredImage')->addSelect('featuredImage')
+            ->andWhere('article.deletedAt IS NULL')
             ->andWhere('article.status = :published')
+            ->andWhere('article.visibility = :public')
             ->andWhere('article.publishedAt IS NOT NULL')
             ->andWhere('article.publishedAt <= :now')
             ->andWhere('article.isPremium = false')
             ->setParameter('published', ArticleStatus::Published)
+            ->setParameter('public', ArticleVisibility::Public)
             ->setParameter('now', new \DateTimeImmutable());
+    }
+
+    private function publishedBuilder(): QueryBuilder
+    {
+        return $this->publishedCriteriaBuilder()
+            ->leftJoin('article.author', 'author')->addSelect('author')
+            ->leftJoin('author.avatar', 'avatar')->addSelect('avatar')
+            ->leftJoin('article.categories', 'category')->addSelect('category')
+            ->leftJoin('article.tags', 'tag')->addSelect('tag')
+            ->leftJoin('article.featuredImage', 'featuredImage')->addSelect('featuredImage');
+    }
+
+    /** @return list<Article> */
+    private function limitedPublished(QueryBuilder $builder, int $limit): array
+    {
+        if ($limit < 1) {
+            return [];
+        }
+        $paginator = new Paginator($builder->getQuery()->setMaxResults($limit), fetchJoinCollection: true);
+
+        return array_values(iterator_to_array($paginator->getIterator()));
     }
 
     /**
@@ -191,10 +204,12 @@ class ArticleRepository extends ServiceEntityRepository
             $builder->andWhere($builder->expr()->orX(...$conditions));
         }
         if ('' !== ($filters['category'] ?? '')) {
-            $builder->andWhere('category.slug = :category')->setParameter('category', $filters['category']);
+            $builder->join('article.categories', 'filterCategory')
+                ->andWhere('filterCategory.slug = :category')->setParameter('category', $filters['category']);
         }
         if ('' !== ($filters['tag'] ?? '')) {
-            $builder->andWhere('tag.slug = :tag')->setParameter('tag', $filters['tag']);
+            $builder->join('article.tags', 'filterTag')
+                ->andWhere('filterTag.slug = :tag')->setParameter('tag', $filters['tag']);
         }
         if ('' !== ($filters['author'] ?? '')) {
             $builder->andWhere('author.slug = :author')->setParameter('author', $filters['author']);
@@ -203,7 +218,7 @@ class ArticleRepository extends ServiceEntityRepository
         $builder->distinct();
         match ($filters['sort'] ?? 'latest') {
             'oldest' => $builder->orderBy('article.publishedAt', 'ASC')->addOrderBy('article.id', 'ASC'),
-            'popular' => $builder->orderBy('article.viewCount', 'DESC')->addOrderBy('article.publishedAt', 'DESC'),
+            'popular' => $builder->orderBy('article.viewCount', 'DESC')->addOrderBy('article.publishedAt', 'DESC')->addOrderBy('article.id', 'DESC'),
             default => $builder->orderBy('article.publishedAt', 'DESC')->addOrderBy('article.id', 'DESC'),
         };
 
@@ -259,34 +274,43 @@ class ArticleRepository extends ServiceEntityRepository
     /** @return list<Article> */
     public function findRelated(Article $article, int $limit = 3): array
     {
-        $builder = $this->publishedBuilder()
+        $builder = $this->publishedCriteriaBuilder()->select('article.id')
             ->andWhere('article.id != :exclude')
-            ->setParameter('exclude', $article);
+            ->setParameter('exclude', $article->getId());
 
         $conditions = [];
+        $scores = [];
         if (!$article->getCategories()->isEmpty()) {
-            $conditions[] = 'category.id IN (:categories)';
+            $builder->leftJoin('article.categories', 'relatedCategory', 'WITH', 'relatedCategory.id IN (:categories)');
+            $conditions[] = 'relatedCategory.id IS NOT NULL';
+            $scores[] = 'COUNT(DISTINCT relatedCategory.id)';
             $builder->setParameter('categories', $article->getCategories()->map(static fn ($category): ?int => $category->getId())->toArray());
         }
         if (!$article->getTags()->isEmpty()) {
-            $conditions[] = 'tag.id IN (:tags)';
+            $builder->leftJoin('article.tags', 'relatedTag', 'WITH', 'relatedTag.id IN (:tags)');
+            $conditions[] = 'relatedTag.id IS NOT NULL';
+            $scores[] = 'COUNT(DISTINCT relatedTag.id)';
             $builder->setParameter('tags', $article->getTags()->map(static fn ($tag): ?int => $tag->getId())->toArray());
         }
-        if ([] === $conditions) {
+        if ([] === $conditions || $limit < 1) {
             return [];
         }
 
-        return $builder->andWhere($builder->expr()->orX(...$conditions))
-            ->distinct()
-            ->orderBy('article.publishedAt', 'DESC')
+        $rows = $builder->andWhere($builder->expr()->orX(...$conditions))
+            ->addSelect(implode(' + ', $scores).' AS HIDDEN matchScore')
+            ->groupBy('article.id')->addGroupBy('article.publishedAt')
+            ->orderBy('matchScore', 'DESC')->addOrderBy('article.publishedAt', 'DESC')->addOrderBy('article.id', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
-            ->getResult();
+            ->getScalarResult();
+
+        // Limit distinct article IDs first; hydrate complete, unfiltered collections second.
+        return $this->findPublishedByIds(array_map(static fn (array $row): int => (int) $row['id'], $rows));
     }
 
     public function findPreviousPublished(Article $article): ?Article
     {
-        return $this->publishedBuilder()
+        $rows = $this->publishedCriteriaBuilder()->select('article.id')
             ->andWhere('article.publishedAt < :publishedAt OR (article.publishedAt = :publishedAt AND article.id < :id)')
             ->setParameter('publishedAt', $article->getPublishedAt())
             ->setParameter('id', $article->getId())
@@ -294,12 +318,14 @@ class ArticleRepository extends ServiceEntityRepository
             ->addOrderBy('article.id', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getScalarResult();
+
+        return [] === $rows ? null : ($this->findPublishedByIds([(int) $rows[0]['id']])[0] ?? null);
     }
 
     public function findNextPublished(Article $article): ?Article
     {
-        return $this->publishedBuilder()
+        $rows = $this->publishedCriteriaBuilder()->select('article.id')
             ->andWhere('article.publishedAt > :publishedAt OR (article.publishedAt = :publishedAt AND article.id > :id)')
             ->setParameter('publishedAt', $article->getPublishedAt())
             ->setParameter('id', $article->getId())
@@ -307,19 +333,18 @@ class ArticleRepository extends ServiceEntityRepository
             ->addOrderBy('article.id', 'ASC')
             ->setMaxResults(1)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getScalarResult();
+
+        return [] === $rows ? null : ($this->findPublishedByIds([(int) $rows[0]['id']])[0] ?? null);
     }
 
     /** @return list<Article> */
     public function mostViewedPublished(int $limit = 3): array
     {
-        return $this->publishedBuilder()
-            ->distinct()
+        return $this->limitedPublished($this->publishedBuilder()
             ->orderBy('article.viewCount', 'DESC')
             ->addOrderBy('article.publishedAt', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+            ->addOrderBy('article.id', 'DESC'), $limit);
     }
 
     /** @return list<int> */
@@ -330,7 +355,7 @@ class ArticleRepository extends ServiceEntityRepository
         }
 
         $connection = $this->getEntityManager()->getConnection();
-        $sql = "SELECT id FROM article WHERE deleted_at IS NULL AND status = 'published' AND published_at <= UTC_TIMESTAMP() AND MATCH(title, excerpt, content) AGAINST (:query IN NATURAL LANGUAGE MODE)";
+        $sql = "SELECT id FROM article WHERE deleted_at IS NULL AND status = 'published' AND visibility = 'public' AND is_premium = 0 AND published_at <= UTC_TIMESTAMP() AND MATCH(title, excerpt, content) AGAINST (:query IN NATURAL LANGUAGE MODE) ORDER BY MATCH(title, excerpt, content) AGAINST (:query IN NATURAL LANGUAGE MODE) DESC, id DESC";
 
         try {
             /** @var list<int> $ids */
@@ -345,14 +370,9 @@ class ArticleRepository extends ServiceEntityRepository
     /** @return array<int, int> */
     public function publishedCountsByCategory(): array
     {
-        $rows = $this->createQueryBuilder('article')
+        $rows = $this->publishedCriteriaBuilder()
             ->select('category.id AS categoryId, COUNT(DISTINCT article.id) AS total')
             ->join('article.categories', 'category')
-            ->andWhere('article.status = :published')
-            ->andWhere('article.publishedAt <= :now')
-            ->andWhere('article.isPremium = false')
-            ->setParameter('published', ArticleStatus::Published)
-            ->setParameter('now', new \DateTimeImmutable())
             ->groupBy('category.id')
             ->getQuery()
             ->getArrayResult();
@@ -363,14 +383,9 @@ class ArticleRepository extends ServiceEntityRepository
     /** @return array<int, int> */
     public function publishedCountsByTag(): array
     {
-        $rows = $this->createQueryBuilder('article')
+        $rows = $this->publishedCriteriaBuilder()
             ->select('tag.id AS tagId, COUNT(DISTINCT article.id) AS total')
             ->join('article.tags', 'tag')
-            ->andWhere('article.status = :published')
-            ->andWhere('article.publishedAt <= :now')
-            ->andWhere('article.isPremium = false')
-            ->setParameter('published', ArticleStatus::Published)
-            ->setParameter('now', new \DateTimeImmutable())
             ->groupBy('tag.id')
             ->getQuery()
             ->getArrayResult();
@@ -381,13 +396,8 @@ class ArticleRepository extends ServiceEntityRepository
     /** @return array<int, int> */
     public function publishedCountsByAuthor(): array
     {
-        $rows = $this->createQueryBuilder('article')
+        $rows = $this->publishedCriteriaBuilder()
             ->select('IDENTITY(article.author) AS authorId, COUNT(article.id) AS total')
-            ->andWhere('article.status = :published')
-            ->andWhere('article.publishedAt <= :now')
-            ->andWhere('article.isPremium = false')
-            ->setParameter('published', ArticleStatus::Published)
-            ->setParameter('now', new \DateTimeImmutable())
             ->groupBy('article.author')
             ->getQuery()
             ->getArrayResult();
@@ -399,9 +409,7 @@ class ArticleRepository extends ServiceEntityRepository
     public function findForSitemap(): array
     {
         return $this->publishedBuilder()
-            ->andWhere('article.visibility = :public')
             ->andWhere('article.seo.noindex = false')
-            ->setParameter('public', ArticleVisibility::Public)
             ->distinct()
             ->orderBy('article.updatedAt', 'DESC')
             ->getQuery()
