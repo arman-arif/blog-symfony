@@ -242,6 +242,13 @@ class ArticleRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    public function findOnePublicById(int $id): ?Article
+    {
+        return $this->publishedCriteriaBuilder()
+            ->andWhere('article.id = :id')->setParameter('id', $id)
+            ->getQuery()->getOneOrNullResult();
+    }
+
     /** @param list<int> $ids
      * @return list<Article>
      */

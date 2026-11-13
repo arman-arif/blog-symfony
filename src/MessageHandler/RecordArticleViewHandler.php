@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\MessageHandler;
 
 use App\Entity\ArticleView;
-use App\Enum\ArticleStatus;
 use App\Message\RecordArticleViewMessage;
 use App\Repository\ArticleRepository;
 use App\Repository\ArticleViewRepository;
@@ -28,8 +27,9 @@ final readonly class RecordArticleViewHandler
             return;
         }
 
-        $article = $this->articles->find($message->articleId);
-        if (null === $article || ArticleStatus::Published !== $article->getStatus() || null === $article->getPublishedAt() || $article->getPublishedAt() > new \DateTimeImmutable()) {
+        // Eligibility is checked again at processing time, not trusted from the HTTP request.
+        $article = $this->articles->findOnePublicById($message->articleId);
+        if (null === $article) {
             return;
         }
 

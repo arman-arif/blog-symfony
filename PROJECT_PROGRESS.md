@@ -41,7 +41,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M5 atomic article saves, attribution, revisions and taxonomy | Fixed; full QA and injected rollback regressions verified |
 | M6 media references, deletion and decoding limits | Fixed; full QA, migration and production schema/command wiring verified |
 | M7 public visibility, fetch joins and discovery ranking | Fixed; full QA and HTTP/query/cardinality regressions verified |
-| M8 async view routing | Pending |
+| M8 async view routing | Fixed; full QA, HTTP/queue/worker regressions and production routing verified |
 | M9 sitemap invalidation | Pending |
 | M10 newsletter eligibility, retries, delivery accounting and SMTP | Pending |
 | M11 analytics scope and export scalability | Owner scope fixed with M4; export scalability pending |
@@ -60,6 +60,12 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, mi
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-13 — M8 review remediation
+- Routed article-view messages to the production async transport, without a synchronous test override. HTTP reads enqueue views without updating counts; the registered Messenger consumer processes them.
+- Rechecked the centralized public criteria at worker time, including private/premium/status/date/trash exclusions, and covered duplicate/bot replay behavior.
+- Verification: `composer qa` passed (**285 tests / 21,312 assertions**), both PHPStan analyses, lints, style, standalone CSS, audit and tooling check. Focused engagement/worker/performance tests: **18 tests / 129 assertions**. Production Messenger configuration confirms `RecordArticleViewMessage: async`. Evidence: `/tmp/opencode/blog-remediation-m8-qa.log`, `/tmp/opencode/blog-remediation-m8-focused.log`, `/tmp/opencode/blog-remediation-m8-prod-routing.log`.
+- Limitations: worker regressions use the actual command and production routing with an in-memory test transport, not a separate Doctrine/Redis worker process. Parallel view deduplication remains independently unverified; remaining remediation and runtime/deployment gaps above are open.
 
 ### 2026-11-13 — M7 review remediation
 - Centralized public article criteria and applied private/premium/status/date/trash filtering to public listings, detail lookup, search, feeds, counts and discovery candidates before ranking limits.
