@@ -69,6 +69,8 @@ Restore `SETTINGS_ENCRYPTION_KEY` with the backup; without it, encrypted SMTP/TO
 
 ## Files and permissions
 
+- Media deletion first commits a soft-deleted tombstone, then removes the original and every configured Liip derivative. Storage failures leave a durable pending cleanup, not a visible library record pointing to a missing file. Run `APP_ENV=prod php bin/console app:media:cleanup` after a failure (and periodically, e.g. hourly cron); a nonzero exit means cleanup still needs retrying. Deletion is blocked for inline content, revisions/restorable trash, SEO images, and website settings including logo/favicon.
+- Image uploads are checked before GD decoding: maximum side 8192 pixels, maximum 16 megapixels, and a conservative estimated decode/encode budget capped at 256 MiB and the available PHP `memory_limit`. Raise PHP's memory budget only after measuring; the fixed safety ceilings still apply. Re-encoded byte length is stored as the media size.
 - Code owned by `fieldnotes:fieldnotes`; files `644`, directories `755`.
 - `var/`, `public/uploads/` writable by `fieldnotes` and `www-data` (directories `775`, files `664`).
 - `public/uploads/` is inside the document root, so PHP execution is denied by the web-server config. Never relax that rule.

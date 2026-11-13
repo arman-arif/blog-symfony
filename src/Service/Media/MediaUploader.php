@@ -8,6 +8,7 @@ use App\Entity\Media;
 use App\Entity\User;
 use App\Service\Settings\SettingsServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final readonly class MediaUploader
@@ -29,10 +30,15 @@ final readonly class MediaUploader
         'js', 'mjs', 'html', 'htm', 'svg', 'xml', 'htaccess',
     ];
 
+    private const int MAX_DIMENSION = 8192;
+    private const int MAX_PIXELS = 16_000_000;
+    private const int MAX_DECODE_BYTES = 268_435_456;
+
     public function __construct(
         private MediaStorageInterface $storage,
         private SettingsServiceInterface $settings,
         private EntityManagerInterface $entityManager,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -68,19 +74,14 @@ final readonly class MediaUploader
         $datePath = date('Y/m');
         $filename = bin2hex(random_bytes(16)).'.'.$extension;
         $storageKey = $datePath.'/'.$filename;
-        $dimensions = str_starts_with($mimeType, 'image/') ? $this->imageDimensions($file->getPathname()) : [null, null];
-
-        if (str_starts_with($mimeType, 'image/')) {
-            $this->storage->write($storageKey, $this->stripImageMetadata($file->getPathname(), $mimeType));
-        } else {
-            $this->storage->storeFile($storageKey, $file);
-        }
+        $dimensions = str_starts_with($mimeType, 'image/') ? $this->imageDimensions($file->getPathname(), $mimeType, (int) $file->getSize()) : [null, null];
+        $contents = str_starts_with($mimeType, 'image/') ? $this->stripImageMetadata($file->getPathname(), $mimeType) : null;
 
         $media = (new Media())
             ->setFilename($filename)
             ->setOriginalName($originalName)
             ->setMimeType($mimeType)
-            ->setSize((int) $file->getSize())
+            ->setSize(null === $contents ? (int) $file->getSize() : strlen($contents))
             ->setWidth($dimensions[0])
             ->setHeight($dimensions[1])
             ->setAlt(pathinfo($originalName, \PATHINFO_FILENAME))
@@ -94,18 +95,49 @@ final readonly class MediaUploader
             ])
             ->setUploadedBy($uploadedBy);
 
-        $this->entityManager->persist($media);
-        $this->entityManager->flush();
+        try {
+            if (null !== $contents) {
+                $this->storage->write($storageKey, $contents);
+            } else {
+                $this->storage->storeFile($storageKey, $file);
+            }
+            $this->entityManager->wrapInTransaction(function () use ($media): void {
+                $this->entityManager->persist($media);
+            });
+        } catch (\Throwable $exception) {
+            try {
+                $this->storage->delete($storageKey);
+            } catch (\Exception $cleanupException) {
+                $this->logger->error('Failed upload left an orphaned storage key.', ['storageKey' => $storageKey, 'exception' => $cleanupException]);
+            }
+            throw $exception;
+        }
 
         return $media;
     }
 
     /** @return array{?int, ?int} */
-    private function imageDimensions(string $path): array
+    private function imageDimensions(string $path, string $mimeType, int $encodedBytes): array
     {
         $size = @getimagesize($path);
-        if (false === $size) {
+        if (false === $size || $size['mime'] !== $mimeType || $size[0] < 1 || $size[1] < 1) {
             throw new \DomainException('The uploaded image could not be read.');
+        }
+
+        // Read headers and bound allocation before any GD raster decoder runs.
+        if ($size[0] > self::MAX_DIMENSION || $size[1] > self::MAX_DIMENSION) {
+            throw new \DomainException('The image exceeds the 8192-pixel dimension limit.');
+        }
+        $pixels = $size[0] * $size[1];
+        if ($pixels > self::MAX_PIXELS) {
+            throw new \DomainException('The image exceeds the 16-megapixel limit.');
+        }
+        // Conservative headroom for raster, encoder buffers and compressed copies.
+        $requiredBytes = $pixels * 16 + $encodedBytes * 3 + 16_777_216;
+        $memoryLimit = ini_parse_quantity((string) ini_get('memory_limit'));
+        $available = $memoryLimit < 0 ? self::MAX_DECODE_BYTES : min(self::MAX_DECODE_BYTES, $memoryLimit - memory_get_usage(true));
+        if ($requiredBytes > $available) {
+            throw new \DomainException('The image exceeds the safe decoding memory limit.');
         }
 
         return [$size[0], $size[1]];
@@ -131,13 +163,18 @@ final readonly class MediaUploader
         }
 
         ob_start();
-        $ok = match ($mimeType) {
-            'image/jpeg' => imagejpeg($image, null, 90),
-            'image/png' => imagepng($image, null, 6),
-            'image/webp' => imagewebp($image, null, 85),
-            'image/gif' => imagegif($image),
-        };
-        $contents = (string) ob_get_clean();
+        try {
+            $ok = match ($mimeType) {
+                'image/jpeg' => imagejpeg($image, null, 90),
+                'image/png' => imagepng($image, null, 6),
+                'image/webp' => imagewebp($image, null, 85),
+                'image/gif' => imagegif($image),
+            };
+            $contents = (string) ob_get_contents();
+        } finally {
+            ob_end_clean();
+            unset($image);
+        }
 
         if (!$ok || '' === $contents) {
             throw new \DomainException('The uploaded image could not be re-encoded.');

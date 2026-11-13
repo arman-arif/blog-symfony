@@ -10,9 +10,9 @@ use App\Form\MediaEditType;
 use App\Form\MediaUploadType;
 use App\Repository\MediaRepository;
 use App\Service\Audit\ActivityLogger;
+use App\Service\Media\MediaDeletionService;
 use App\Service\Media\MediaStorageInterface;
 use App\Service\Media\MediaUploader;
-use App\Service\Media\MediaUsageChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -30,7 +30,7 @@ final class MediaController extends AbstractController
         private readonly MediaRepository $media,
         private readonly MediaUploader $uploader,
         private readonly MediaStorageInterface $storage,
-        private readonly MediaUsageChecker $usageChecker,
+        private readonly MediaDeletionService $deletion,
         private readonly ActivityLogger $activityLogger,
         private readonly EntityManagerInterface $entityManager,
     ) {
@@ -99,19 +99,17 @@ final class MediaController extends AbstractController
             throw new AccessDeniedException('Invalid CSRF token.');
         }
 
-        $usages = $this->usageChecker->usages($media);
-        if ([] !== $usages) {
-            $this->addFlash('danger', 'This file is used by '.implode(', ', $usages).'. Remove those references before deleting it.');
+        $name = $media->getOriginalName();
+        try {
+            $cleaned = $this->deletion->delete($media);
+        } catch (\DomainException $exception) {
+            $this->addFlash('danger', $exception->getMessage());
 
             return $this->redirectToRoute('admin_media_edit', ['id' => $media->getId()]);
         }
 
-        $this->storage->delete($media->getStorageKey());
-        $name = $media->getOriginalName();
-        $this->entityManager->remove($media);
-        $this->entityManager->flush();
         $this->activityLogger->log('media.deleted', 'Media', $id, ['summary' => 'Deleted “'.$name.'”']);
-        $this->addFlash('success', 'Media deleted.');
+        $this->addFlash($cleaned ? 'success' : 'warning', $cleaned ? 'Media deleted.' : 'Media deleted from the library. File cleanup failed and must be retried with app:media:cleanup.');
 
         return $this->redirectToRoute('admin_media_index');
     }

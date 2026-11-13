@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service\Media;
 
 use League\Flysystem\FilesystemOperator;
+use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -15,6 +16,7 @@ final readonly class FlysystemMediaStorage implements MediaStorageInterface
         private FilesystemOperator $filesystem,
         #[Autowire(param: 'app.media.public_base_url')]
         private string $publicBaseUrl,
+        private CacheManager $cacheManager,
     ) {
     }
 
@@ -41,6 +43,7 @@ final readonly class FlysystemMediaStorage implements MediaStorageInterface
 
     public function delete(string $storageKey): void
     {
+        $this->cacheManager->remove($storageKey);
         if ($this->filesystem->fileExists($storageKey)) {
             $this->filesystem->delete($storageKey);
         }

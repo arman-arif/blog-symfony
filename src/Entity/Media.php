@@ -56,6 +56,22 @@ class Media
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?User $uploadedBy = null;
 
+    /** Deleted rows are durable cleanup tombstones until originals and derivatives are removed. */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $filesDeletedAt = null;
+
+    public function getFilesDeletedAt(): ?\DateTimeImmutable
+    {
+        return $this->filesDeletedAt;
+    }
+
+    public function setFilesDeletedAt(?\DateTimeImmutable $filesDeletedAt): self
+    {
+        $this->filesDeletedAt = $filesDeletedAt;
+
+        return $this;
+    }
+
     public function getFilename(): string
     {
         return $this->filename;

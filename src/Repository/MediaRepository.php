@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Media;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -20,6 +21,28 @@ class MediaRepository extends ServiceEntityRepository
     public function findOneByStorageKey(string $storageKey): ?Media
     {
         return $this->findOneBy(['storageKey' => $storageKey]);
+    }
+
+    /** @return list<array{id: int, storageKey: string}> */
+    public function pendingFileCleanup(int $afterId, int $limit = 100): array
+    {
+        // DBAL deliberately includes soft-deleted tombstones without disabling ORM filters.
+        $rows = $this->getEntityManager()->getConnection()->createQueryBuilder()
+            ->select('id', 'storage_key')->from('media')
+            ->where('deleted_at IS NOT NULL')->andWhere('files_deleted_at IS NULL')->andWhere('id > :after')
+            ->setParameter('after', $afterId)->orderBy('id')->setMaxResults($limit)
+            ->executeQuery()->fetchAllAssociative();
+
+        return array_map(static fn (array $row): array => ['id' => (int) $row['id'], 'storageKey' => (string) $row['storage_key']], $rows);
+    }
+
+    public function markFilesDeleted(int $id): void
+    {
+        $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE media SET files_deleted_at = :now WHERE id = :id AND deleted_at IS NOT NULL',
+            ['now' => new \DateTimeImmutable(), 'id' => $id],
+            ['now' => Types::DATETIME_IMMUTABLE],
+        );
     }
 
     /**

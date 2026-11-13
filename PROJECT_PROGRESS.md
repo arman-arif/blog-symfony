@@ -39,7 +39,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M2 settings/default parity | Fixed; full QA passed, including production-service regression coverage |
 | M4 authorization and TOTP | Fixed; full QA and production listener registration verified |
 | M5 atomic article saves, attribution, revisions and taxonomy | Fixed; full QA and injected rollback regressions verified |
-| M6 media references, deletion and decoding limits | Pending |
+| M6 media references, deletion and decoding limits | Fixed; full QA, migration and production schema/command wiring verified |
 | M7 public visibility, fetch joins and discovery ranking | Pending |
 | M8 async view routing | Pending |
 | M9 sitemap invalidation | Pending |
@@ -60,6 +60,13 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, mi
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-13 — M6 review remediation
+- Protected relational and inline media references in articles, pages, revisions/restorable trash, newsletters, advertisements, SEO images and website settings including logo/favicon. Candidate reads are streamed; exact storage-key boundaries avoid blocking deletion for lookalike filenames.
+- Committed the media soft-deletion before removing bytes; removed all configured Liip derivatives alongside originals. Added a migrated cleanup-completion timestamp on retained tombstones and the idempotent `app:media:cleanup` command to recover from storage failures or process interruption. Documented periodic cleanup and failure handling in `docs/operations.md`.
+- Checked dimensions, pixel count and conservative allocation headroom before GD raster decoding, including PHP's current memory budget. Stored actual re-encoded sizes and cleaned up uploaded bytes on database failures.
+- Verification: `composer qa` passed (**269 tests / 20,875 assertions**), both PHPStan analyses, lints, style, standalone CSS, audit and tooling check. Caller-level regressions cover reference-protected HTTP deletion, injected database/storage/upload failures, retry idempotence, all generated derivatives and hostile raster headers. Applied the generated migration; production schema validation and command registration passed. Evidence: `/tmp/opencode/blog-remediation-m6-qa.log`, `/tmp/opencode/blog-remediation-m6-migrate.log`, `/tmp/opencode/blog-remediation-m6-prod-schema.log`, `/tmp/opencode/blog-remediation-m6-prod-command.log`.
+- Limitations: simultaneous insertion of literal media URLs during deletion is not serialized across all content writers; upload cleanup failures are logged for operator reconciliation. S3/CDN cleanup, large reference-scan benchmarks and independent decoder fuzzing remain unverified. Broader deployment/runtime gaps above remain open.
 
 ### 2026-11-13 — M5 review remediation
 - Bound article edit forms to isolated copies, including SEO and taxonomy collections, without loading revision history. Invalid forms and rejected workflow/permission changes cannot leak into later flushes; submitted values remain visible for correction.
