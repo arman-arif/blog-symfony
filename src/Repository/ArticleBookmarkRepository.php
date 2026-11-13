@@ -27,6 +27,16 @@ class ArticleBookmarkRepository extends ServiceEntityRepository
         return $this->findBy(['user' => $userId], ['createdAt' => 'DESC']);
     }
 
+    public function countForAuthor(?int $authorId = null): int
+    {
+        $builder = $this->createQueryBuilder('bookmark')->select('COUNT(bookmark.id)');
+        if (null !== $authorId) {
+            $builder->join('bookmark.article', 'article')->andWhere('article.author = :scopeAuthor')->setParameter('scopeAuthor', $authorId);
+        }
+
+        return (int) $builder->getQuery()->getSingleScalarResult();
+    }
+
     /** @param list<int> $articleIds
      * @return array<int, int>
      */

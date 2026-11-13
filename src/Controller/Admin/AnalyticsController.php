@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Entity\User;
 use App\Service\Analytics\AnalyticsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,7 +22,7 @@ final class AnalyticsController extends AbstractController
         [$from, $to] = $this->range($request);
 
         return $this->render('admin/analytics/index.html.twig', [
-            'report' => $analytics->report($from, $to),
+            'report' => $analytics->report($from, $to, $this->authorScope()),
             'from' => $from->format('Y-m-d'),
             'to' => $to->format('Y-m-d'),
         ]);
@@ -31,7 +32,7 @@ final class AnalyticsController extends AbstractController
     public function export(Request $request, AnalyticsService $analytics): Response
     {
         [$from, $to] = $this->range($request);
-        $report = $analytics->report($from, $to);
+        $report = $analytics->report($from, $to, $this->authorScope());
 
         $handle = fopen('php://temp', 'wb');
         \assert(false !== $handle);
@@ -69,5 +70,13 @@ final class AnalyticsController extends AbstractController
         }
 
         return [$from, $to];
+    }
+
+    private function authorScope(): ?int
+    {
+        $user = $this->getUser();
+        \assert($user instanceof User);
+
+        return $this->isGranted('article.edit.any') ? null : $user->getId();
     }
 }

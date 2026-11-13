@@ -28,7 +28,7 @@ final readonly class UserChecker implements UserCheckerInterface
         }
 
         if ($this->settings->getBool('security.require_admin_2fa')
-            && $user->hasRoleCode('ROLE_SUPER_ADMIN')
+            && ($user->hasRoleCode('ROLE_SUPER_ADMIN') || $user->hasRoleCode('ROLE_ADMIN'))
             && !$user->isTotpAuthenticationEnabled()
         ) {
             throw new CustomUserMessageAccountStatusException('Two-factor authentication is required for administrator accounts.');

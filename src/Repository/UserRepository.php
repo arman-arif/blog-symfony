@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -68,14 +69,23 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         return ['items' => $items, 'total' => $total, 'pages' => max(1, (int) ceil($total / $perPage))];
     }
 
-    public function countSuperAdmins(): int
+    public function countSuperAdmins(?int $ignoreId = null, bool $forUpdate = false): int
     {
-        return (int) $this->createQueryBuilder('user')
+        $builder = $this->createQueryBuilder('user')
             ->select('COUNT(DISTINCT user.id)')
             ->join('user.assignedRoles', 'role')
             ->andWhere('role.code = :code')
-            ->setParameter('code', 'ROLE_SUPER_ADMIN')
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->andWhere('user.isActive = true')
+            ->setParameter('code', 'ROLE_SUPER_ADMIN');
+        if (null !== $ignoreId) {
+            $builder->andWhere('user.id != :ignore')->setParameter('ignore', $ignoreId);
+        }
+
+        if ($forUpdate) {
+            // A locking read sees current committed membership, not a MySQL RR snapshot.
+            return count($builder->select('DISTINCT user.id')->getQuery()->setLockMode(LockMode::PESSIMISTIC_WRITE)->getScalarResult());
+        }
+
+        return (int) $builder->getQuery()->getSingleScalarResult();
     }
 }

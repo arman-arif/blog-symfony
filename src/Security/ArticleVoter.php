@@ -6,6 +6,7 @@ namespace App\Security;
 
 use App\Entity\Article;
 use App\Entity\User;
+use App\Enum\ArticleStatus;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
@@ -40,7 +41,10 @@ final class ArticleVoter extends Voter
             if ($role->hasPermission($permission.'.any')) {
                 return true;
             }
-            if ($role->hasPermission($permission.'.own') && $subject->getAuthor()->getId() === $user->getId()) {
+        }
+        foreach ($user->getAssignedRoles() as $role) {
+            if ($role->hasPermission($permission.'.own') && $subject->getAuthor()->getId() === $user->getId()
+                && ('ROLE_CONTRIBUTOR' !== $role->getCode() || ArticleStatus::Draft === $subject->getStatus())) {
                 return true;
             }
         }

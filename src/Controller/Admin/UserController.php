@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Entity\Role;
 use App\Entity\User;
 use App\Form\AdminUserFormType;
 use App\Repository\RoleRepository;
 use App\Repository\UserRepository;
+use App\Security\RoleAssignmentPolicy;
 use App\Security\UserVoter;
 use App\Service\Audit\ActivityLogger;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\User\UserManagementService;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -26,8 +28,8 @@ final class UserController extends AbstractController
     public function __construct(
         private readonly UserRepository $users,
         private readonly RoleRepository $roles,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly RoleAssignmentPolicy $rolePolicy,
+        private readonly UserManagementService $userManagement,
         private readonly ActivityLogger $activityLogger,
     ) {
     }
@@ -67,46 +69,32 @@ final class UserController extends AbstractController
 
     private function form(Request $request, User $user, bool $creating): Response
     {
-        $wasSuperAdmin = $user->hasRoleCode('ROLE_SUPER_ADMIN');
-        $form = $this->createForm(AdminUserFormType::class, $user, ['creating' => $creating]);
+        $actor = $this->getUser();
+        \assert($actor instanceof User);
+        $assignableRoles = array_values(array_filter($this->roles->findAll(), fn ($role): bool => $this->rolePolicy->canAssign($actor, $role)));
+        // Invalid input must not dirty the managed account (including the session user).
+        $details = $creating ? $user : clone $user;
+        $form = $this->createForm(AdminUserFormType::class, $details, ['creating' => $creating, 'assignable_roles' => $assignableRoles]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $hasErrors = false;
-            $existing = $this->users->findOneByEmail($user->getEmail());
+            $existing = $this->users->findOneByEmail($details->getEmail());
             if (null !== $existing && $existing->getId() !== $user->getId()) {
                 $form->get('email')->addError(new FormError('Another account already uses this email.'));
                 $hasErrors = true;
             }
-            $requestData = $request->request->all('admin_user_form');
-            $submittedRoles = is_array($requestData['assignedRoles'] ?? null) ? array_map(strval(...), $requestData['assignedRoles']) : [];
-            $nowSuperAdmin = false;
-            foreach ($user->getAssignedRoles() as $role) {
-                $nowSuperAdmin = $nowSuperAdmin || (in_array((string) $role->getId(), $submittedRoles, true) && 'ROLE_SUPER_ADMIN' === $role->getCode());
-            }
-            if ($wasSuperAdmin && !$nowSuperAdmin && $this->users->countSuperAdmins() <= 1) {
-                $form->get('assignedRoles')->addError(new FormError('The last Super Administrator cannot lose that role.'));
-                $hasErrors = true;
-            }
-
             $plainPassword = (string) $form->get('temporaryPassword')->getData();
-            if ('' !== $plainPassword && strlen($plainPassword) < 12) {
-                $form->get('temporaryPassword')->addError(new FormError('Use at least 12 characters.'));
-                $hasErrors = true;
-            }
             if (!$hasErrors) {
-                if ('' !== $plainPassword) {
-                    $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
+                try {
+                    /** @var Collection<int, Role> $assignedRoles */
+                    $assignedRoles = $form->get('assignedRoles')->getData();
+                    $this->userManagement->save($user, $actor, array_values($assignedRoles->toArray()), $plainPassword, $creating, $details);
+                } catch (\DomainException $exception) {
+                    $form->addError(new FormError($exception->getMessage()));
+
+                    return $this->render('admin/user/form.html.twig', ['user' => $user, 'form' => $form, 'creating' => $creating], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
                 }
-                if ($creating) {
-                    $user->setIsVerified(true);
-                }
-                $user->getAssignedRoles()->clear();
-                foreach ($this->roles->findBy(['id' => $submittedRoles]) as $role) {
-                    $user->addAssignedRole($role);
-                }
-                $this->entityManager->persist($user);
-                $this->entityManager->flush();
                 $this->activityLogger->log($creating ? 'user.created' : 'user.updated', 'User', $user->getId(), ['summary' => ($creating ? 'Created' : 'Updated').' user “'.$user->getDisplayName().'”']);
                 $this->addFlash('success', $creating ? 'User created.' : 'User updated.');
 

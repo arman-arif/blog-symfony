@@ -37,14 +37,14 @@ The completion table and earlier logs are historical implementation claims. The 
 | Review area | Remediation status |
 |---|---|
 | M2 settings/default parity | Fixed; full QA passed, including production-service regression coverage |
-| M4 authorization and TOTP | Pending |
+| M4 authorization and TOTP | Fixed; full QA and production listener registration verified |
 | M5 atomic article saves, attribution, revisions and taxonomy | Pending |
 | M6 media references, deletion and decoding limits | Pending |
 | M7 public visibility, fetch joins and discovery ranking | Pending |
 | M8 async view routing | Pending |
 | M9 sitemap invalidation | Pending |
 | M10 newsletter eligibility, retries, delivery accounting and SMTP | Pending |
-| M11 analytics scope and export scalability | Pending |
+| M11 analytics scope and export scalability | Owner scope fixed with M4; export scalability pending |
 | M12 advertisement expiry and CSP | Pending |
 | M13 settings validation/completeness and menu cycles | Pending |
 | M14 password policy and security follow-ups | Pending |
@@ -60,6 +60,14 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, mi
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-13 — M4 review remediation
+- Restricted user management and role assignment: Administrators cannot manage either administrative role or grant custom capabilities they do not hold. Invalid account forms bind to copies and cannot persist rejected changes on a later flush.
+- Protected the last active Super Administrator from demotion/deactivation; serialized membership changes with database role-row locks and current locking membership reads. Inactive administrators do not satisfy the protection.
+- Enforced Contributor draft-only mutations; owner-scoped article lists, dashboard, analytics and CSV, including scope-separated report caches and permission-filtered dashboard sections.
+- Restored TOTP plaintext in memory after inserts/updates while retaining encrypted database storage and correct dirty checking. Registered all four lifecycle events through attributes in production. Mandatory 2FA covers both administrative roles; optional disable requires the password and authenticator code, replacement is blocked while enrolled, and confirmation/disable attempts are throttled.
+- Verification: `composer qa` passed (**237 tests / 20,669 assertions**), both PHPStan analyses, lints, style, standalone CSS, dependency audit and tooling check. Refreshed stale no-debug production and test containers rather than weakening tests. Evidence: `/tmp/opencode/blog-remediation-m4-qa.log` and `/tmp/opencode/blog-remediation-m4-prod-listener.log`.
+- Limitations: concurrent account requests have not been independently stress-tested; fresh deployment and the remaining remediation areas above are still pending.
 
 ### 2026-11-13 — M2 review remediation
 - Registered every committed runtime default, including mandatory-admin 2FA, comment controls, newsletter double opt-in and media upload limits, while continuing to reject unknown keys.

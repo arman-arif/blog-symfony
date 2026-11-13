@@ -7,15 +7,20 @@ namespace App\Controller\Security;
 use App\Entity\User;
 use App\Form\ChangePasswordFormType;
 use App\Form\ProfileFormType;
+use App\Form\TwoFactorDisableFormType;
 use App\Security\TotpEnrollment;
 use App\Service\Audit\ActivityLogger;
+use App\Service\Settings\SettingsServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -27,6 +32,9 @@ final class ProfileController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly TotpAuthenticatorInterface $totpAuthenticator,
         private readonly ActivityLogger $activityLogger,
+        private readonly SettingsServiceInterface $settings,
+        #[Autowire(service: 'limiter.two_factor_changes')]
+        private readonly RateLimiterFactory $twoFactorLimiter,
     ) {
     }
 
@@ -59,7 +67,7 @@ final class ProfileController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $current = (string) $form->get('currentPassword')->getData();
             if (!$passwordHasher->isPasswordValid($user, $current)) {
-                $form->get('currentPassword')->addError(new \Symfony\Component\Form\FormError('Your current password is incorrect.'));
+                $form->get('currentPassword')->addError(new FormError('Your current password is incorrect.'));
             } else {
                 $user->setPassword($passwordHasher->hashPassword($user, (string) $form->get('newPassword')->getData()));
                 $this->entityManager->flush();
@@ -77,6 +85,9 @@ final class ProfileController extends AbstractController
     public function startTwoFactor(Request $request): Response
     {
         $this->assertCsrf('2fa_start', $request);
+        if ($this->currentUser()->isTotpAuthenticationEnabled()) {
+            throw new AccessDeniedException('Disable the existing authenticator with reauthentication before replacing it.');
+        }
         $request->getSession()->set('totp_pending_secret', $this->totpAuthenticator->generateSecret());
         $this->addFlash('info', 'Scan or copy the setup key into your authenticator app, then confirm the six-digit code.');
 
@@ -88,6 +99,10 @@ final class ProfileController extends AbstractController
     {
         $this->assertCsrf('2fa_confirm', $request);
         $user = $this->currentUser();
+        if ($user->isTotpAuthenticationEnabled()) {
+            throw new AccessDeniedException('An authenticator is already enrolled.');
+        }
+        $this->assertTwoFactorRateLimit($user);
         $secret = $request->getSession()->get('totp_pending_secret');
 
         if (!is_string($secret) || '' === $secret) {
@@ -116,20 +131,34 @@ final class ProfileController extends AbstractController
     #[Route('/profile/2fa/disable', name: 'app_profile_2fa_disable', methods: ['POST'])]
     public function disableTwoFactor(Request $request): Response
     {
-        $this->assertCsrf('2fa_disable', $request);
         $user = $this->currentUser();
-        $user->setTotpSecret(null);
-        $this->entityManager->flush();
-        $this->activityLogger->log('profile.two_factor_disabled', 'User', $user->getId(), ['summary' => 'Disabled TOTP two-factor authentication']);
-        $this->addFlash('success', 'Two-factor authentication has been disabled.');
+        if ($this->isTwoFactorRequired($user)) {
+            throw new AccessDeniedException('Two-factor authentication is required for administrator accounts.');
+        }
+        $form = $this->createForm(TwoFactorDisableFormType::class);
+        $form->handleRequest($request);
+        $this->assertTwoFactorRateLimit($user);
+        if ($form->isSubmitted() && $form->isValid() && $user->isTotpAuthenticationEnabled()) {
+            if ($this->totpAuthenticator->checkCode($user, (string) $form->get('code')->getData())) {
+                $user->setTotpSecret(null);
+                $this->entityManager->flush();
+                $request->getSession()->remove('totp_pending_secret');
+                $this->activityLogger->log('profile.two_factor_disabled', 'User', $user->getId(), ['summary' => 'Disabled TOTP two-factor authentication']);
+                $this->addFlash('success', 'Two-factor authentication has been disabled.');
 
-        return $this->redirectToRoute('app_profile');
+                return $this->redirectToRoute('app_profile');
+            }
+            $form->get('code')->addError(new FormError('That authenticator code did not match.'));
+        }
+
+        return $this->renderProfile($request, $user, $this->createForm(ProfileFormType::class, $user), $this->createForm(ChangePasswordFormType::class), Response::HTTP_UNPROCESSABLE_ENTITY, $form);
     }
 
     /** @param FormInterface<mixed> $profileForm
-     * @param FormInterface<mixed> $passwordForm
+     * @param FormInterface<mixed>      $passwordForm
+     * @param FormInterface<mixed>|null $disableForm
      */
-    private function renderProfile(Request $request, User $user, FormInterface $profileForm, FormInterface $passwordForm, int $status = Response::HTTP_OK): Response
+    private function renderProfile(Request $request, User $user, FormInterface $profileForm, FormInterface $passwordForm, int $status = Response::HTTP_OK, ?FormInterface $disableForm = null): Response
     {
         $pendingSecret = $request->getSession()->get('totp_pending_secret');
         $qrContent = is_string($pendingSecret) && '' !== $pendingSecret
@@ -142,6 +171,8 @@ final class ProfileController extends AbstractController
             'passwordForm' => $passwordForm,
             'pendingSecret' => $pendingSecret,
             'qrContent' => $qrContent,
+            'disableForm' => $disableForm ?? $this->createForm(TwoFactorDisableFormType::class),
+            'twoFactorRequired' => $this->isTwoFactorRequired($user),
         ], new Response(status: $status));
     }
 
@@ -159,6 +190,19 @@ final class ProfileController extends AbstractController
     {
         if (!$this->isCsrfTokenValid($tokenId, (string) $request->request->get('_token'))) {
             throw new AccessDeniedException('Invalid CSRF token.');
+        }
+    }
+
+    private function isTwoFactorRequired(User $user): bool
+    {
+        return $this->settings->getBool('security.require_admin_2fa')
+            && ($user->hasRoleCode('ROLE_SUPER_ADMIN') || $user->hasRoleCode('ROLE_ADMIN'));
+    }
+
+    private function assertTwoFactorRateLimit(User $user): void
+    {
+        if (!$this->twoFactorLimiter->create('user-'.$user->getId())->consume()->isAccepted()) {
+            throw new \Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException(60, 'Too many authenticator attempts. Try again shortly.');
         }
     }
 }

@@ -6,10 +6,16 @@ namespace App\EventListener;
 
 use App\Entity\User;
 use App\Security\TotpSecretCipher;
+use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PostLoadEventArgs;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 
+#[AsDoctrineListener(event: 'postLoad')]
+#[AsDoctrineListener(event: 'prePersist')]
+#[AsDoctrineListener(event: 'onFlush')]
+#[AsDoctrineListener(event: 'postFlush')]
 final readonly class UserTotpSecretListener
 {
     public function __construct(private TotpSecretCipher $cipher)
@@ -23,6 +29,7 @@ final readonly class UserTotpSecretListener
             return;
         }
         $user->setTotpSecret($this->cipher->decrypt($user->getTotpSecret()));
+        $args->getObjectManager()->getUnitOfWork()->setOriginalEntityProperty(spl_object_id($user), 'totpSecret', $user->getTotpSecret());
     }
 
     public function prePersist(PrePersistEventArgs $args): void
@@ -59,5 +66,17 @@ final readonly class UserTotpSecretListener
             return;
         }
         $entity->setTotpSecret($this->cipher->encrypt($entity->getTotpSecret()));
+    }
+
+    public function postFlush(PostFlushEventArgs $args): void
+    {
+        $unitOfWork = $args->getObjectManager()->getUnitOfWork();
+        foreach ($unitOfWork->getIdentityMap()[User::class] ?? [] as $user) {
+            if (null !== $user->getTotpSecret() && $this->cipher->isEncrypted($user->getTotpSecret())) {
+                $user->setTotpSecret($this->cipher->decrypt($user->getTotpSecret()));
+                // Track the in-memory plaintext, not the storage representation, for dirty checking.
+                $unitOfWork->setOriginalEntityProperty(spl_object_id($user), 'totpSecret', $user->getTotpSecret());
+            }
+        }
     }
 }

@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\ArticleDailyStat;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /** @extends ServiceEntityRepository<ArticleDailyStat> */
@@ -22,14 +23,10 @@ class ArticleDailyStatRepository extends ServiceEntityRepository
     }
 
     /** @return array<string, int> Date (Y-m-d) => total views. */
-    public function dailyTotals(\DateTimeImmutable $from, \DateTimeImmutable $to): array
+    public function dailyTotals(\DateTimeImmutable $from, \DateTimeImmutable $to, ?int $authorId = null): array
     {
-        $rows = $this->createQueryBuilder('stat')
+        $rows = $this->scopedRange($from, $to, $authorId)
             ->select('stat.statDate AS day, SUM(stat.views) AS total')
-            ->andWhere('stat.statDate >= :from')
-            ->andWhere('stat.statDate <= :to')
-            ->setParameter('from', $from->setTime(0, 0))
-            ->setParameter('to', $to->setTime(0, 0))
             ->groupBy('stat.statDate')
             ->orderBy('stat.statDate', 'ASC')
             ->getQuery()
@@ -44,27 +41,19 @@ class ArticleDailyStatRepository extends ServiceEntityRepository
         return $totals;
     }
 
-    public function sumViews(\DateTimeImmutable $from, \DateTimeImmutable $to): int
+    public function sumViews(\DateTimeImmutable $from, \DateTimeImmutable $to, ?int $authorId = null): int
     {
-        return (int) $this->createQueryBuilder('stat')
+        return (int) $this->scopedRange($from, $to, $authorId)
             ->select('COALESCE(SUM(stat.views), 0)')
-            ->andWhere('stat.statDate >= :from')
-            ->andWhere('stat.statDate <= :to')
-            ->setParameter('from', $from->setTime(0, 0))
-            ->setParameter('to', $to->setTime(0, 0))
             ->getQuery()
             ->getSingleScalarResult();
     }
 
     /** @return list<array{articleId: int, views: int}> */
-    public function topArticles(\DateTimeImmutable $from, \DateTimeImmutable $to, int $limit = 10): array
+    public function topArticles(\DateTimeImmutable $from, \DateTimeImmutable $to, int $limit = 10, ?int $authorId = null): array
     {
-        $rows = $this->createQueryBuilder('stat')
+        $rows = $this->scopedRange($from, $to, $authorId)
             ->select('IDENTITY(stat.article) AS articleId, SUM(stat.views) AS views')
-            ->andWhere('stat.statDate >= :from')
-            ->andWhere('stat.statDate <= :to')
-            ->setParameter('from', $from->setTime(0, 0))
-            ->setParameter('to', $to->setTime(0, 0))
             ->groupBy('stat.article')
             ->orderBy('views', 'DESC')
             ->setMaxResults($limit)
@@ -75,16 +64,11 @@ class ArticleDailyStatRepository extends ServiceEntityRepository
     }
 
     /** @return list<array{id: int, name: string, views: int}> */
-    public function popularCategories(\DateTimeImmutable $from, \DateTimeImmutable $to, int $limit = 6): array
+    public function popularCategories(\DateTimeImmutable $from, \DateTimeImmutable $to, int $limit = 6, ?int $authorId = null): array
     {
-        $rows = $this->createQueryBuilder('stat')
+        $rows = $this->scopedRange($from, $to, $authorId)
             ->select('category.id AS id, category.name AS name, SUM(stat.views) AS views')
-            ->join('stat.article', 'article')
             ->join('article.categories', 'category')
-            ->andWhere('stat.statDate >= :from')
-            ->andWhere('stat.statDate <= :to')
-            ->setParameter('from', $from->setTime(0, 0))
-            ->setParameter('to', $to->setTime(0, 0))
             ->groupBy('category.id')
             ->addGroupBy('category.name')
             ->orderBy('views', 'DESC')
@@ -96,16 +80,11 @@ class ArticleDailyStatRepository extends ServiceEntityRepository
     }
 
     /** @return list<array{id: int, name: string, views: int}> */
-    public function popularTags(\DateTimeImmutable $from, \DateTimeImmutable $to, int $limit = 6): array
+    public function popularTags(\DateTimeImmutable $from, \DateTimeImmutable $to, int $limit = 6, ?int $authorId = null): array
     {
-        $rows = $this->createQueryBuilder('stat')
+        $rows = $this->scopedRange($from, $to, $authorId)
             ->select('tag.id AS id, tag.name AS name, SUM(stat.views) AS views')
-            ->join('stat.article', 'article')
             ->join('article.tags', 'tag')
-            ->andWhere('stat.statDate >= :from')
-            ->andWhere('stat.statDate <= :to')
-            ->setParameter('from', $from->setTime(0, 0))
-            ->setParameter('to', $to->setTime(0, 0))
             ->groupBy('tag.id')
             ->addGroupBy('tag.name')
             ->orderBy('views', 'DESC')
@@ -117,16 +96,11 @@ class ArticleDailyStatRepository extends ServiceEntityRepository
     }
 
     /** @return list<array{id: int, name: string, slug: string, views: int}> */
-    public function authorPerformance(\DateTimeImmutable $from, \DateTimeImmutable $to, int $limit = 6): array
+    public function authorPerformance(\DateTimeImmutable $from, \DateTimeImmutable $to, int $limit = 6, ?int $authorId = null): array
     {
-        $rows = $this->createQueryBuilder('stat')
+        $rows = $this->scopedRange($from, $to, $authorId)
             ->select('author.id AS id, author.displayName AS name, author.slug AS slug, SUM(stat.views) AS views')
-            ->join('stat.article', 'article')
             ->join('article.author', 'author')
-            ->andWhere('stat.statDate >= :from')
-            ->andWhere('stat.statDate <= :to')
-            ->setParameter('from', $from->setTime(0, 0))
-            ->setParameter('to', $to->setTime(0, 0))
             ->groupBy('author.id')
             ->addGroupBy('author.displayName')
             ->addGroupBy('author.slug')
@@ -136,5 +110,18 @@ class ArticleDailyStatRepository extends ServiceEntityRepository
             ->getArrayResult();
 
         return array_map(static fn (array $row): array => ['id' => (int) $row['id'], 'name' => (string) $row['name'], 'slug' => (string) $row['slug'], 'views' => (int) $row['views']], $rows);
+    }
+
+    private function scopedRange(\DateTimeImmutable $from, \DateTimeImmutable $to, ?int $authorId): QueryBuilder
+    {
+        $builder = $this->createQueryBuilder('stat')
+            ->join('stat.article', 'article')
+            ->andWhere('stat.statDate >= :from')->andWhere('stat.statDate <= :to')
+            ->setParameter('from', $from->setTime(0, 0))->setParameter('to', $to->setTime(0, 0));
+        if (null !== $authorId) {
+            $builder->andWhere('article.author = :scopeAuthor')->setParameter('scopeAuthor', $authorId);
+        }
+
+        return $builder;
     }
 }

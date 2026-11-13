@@ -9,11 +9,15 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
-/** Administrators with user.manage may not manage super administrators. */
+/** User managers may only manage accounts with assignable, non-administrative roles. */
 /** @extends Voter<string, mixed> */
 final class UserVoter extends Voter
 {
     public const string MANAGE = 'USER_MANAGE';
+
+    public function __construct(private readonly RoleAssignmentPolicy $rolePolicy)
+    {
+    }
 
     protected function supports(string $attribute, mixed $subject): bool
     {
@@ -28,8 +32,14 @@ final class UserVoter extends Voter
         }
 
         $user = $token->getUser();
-        if (!$user instanceof User || $subject->hasRoleCode('ROLE_SUPER_ADMIN')) {
+        if (!$user instanceof User) {
             return false;
+        }
+
+        foreach ($subject->getAssignedRoles() as $role) {
+            if (!$this->rolePolicy->canAssign($user, $role)) {
+                return false;
+            }
         }
 
         foreach ($user->getAssignedRoles() as $role) {

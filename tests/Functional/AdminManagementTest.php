@@ -104,6 +104,8 @@ final class AdminManagementTest extends FrontTestCase
         $admin = self::getContainer()->get(UserRepository::class)->findOneByEmail('writer6@example.test');
         self::assertNotNull($admin);
         self::assertTrue($admin->hasRoleCode('ROLE_SUPER_ADMIN'));
+        // writer6 is inactive in the demo dataset; this scenario requires an active last admin.
+        $admin->setIsActive(true);
         $first = self::getContainer()->get(UserRepository::class)->findOneByEmail('writer1@example.test');
         $superRole = self::getContainer()->get(RoleRepository::class)->findOneByCode('ROLE_SUPER_ADMIN');
         self::assertNotNull($first);

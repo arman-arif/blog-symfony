@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Entity\User;
 use App\Service\Analytics\AnalyticsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +18,26 @@ final class DashboardController extends AbstractController
     #[Route('', name: 'dashboard_index', methods: ['GET'])]
     public function index(AnalyticsService $analytics): Response
     {
-        return $this->render('admin/dashboard/index.html.twig', ['dashboard' => $analytics->dashboard()]);
+        $user = $this->getUser();
+        \assert($user instanceof User);
+        $dashboard = $analytics->dashboard($this->isGranted('article.edit.any') ? null : $user->getId());
+        $dashboard['stats'] = array_values(array_filter($dashboard['stats'], fn (array $stat): bool => match ($stat['label']) {
+            'Editorial team' => $this->isGranted('user.manage'),
+            'Article views' => $this->isGranted('analytics.view'),
+            'Reader conversations' => $this->isGranted('comment.moderate'),
+            default => true,
+        }));
+        if (!$this->isGranted('comment.moderate')) {
+            $dashboard['comments'] = [];
+        }
+        if (!$this->isGranted('activity_log.view')) {
+            $dashboard['activity'] = [];
+        }
+        if (!$this->isGranted('newsletter.manage')) {
+            $dashboard['subscribers'] = 0;
+        }
+
+        return $this->render('admin/dashboard/index.html.twig', ['dashboard' => $dashboard]);
     }
 
     #[Route('/no-permission', name: 'permission_denied', methods: ['GET'])]

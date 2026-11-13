@@ -34,6 +34,9 @@ final class AdminUserFormType extends AbstractType
                 'multiple' => true,
                 'expanded' => true,
                 'by_reference' => false,
+                'mapped' => false,
+                'choices' => $options['assignable_roles'],
+                'data' => $builder->getData()?->getAssignedRoles()->toArray() ?? [],
                 'label' => 'Roles',
             ])
             ->add('isActive', CheckboxType::class, ['required' => false])
@@ -44,13 +47,14 @@ final class AdminUserFormType extends AbstractType
                 'label' => $options['creating'] ? 'Temporary password' : 'New password (leave blank to keep current)',
                 'always_empty' => true,
                 'attr' => ['autocomplete' => 'new-password'],
-                'constraints' => $options['creating'] ? [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096), new StrongPassword()] : [],
+                'constraints' => array_merge($options['creating'] ? [new Assert\NotBlank()] : [], [new Assert\Length(min: 12, max: 4096), new StrongPassword()]),
             ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults(['data_class' => User::class, 'creating' => false]);
+        $resolver->setDefaults(['data_class' => User::class, 'creating' => false, 'assignable_roles' => []]);
         $resolver->setAllowedTypes('creating', 'bool');
+        $resolver->setAllowedTypes('assignable_roles', 'array');
     }
 }

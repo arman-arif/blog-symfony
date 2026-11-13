@@ -56,7 +56,8 @@ final class ArticleController extends AbstractController
 
         $activeStatus = $trash ? 'trash' : $filters['status'];
         $page = max(1, $request->query->getInt('page', 1));
-        $result = $this->articles->findForAdmin(array_filter($filters, static fn (mixed $value): bool => null !== $value && '' !== $value), $page, 10, $trash);
+        $authorScope = $this->isGranted('article.edit.any') ? null : $this->currentUser()->getId();
+        $result = $this->articles->findForAdmin(array_filter($filters, static fn (mixed $value): bool => null !== $value && '' !== $value), $page, 10, $trash, $authorScope);
 
         return $this->render('admin/article/index.html.twig', [
             'articles' => $result['items'],
@@ -66,7 +67,7 @@ final class ArticleController extends AbstractController
             'activeStatus' => $activeStatus,
             'trash' => $trash,
             'categories' => $categories->findTree(),
-            'authors' => $users->findBy([], ['displayName' => 'ASC']),
+            'authors' => null === $authorScope ? $users->findBy([], ['displayName' => 'ASC']) : [$this->currentUser()],
             'statuses' => ArticleStatus::cases(),
         ]);
     }

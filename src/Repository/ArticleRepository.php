@@ -57,7 +57,7 @@ class ArticleRepository extends ServiceEntityRepository
      *
      * @return array{items: list<Article>, total: int}
      */
-    public function findForAdmin(array $filters, int $page, int $perPage, bool $includeTrashed = false): array
+    public function findForAdmin(array $filters, int $page, int $perPage, bool $includeTrashed = false, ?int $restrictToAuthorId = null): array
     {
         $filtersBag = $this->getEntityManager()->getFilters();
         $enabled = $filtersBag->isEnabled('softdeleteable');
@@ -72,6 +72,9 @@ class ArticleRepository extends ServiceEntityRepository
                 ->orderBy('article.updatedAt', 'DESC');
 
             $builder->andWhere($includeTrashed ? 'article.deletedAt IS NOT NULL' : 'article.deletedAt IS NULL');
+            if (null !== $restrictToAuthorId) {
+                $builder->andWhere('author.id = :scopeAuthor')->setParameter('scopeAuthor', $restrictToAuthorId);
+            }
 
             if ('' !== ($filters['q'] ?? '')) {
                 $builder->andWhere('article.title LIKE :search OR article.excerpt LIKE :search')
@@ -135,14 +138,17 @@ class ArticleRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function countByStatus(ArticleStatus $status): int
+    public function countByStatus(ArticleStatus $status, ?int $authorId = null): int
     {
-        return (int) $this->createQueryBuilder('article')
+        $builder = $this->createQueryBuilder('article')
             ->select('COUNT(article.id)')
             ->andWhere('article.status = :status')
-            ->setParameter('status', $status)
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->setParameter('status', $status);
+        if (null !== $authorId) {
+            $builder->andWhere('article.author = :scopeAuthor')->setParameter('scopeAuthor', $authorId);
+        }
+
+        return (int) $builder->getQuery()->getSingleScalarResult();
     }
 
     private function publishedBuilder(): QueryBuilder
@@ -403,15 +409,19 @@ class ArticleRepository extends ServiceEntityRepository
     }
 
     /** @return list<Article> */
-    public function findRecentForDashboard(int $limit = 5): array
+    public function findRecentForDashboard(int $limit = 5, ?int $authorId = null): array
     {
-        return $this->createQueryBuilder('article')
+        $builder = $this->createQueryBuilder('article')
             ->leftJoin('article.author', 'author')->addSelect('author')
             ->leftJoin('article.featuredImage', 'featuredImage')->addSelect('featuredImage')
             ->orderBy('article.updatedAt', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+            ->addOrderBy('article.id', 'DESC')
+            ->setMaxResults($limit);
+        if (null !== $authorId) {
+            $builder->andWhere('author.id = :scopeAuthor')->setParameter('scopeAuthor', $authorId);
+        }
+
+        return $builder->getQuery()->getResult();
     }
 
     /** @param list<int> $ids
@@ -426,11 +436,13 @@ class ArticleRepository extends ServiceEntityRepository
         return $this->findBy(['id' => $ids]);
     }
 
-    public function sumLikeCount(): int
+    public function sumLikeCount(?int $authorId = null): int
     {
-        return (int) $this->createQueryBuilder('article')
-            ->select('COALESCE(SUM(article.likeCount), 0)')
-            ->getQuery()
-            ->getSingleScalarResult();
+        $builder = $this->createQueryBuilder('article')->select('COALESCE(SUM(article.likeCount), 0)');
+        if (null !== $authorId) {
+            $builder->andWhere('article.author = :scopeAuthor')->setParameter('scopeAuthor', $authorId);
+        }
+
+        return (int) $builder->getQuery()->getSingleScalarResult();
     }
 }

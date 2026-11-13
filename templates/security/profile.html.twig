@@ -22,7 +22,7 @@
 
 <section class="mt-10 border-t border-line pt-8" aria-labelledby="password-heading">
     <h2 id="password-heading" class="font-display text-2xl">Change password</h2>
-    <p class="mt-2 text-sm text-muted">Use at least 10 characters. Changing your password does not sign out other devices.</p>
+    <p class="mt-2 text-sm text-muted">Use at least 12 characters. Changing your password does not sign out other devices.</p>
     <div class="mt-6">
         {{ form_start(passwordForm, {action: path('app_profile_password')}) }}
         {{ form_row(passwordForm.currentPassword) }}
@@ -37,10 +37,16 @@
     <h2 id="two-factor-heading" class="font-display text-2xl">Two-factor authentication</h2>
     {% if user.totpAuthenticationEnabled %}
         <p class="mt-2 text-sm text-muted">Authenticator-app verification is <span class="badge badge-success">enabled</span>. You will be asked for a six-digit code after signing in.</p>
-        <form method="post" action="{{ path('app_profile_2fa_disable') }}" class="mt-6">
-            <input type="hidden" name="_token" value="{{ csrf_token('2fa_disable') }}">
+        {% if twoFactorRequired %}
+            <p class="mt-4 text-sm text-muted">Two-factor authentication is required for this administrator account and cannot be disabled.</p>
+        {% else %}
+            {{ form_start(disableForm, {action: path('app_profile_2fa_disable'), attr: {class: 'mt-6', novalidate: 'novalidate'}}) }}
+            {{ form_errors(disableForm) }}
+            {{ form_row(disableForm.currentPassword) }}
+            {{ form_row(disableForm.code) }}
             <twig:Button type="submit" variant="danger">Disable two-factor authentication</twig:Button>
-        </form>
+            {{ form_end(disableForm) }}
+        {% endif %}
     {% elseif pendingSecret %}
         <p class="mt-2 text-sm text-muted">Add this setup key to your authenticator app, then confirm the six-digit code below. The key is shown only during setup.</p>
         <div class="mt-4 rounded-control border border-line bg-canvas p-4">

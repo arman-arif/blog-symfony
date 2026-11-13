@@ -1,5 +1,9 @@
 framework:
     rate_limiter:
+        two_factor_changes:
+            policy: sliding_window
+            limit: 5
+            interval: '1 minute'
         article_autosave:
             policy: sliding_window
             limit: 12

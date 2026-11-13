@@ -91,26 +91,42 @@ class CommentRepository extends ServiceEntityRepository
         return ['items' => iterator_to_array($paginator->getIterator()), 'total' => count($paginator), 'pages' => max(1, (int) ceil(count($paginator) / $perPage))];
     }
 
-    public function countByStatus(CommentStatus $status): int
+    public function countByStatus(CommentStatus $status, ?int $authorId = null): int
     {
-        return (int) $this->createQueryBuilder('comment')
+        $builder = $this->createQueryBuilder('comment')
             ->select('COUNT(comment.id)')
             ->andWhere('comment.status = :status')
-            ->setParameter('status', $status)
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->setParameter('status', $status);
+        if (null !== $authorId) {
+            $builder->join('comment.article', 'article')->andWhere('article.author = :scopeAuthor')->setParameter('scopeAuthor', $authorId);
+        }
+
+        return (int) $builder->getQuery()->getSingleScalarResult();
+    }
+
+    public function countForAuthor(?int $authorId = null): int
+    {
+        $builder = $this->createQueryBuilder('comment')->select('COUNT(comment.id)');
+        if (null !== $authorId) {
+            $builder->join('comment.article', 'article')->andWhere('article.author = :scopeAuthor')->setParameter('scopeAuthor', $authorId);
+        }
+
+        return (int) $builder->getQuery()->getSingleScalarResult();
     }
 
     /** @return list<Comment> */
-    public function findRecent(int $limit = 5): array
+    public function findRecent(int $limit = 5, ?int $authorId = null): array
     {
-        return $this->createQueryBuilder('comment')
+        $builder = $this->createQueryBuilder('comment')
             ->leftJoin('comment.article', 'article')->addSelect('article')
             ->leftJoin('comment.user', 'user')->addSelect('user')
             ->orderBy('comment.createdAt', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+            ->setMaxResults($limit);
+        if (null !== $authorId) {
+            $builder->andWhere('article.author = :scopeAuthor')->setParameter('scopeAuthor', $authorId);
+        }
+
+        return $builder->getQuery()->getResult();
     }
 
     /** @param list<int> $articleIds
