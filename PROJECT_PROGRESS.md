@@ -30,6 +30,29 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 | 15 | M15 | Testing | Completed | 221 tests, coverage targets, route/permission/query sweeps and QA pipeline green |
 | 16 | M16 | Deployment & Documentation | Completed | README, install/deploy/operations docs, server/worker configs and MySQL 8.4 parity verified |
 
+## Backend review remediation — current status
+
+The completion table and earlier logs are historical implementation claims. The M2–M16 review found defects not covered by the original tests; **the application is not yet production-ready**. Remediation is authorized and ongoing, without reducing the canonical scope.
+
+| Review area | Remediation status |
+|---|---|
+| M2 settings/default parity | Fixed; full QA passed, including production-service regression coverage |
+| M4 authorization and TOTP | Pending |
+| M5 atomic article saves, attribution, revisions and taxonomy | Pending |
+| M6 media references, deletion and decoding limits | Pending |
+| M7 public visibility, fetch joins and discovery ranking | Pending |
+| M8 async view routing | Pending |
+| M9 sitemap invalidation | Pending |
+| M10 newsletter eligibility, retries, delivery accounting and SMTP | Pending |
+| M11 analytics scope and export scalability | Pending |
+| M12 advertisement expiry and CSP | Pending |
+| M13 settings validation/completeness and menu cycles | Pending |
+| M14 password policy and security follow-ups | Pending |
+| M15 regression consolidation | In progress; previously passing tests did not establish correctness |
+| M16 deployment scripts/configuration/runbooks | Pending |
+
+Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, migration reversal and large-scale benchmarks have not been independently reverified during remediation.
+
 ## Phase 1 review gate
 
 - **Phase 1 engineering status: Completed** — mock-data interfaces and their audit only.
@@ -37,6 +60,12 @@ Completed UI milestones mean **mock-data interfaces only**, not completed backen
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-13 — M2 review remediation
+- Registered every committed runtime default, including mandatory-admin 2FA, comment controls, newsletter double opt-in and media upload limits, while continuing to reject unknown keys.
+- Removed the test-only unknown-key exception fallback. Test overrides remain explicit; otherwise tests delegate directly to the production database settings implementation.
+- Added production-service coverage for every default and typed getter, active-user authentication checks, unknown-key propagation and type mismatches.
+- Verification: `composer qa` passed (**224 tests / 20,576 assertions**), both PHPStan analyses, all lints, style, standalone CSS, dependency audit and no-Node tooling check. Evidence: `/tmp/opencode/blog-remediation-m2-qa.log`. Remaining reviewed issues are tracked above and are not claimed fixed.
 
 ### 2026-11-12 — M0 inspection
 - Preserved both original planning files; inspected the clean initial repository.

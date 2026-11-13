@@ -72,7 +72,20 @@ final class SettingsCatalog
 
     public static function groupForKey(string $key): string
     {
-        return self::FIELDS[$key]['group'] ?? throw new \OutOfBoundsException('Unknown setting: '.$key);
+        if (isset(self::FIELDS[$key])) {
+            return self::FIELDS[$key]['group'];
+        }
+        // Runtime settings are valid even when they do not yet have an admin control.
+        // Keep unknown keys strict: accepting arbitrary prefixes would hide typos.
+        if (!array_key_exists($key, DefaultSettingsService::DEFAULTS)) {
+            throw new \OutOfBoundsException('Unknown setting: '.$key);
+        }
+
+        return match (strstr($key, '.', true)) {
+            'appearance' => 'appearance',
+            'security', 'analytics', 'media' => 'system',
+            default => 'general',
+        };
     }
 
     public static function isSensitive(string $key): bool
