@@ -104,7 +104,7 @@ final class SeoController extends AbstractController
     #[Route('/sitemap-pages.xml', name: 'front_sitemap_pages', methods: ['GET'])]
     public function pages(PageRepository $pages): Response
     {
-        $urls = $this->cache->get('sitemap.pages.v1', function (ItemInterface $item) use ($pages): array {
+        $urls = $this->cache->get('sitemap.pages.v2', function (ItemInterface $item) use ($pages): array {
             $item->expiresAfter(3600);
             $item->tag(['sitemap']);
 

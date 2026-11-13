@@ -3,14 +3,16 @@
 {% block breadcrumb %}Pages / {{ page.id ? page.title : 'New' }}{% endblock %}
 {% block eyebrow %}Content / Site pages{% endblock %}
 {% block heading %}A clear page, carefully kept.{% endblock %}
-{% block intro %}Slugs are generated from the title. Published content is sanitized before it reaches readers.{% endblock %}
+{% block intro %}Control the public URL, publication time and search metadata. Content is sanitized before it reaches readers.{% endblock %}
 {% block actions %}<twig:Button variant="secondary" href="{{ path('admin_page_index') }}">All pages</twig:Button>{% endblock %}
 {% block content %}
 <div class="card p-6 sm:p-8">
 {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
 {{ form_errors(form) }}
 <div class="grid gap-5 sm:grid-cols-[minmax(0,1fr)_14rem]">{{ form_row(form.title) }}{{ form_row(form.status) }}</div>
+<div class="mt-5 grid gap-5 sm:grid-cols-2">{{ form_row(form.slug) }}{{ form_row(form.publishedAt) }}</div>
 <div class="mt-5">{{ form_row(form.content, {attr: {rows: 16}}) }}</div>
+<fieldset class="mt-6 space-y-5"><legend class="font-semibold">Search and sharing</legend>{{ form_widget(form.seo) }}</fieldset>
 <div class="mt-6"><twig:Button type="submit">Save page</twig:Button></div>
 {{ form_end(form) }}
 </div>

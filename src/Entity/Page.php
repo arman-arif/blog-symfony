@@ -50,6 +50,11 @@ class Page
         $this->seo = new SeoMetadata();
     }
 
+    public function __clone(): void
+    {
+        $this->seo = clone $this->seo;
+    }
+
     public function getTitle(): string
     {
         return $this->title;

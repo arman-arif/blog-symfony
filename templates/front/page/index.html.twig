@@ -1,6 +1,6 @@
 {% extends 'front/layout.html.twig' %}
-{% block title %}{{ slug|capitalize }} · Fieldnotes{% endblock %}
-{% block description %}{{ page.seo.description ?: '' }}{% endblock %}
+{% block title %}{{ seo_metadata().title }}{% endblock %}
+{% block description %}{{ seo_metadata().description }}{% endblock %}
 {% block content %}<section class="container-editorial py-16 sm:py-24"><div class="mx-auto max-w-3xl"><p class="eyebrow">Fieldnotes</p><h1 class="mt-5 font-display text-5xl leading-tight sm:text-6xl">{{ page.title }}</h1>{% if page.seo.description %}<p class="mt-8 text-lg leading-8 text-muted">{{ page.seo.description }}</p>{% endif %}
 {% if page.content %}<div class="prose prose-lg mt-12 max-w-none dark:prose-invert">{{ page.content|raw }}</div>{% endif %}{% if slug == 'contact' %}{% include 'front/page/contact_form.html.twig' %}{% endif %}
 {% if slug == 'about' %}<div class="mt-12 card p-7"><p class="eyebrow">Meet the people behind the journal</p><div class="mt-6 flex flex-wrap gap-4">{% for author in authors %}<a href="{{ path('front_author', {slug: author.slug}) }}" aria-label="Meet {{ author.displayName }}"><twig:Avatar name="{{ author.displayName }}"/></a>{% endfor %}</div><a class="mt-6 inline-block font-semibold text-brand" href="{{ path('front_authors') }}">Our contributors →</a></div>{% endif %}

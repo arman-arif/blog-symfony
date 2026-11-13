@@ -42,7 +42,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M6 media references, deletion and decoding limits | Fixed; full QA, migration and production schema/command wiring verified |
 | M7 public visibility, fetch joins and discovery ranking | Fixed; full QA and HTTP/query/cardinality regressions verified |
 | M8 async view routing | Fixed; full QA, HTTP/queue/worker regressions and production routing verified |
-| M9 sitemap invalidation | Pending |
+| M9 sitemap invalidation and page eligibility/editing | Fixed; cached HTTP regressions, full QA and production cache-pool wiring verified |
 | M10 newsletter eligibility, retries, delivery accounting and SMTP | Pending |
 | M11 analytics scope and export scalability | Owner scope fixed with M4; export scalability pending |
 | M12 advertisement expiry and CSP | Pending |
@@ -60,6 +60,13 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, mi
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-13 — M9 review remediation
+- Moved page saves/deletion into a transactional service with post-success sitemap invalidation. Page forms bind to isolated copies including SEO; invalid submissions cannot become pending writes.
+- Added editable unique page slugs (including collisions with retained trash), UTC publication controls and SEO/noindex fields. Public page lookup and sitemap selection now share status/date/trash eligibility; page title/description rendering uses the metadata resolver.
+- Wired taxonomy invalidation explicitly to `cache.content`, the same pool used by public sitemaps, and invalidated cached homepage/article/analytics taxonomy data as well. Bumped the page sitemap cache version.
+- Verification: `composer qa` passed (**294 tests / 21,456 assertions**), both PHPStan analyses, lints, style, standalone CSS, audit and tooling check. Cached HTTP regressions cover page publication/slug/noindex/unpublish/delete, rejected-edit isolation and taxonomy mutation invalidation. Focused run: **52 tests / 366 assertions** before the additional checkbox-type assertions. Production service diagnostics show `TaxonomyService` uses `cache.content`. Evidence: `/tmp/opencode/blog-remediation-m9-qa.log`, `/tmp/opencode/blog-remediation-m9-focused.log`, `/tmp/opencode/blog-remediation-m9-prod-taxonomy.log`.
+- Limitations: date-driven sitemap additions can wait for the existing one-hour TTL; concurrent slug edits, large sitemap partitioning and browser rechecks remain unverified. The remaining review remediation and independent deployment/runtime gaps above remain open.
 
 ### 2026-11-13 — M8 review remediation
 - Routed article-view messages to the production async transport, without a synchronous test override. HTTP reads enqueue views without updating counts; the registered Messenger consumer processes them.

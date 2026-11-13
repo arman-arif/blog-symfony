@@ -9,6 +9,7 @@ use App\Entity\Tag;
 use App\Repository\CategoryRepository;
 use App\Repository\TagRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -19,6 +20,7 @@ final readonly class TaxonomyService
         private CategoryRepository $categories,
         private TagRepository $tags,
         private SluggerInterface $slugger,
+        #[Autowire(service: 'cache.content')]
         private TagAwareCacheInterface $publicCache,
     ) {
     }
@@ -29,7 +31,7 @@ final readonly class TaxonomyService
         $category->setSlug($this->uniqueCategorySlug($source, $category->getId()));
         $this->entityManager->persist($category);
         $this->entityManager->flush();
-        $this->publicCache->invalidateTags(['sitemap']);
+        $this->invalidatePublicCache();
 
         return $category;
     }
@@ -42,7 +44,7 @@ final readonly class TaxonomyService
 
         $this->entityManager->remove($category);
         $this->entityManager->flush();
-        $this->publicCache->invalidateTags(['sitemap']);
+        $this->invalidatePublicCache();
     }
 
     public function saveTag(Tag $tag): Tag
@@ -51,7 +53,7 @@ final readonly class TaxonomyService
         $tag->setSlug($this->uniqueTagSlug($source, $tag->getId()));
         $this->entityManager->persist($tag);
         $this->entityManager->flush();
-        $this->publicCache->invalidateTags(['sitemap']);
+        $this->invalidatePublicCache();
 
         return $tag;
     }
@@ -60,7 +62,7 @@ final readonly class TaxonomyService
     {
         $this->entityManager->remove($tag);
         $this->entityManager->flush();
-        $this->publicCache->invalidateTags(['sitemap']);
+        $this->invalidatePublicCache();
     }
 
     public function findOrCreateTag(string $name): Tag
@@ -100,5 +102,10 @@ final readonly class TaxonomyService
         }
 
         return $slug;
+    }
+
+    private function invalidatePublicCache(): void
+    {
+        $this->publicCache->invalidateTags(['sitemap', 'homepage', 'articles', 'analytics']);
     }
 }
