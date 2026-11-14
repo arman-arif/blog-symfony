@@ -11,12 +11,59 @@ use App\Repository\AdvertisementRepository;
 use App\Repository\ArticleRepository;
 use App\Repository\UserRepository;
 use App\Service\Article\ArticleService;
+use App\Service\Monetization\AdvertisementRenderer;
 use App\Service\Monetization\AdvertisementService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final class MonetizationTest extends FrontTestCase
 {
+    public function testWarmAdCacheRechecksBothScheduleBoundaries(): void
+    {
+        self::createClient();
+        $this->seed();
+        $start = new \DateTimeImmutable('2030-01-01 12:00:00 UTC');
+        $end = $start->modify('+1 minute');
+        $service = self::getContainer()->get(AdvertisementService::class);
+        $fallback = (new Advertisement())->setName('Fallback')->setIsActive(true)->setPriority(1);
+        $scheduled = (new Advertisement())->setName('Scheduled')->setIsActive(true)->setPriority(100)->setStartsAt($start)->setEndsAt($end);
+        $service->save($fallback);
+        $service->save($scheduled);
+        $renderer = self::getContainer()->get(AdvertisementRenderer::class);
+        self::assertSame($fallback, $renderer->forPlacement('sidebar', $start->modify('-1 second')));
+        self::assertSame($scheduled, $renderer->forPlacement('sidebar', $start));
+        self::assertSame($scheduled, $renderer->forPlacement('sidebar', $end->modify('-1 second')));
+        self::assertSame($fallback, $renderer->forPlacement('sidebar', $end));
+    }
+
+    public function testNetworkCreativesReceiveFreshNoncesAndScopedCsp(): void
+    {
+        $client = self::createClient();
+        $this->seed();
+        self::getContainer()->get(AdvertisementService::class)->save((new Advertisement())
+            ->setName('Ad network')->setPlacement(AdvertisementPlacement::Header)->setType(AdvertisementType::Adsense)->setIsActive(true)
+            ->setContent('<script async nonce="stale" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>'));
+        $nonces = [];
+        for ($index = 0; $index < 2; ++$index) {
+            $crawler = $client->request('GET', '/');
+            self::assertResponseIsSuccessful();
+            $csp = (string) $client->getResponse()->headers->get('Content-Security-Policy');
+            preg_match('/nonce-([A-Za-z0-9_-]+)/', $csp, $matches);
+            $nonces[] = $matches[1];
+            self::assertCount(2, $crawler->filter('[data-ad-placement="header"] script'));
+            foreach ($crawler->filter('script')->each(static fn ($script): ?string => $script->attr('nonce')) as $nonce) {
+                self::assertSame($matches[1], $nonce);
+            }
+            self::assertStringContainsString("'strict-dynamic'", $csp);
+            self::assertStringContainsString("connect-src 'self' https:;", $csp);
+            self::assertStringContainsString("frame-src 'self' https:;", $csp);
+            self::assertStringNotContainsString("'unsafe-eval'", $csp);
+        }
+        self::assertNotSame($nonces[0], $nonces[1]);
+        $client->request('GET', '/login');
+        self::assertStringNotContainsString("connect-src 'self' https:;", (string) $client->getResponse()->headers->get('Content-Security-Policy'));
+    }
+
     public function testAdsRenderByPlacementPriorityScheduleAndInvalidateCache(): void
     {
         $client = self::createClient();

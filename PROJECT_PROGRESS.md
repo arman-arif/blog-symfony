@@ -45,7 +45,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M9 sitemap invalidation and page eligibility/editing | Fixed; cached HTTP regressions, full QA and production cache-pool wiring verified |
 | M10 newsletter eligibility, retries, delivery accounting and SMTP | Fixed in code; development schema reconciled with preserved archives; full QA passed; missing historical migration still limits reversals |
 | M11 analytics scope and export scalability | Fixed; bounded streamed CSV, owner scope and formula safety verified by full QA |
-| M12 advertisement expiry and CSP | Pending |
+| M12 advertisement expiry and CSP | Fixed in code; warm-cache date boundaries and fresh scripted-creative nonces verified; live ad networks unverified |
 | M13 settings validation/completeness and menu cycles | Pending |
 | M14 password policy and security follow-ups | Pending |
 | M15 regression consolidation | In progress; previously passing tests did not establish correctness |
@@ -60,6 +60,12 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, fu
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-14 — M12 advertisement remediation
+- Cached schedule-independent enabled candidates and rechecked placement/active/start/end eligibility on selection; warm caches no longer suppress scheduled starts or retain expired ads. Dates use inclusive starts/exclusive ends.
+- Added per-request nonce injection only for trusted scripted ad creatives, nonce-based `strict-dynamic` script loading and HTTPS connections/frames scoped to pages actually rendering those creatives. GA4's external loader is now nonced; eval and inline event handlers remain blocked. Ordinary/admin connection policies are unchanged.
+- Verification: `composer qa` passed (**323 tests / 21,785 assertions**), including warm-cache boundaries, nonce rotation, script consistency and scoped CSP. Rebuilt the stale production container; production container lint passed. Evidence: `/tmp/opencode/blog-m12-qa.log`, `/tmp/opencode/blog-m12-prod-container.log`.
+- Limitations: live AdSense/GPT and browser CSP behavior remain unverified. Trusted ad authors can execute code by design; snippets requiring eval/same-origin frames are not guaranteed compatible. Large enabled-ad inventories have not been benchmarked.
 
 ### 2026-11-14 — M11 export remediation
 - Replaced temporary-file/full-string CSV buffering with `StreamedResponse` output. Preserved owner scope, the 366-date/top-ten-article report limits and CSV escaping; neutralized spreadsheet formulas including whitespace prefixes. Exports are private/no-store with Nginx buffering disabled.

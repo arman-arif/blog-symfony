@@ -6,8 +6,10 @@ namespace App\Service\Monetization;
 
 use App\Entity\Advertisement;
 use App\Enum\AdvertisementPlacement;
+use App\Enum\AdvertisementType;
 use App\Repository\AdvertisementRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Twig\Environment;
@@ -20,22 +22,26 @@ final readonly class AdvertisementRenderer
         private Environment $twig,
         #[Autowire(service: 'cache.content')]
         private TagAwareCacheInterface $cache,
+        private RequestStack $requests,
     ) {
     }
 
     public function forPlacement(string|AdvertisementPlacement $placement, ?\DateTimeImmutable $now = null): ?Advertisement
     {
         $placement = is_string($placement) ? AdvertisementPlacement::from($placement) : $placement;
-        $ids = $this->cache->get('ads.placement.'.$placement->value, function (ItemInterface $item) use ($placement, $now): array {
+        $now ??= new \DateTimeImmutable();
+        $ids = $this->cache->get('ads.candidates.v2.'.$placement->value, function (ItemInterface $item) use ($placement): array {
             $item->expiresAfter(300);
             $item->tag(['ads']);
 
-            return array_map(static fn (Advertisement $ad): ?int => $ad->getId(), $this->ads->findActiveForPlacement($placement, $now));
+            return $this->ads->enabledIdsForPlacement($placement);
         });
 
         foreach ($ids as $id) {
-            $ad = null === $id ? null : $this->ads->find($id);
-            if (null !== $ad) {
+            $ad = $this->ads->find($id);
+            if (null !== $ad && $ad->isActive() && $ad->getPlacement() === $placement
+                && (null === $ad->getStartsAt() || $ad->getStartsAt() <= $now)
+                && (null === $ad->getEndsAt() || $ad->getEndsAt() > $now)) {
                 return $ad;
             }
         }
@@ -50,7 +56,7 @@ final readonly class AdvertisementRenderer
             return new Markup('', 'UTF-8');
         }
 
-        return new Markup($this->twig->render('front/partials/ad.html.twig', ['ad' => $ad]), 'UTF-8');
+        return new Markup($this->renderAd($ad), 'UTF-8');
     }
 
     public function injectInArticle(string $html): string
@@ -61,7 +67,7 @@ final readonly class AdvertisementRenderer
         }
 
         $after = max(1, $ad->getAfterParagraph() ?? 1);
-        $adHtml = $this->twig->render('front/partials/ad.html.twig', ['ad' => $ad]);
+        $adHtml = $this->renderAd($ad);
         $count = 0;
         $inserted = false;
         $result = preg_replace_callback('#</p>#i', static function (array $match) use (&$count, &$inserted, $after, $adHtml): string {
@@ -83,5 +89,30 @@ final readonly class AdvertisementRenderer
     public function invalidate(): void
     {
         $this->cache->invalidateTags(['ads']);
+    }
+
+    private function renderAd(Advertisement $ad): string
+    {
+        $content = $ad->getContent() ?? '';
+        if (AdvertisementType::Image !== $ad->getType() && false !== stripos($content, '<script')) {
+            // Only trusted ad.manage creatives receive execution authority. Never
+            // apply this to reader comments or sanitized article content.
+            $request = $this->requests->getMainRequest();
+            $nonce = $request?->attributes->get('_csp_nonce', '');
+            $nonce = is_string($nonce) ? $nonce : '';
+            $document = new \DOMDocument('1.0', 'UTF-8');
+            $document->loadHTML('<?xml encoding="UTF-8"><html><body>'.$content.'</body></html>', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+            foreach ($document->getElementsByTagName('script') as $script) {
+                $script->setAttribute('nonce', $nonce);
+            }
+            $body = $document->getElementsByTagName('body')->item(0);
+            $content = '';
+            foreach ($body->childNodes ?? [] as $node) {
+                $content .= $document->saveHTML($node);
+            }
+            $request?->attributes->set('_has_script_ad', true);
+        }
+
+        return $this->twig->render('front/partials/ad.html.twig', ['ad' => $ad, 'creative' => $content]);
     }
 }

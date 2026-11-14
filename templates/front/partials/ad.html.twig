@@ -5,6 +5,6 @@
         <img src="{{ media_url(ad.image, 'medium') }}" alt="{{ ad.image.alt ?: ad.name }}" width="{{ ad.image.width ?: 1200 }}" height="{{ ad.image.height ?: 800 }}" loading="lazy" class="w-full rounded-control object-cover">
         {% if ad.targetUrl %}</a>{% endif %}
     {% elseif ad.content %}
-        {{ ad.content|raw }}
+        {{ creative|raw }}
     {% endif %}
 </div>

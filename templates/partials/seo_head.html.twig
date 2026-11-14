@@ -17,6 +17,6 @@
 {% if meta.gsc_verification %}<meta name="google-site-verification" content="{{ meta.gsc_verification }}">{% endif %}
 {% if meta.json_ld %}<script type="application/ld+json" nonce="{{ csp_nonce() }}">{{ meta.json_ld|raw }}</script>{% endif %}
 {% if meta.ga_id and app.request.cookies.get('fieldnotes_consent') == 'all' %}
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ meta.ga_id|url_encode }}"></script>
+<script async nonce="{{ csp_nonce() }}" src="https://www.googletagmanager.com/gtag/js?id={{ meta.ga_id|url_encode }}"></script>
 <script nonce="{{ csp_nonce() }}">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ meta.ga_id|e('js') }}');</script>
 {% endif %}

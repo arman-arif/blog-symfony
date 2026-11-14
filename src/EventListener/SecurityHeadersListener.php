@@ -36,11 +36,14 @@ final class SecurityHeadersListener implements EventSubscriberInterface
         $request = $event->getRequest();
         $response = $event->getResponse();
         $nonce = (string) $request->attributes->get(self::NONCE_ATTRIBUTE, '');
+        // Ad-network resource hosts change over time. Allow HTTPS connections and
+        // frames only on pages rendering an explicitly trusted scripted creative.
+        $scriptedAd = $request->attributes->getBoolean('_has_script_ad');
         $csp = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; ".
-            "script-src 'self' 'nonce-".$nonce."' https://www.googletagmanager.com; ".
+            "script-src 'self' 'nonce-".$nonce."' 'strict-dynamic'".($scriptedAd ? ' https:' : ' https://www.googletagmanager.com').'; '.
             "style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; ".
-            "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com; ".
-            "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; ".
+            "connect-src 'self' ".($scriptedAd ? 'https:' : 'https://www.google-analytics.com https://region1.google-analytics.com').'; '.
+            "frame-src 'self' ".($scriptedAd ? 'https:' : 'https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com').'; '.
             "media-src 'self'";
         if ($request->isSecure()) {
             $csp .= '; upgrade-insecure-requests';
