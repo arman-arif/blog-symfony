@@ -58,7 +58,7 @@ final class SecurityHardeningTest extends FrontTestCase
             'registration_form[plainPassword][second]' => 'password123',
         ]));
         self::assertResponseStatusCodeSame(422);
-        self::assertSelectorTextContains('main', 'commonly used password');
+        self::assertSelectorTextContains('main', '12 characters or more');
 
         $crawler = $client->request('GET', '/register');
         $client->submit($crawler->selectButton('Create account')->form([

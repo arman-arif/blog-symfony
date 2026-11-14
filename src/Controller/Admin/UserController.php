@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
 
 #[Route('/admin/users', name: 'admin_user_')]
 #[IsGranted('user.manage')]
@@ -90,6 +91,12 @@ final class UserController extends AbstractController
                     /** @var Collection<int, Role> $assignedRoles */
                     $assignedRoles = $form->get('assignedRoles')->getData();
                     $this->userManagement->save($user, $actor, array_values($assignedRoles->toArray()), $plainPassword, $creating, $details);
+                } catch (ValidationFailedException $exception) {
+                    foreach ($exception->getViolations() as $violation) {
+                        $form->get('temporaryPassword')->addError(new FormError((string) $violation->getMessage()));
+                    }
+
+                    return $this->render('admin/user/form.html.twig', ['user' => $user, 'form' => $form, 'creating' => $creating], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
                 } catch (\DomainException $exception) {
                     $form->addError(new FormError($exception->getMessage()));
 

@@ -5,17 +5,13 @@ declare(strict_types=1);
 namespace App\Validator;
 
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 final class StrongPasswordValidator extends ConstraintValidator
 {
-    private const array COMMON = [
-        'password', 'password123', 'password1234', '123456789012', 'qwertyuiop',
-        'qwerty123456', 'letmein123', 'welcome123', 'admin123456', 'iloveyou123',
-        'fieldnotes123', 'changeme123', 'abc123456789', 'football123', 'monkey123456',
-    ];
-
     public function validate(mixed $value, Constraint $constraint): void
     {
         if (!$constraint instanceof StrongPassword) {
@@ -24,9 +20,17 @@ final class StrongPasswordValidator extends ConstraintValidator
         if (null === $value || '' === $value) {
             return;
         }
-        $password = (string) $value;
-        if (strlen($password) < 12 || in_array(strtolower($password), self::COMMON, true)) {
-            $this->context->buildViolation($constraint->message)->addViolation();
+        try {
+            $this->context->getValidator()->inContext($this->context)->validate($value, new Assert\Sequentially([
+                new Assert\Type('string'),
+                new Assert\Length(min: 12, max: 4096),
+                new Assert\PasswordStrength(minScore: Assert\PasswordStrength::STRENGTH_MEDIUM, message: $constraint->message),
+                new Assert\NotCompromisedPassword(skipOnError: false),
+            ]));
+        } catch (ExceptionInterface) {
+            // The real breach validator throws on lookup failure. Fail closed,
+            // but present a correctable form/CLI error rather than an HTTP 500.
+            $this->context->buildViolation('Password safety could not be verified. Please try again later.')->addViolation();
         }
     }
 }

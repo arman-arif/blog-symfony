@@ -34,7 +34,7 @@ final class RegistrationFormType extends AbstractType
                 'first_options' => ['label' => 'Password'],
                 'second_options' => ['label' => 'Confirm password'],
                 'invalid_message' => 'The password fields must match.',
-                'constraints' => [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096), new StrongPassword()],
+                'constraints' => [new Assert\NotBlank(), new StrongPassword()],
             ]);
     }
 

@@ -9,10 +9,14 @@ use App\Entity\User;
 use App\Repository\RoleRepository;
 use App\Repository\UserRepository;
 use App\Security\RoleAssignmentPolicy;
+use App\Validator\StrongPassword;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final readonly class UserManagementService
 {
@@ -22,6 +26,7 @@ final readonly class UserManagementService
         private RoleRepository $roles,
         private RoleAssignmentPolicy $rolePolicy,
         private UserPasswordHasherInterface $passwordHasher,
+        private ValidatorInterface $validator,
     ) {
     }
 
@@ -42,6 +47,15 @@ final readonly class UserManagementService
         foreach ($assignedRoles as $role) {
             if (!$this->rolePolicy->canAssign($actor, $role)) {
                 throw new AccessDeniedException('You cannot assign this role.');
+            }
+        }
+        if ($creating || '' !== $plainPassword) {
+            // Keep a scalar password out of the violation root/exception message.
+            $violations = $this->validator->validate(['password' => $plainPassword], new Assert\Collection([
+                'password' => [new Assert\NotBlank(), new StrongPassword()],
+            ]));
+            if (count($violations) > 0) {
+                throw new ValidationFailedException(null, $violations);
             }
         }
         $connection = $this->entityManager->getConnection();

@@ -18,6 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[AsCommand(name: 'app:user:create-admin', description: 'Create the first verified Super Administrator without demo fixtures.')]
@@ -62,7 +63,7 @@ final class CreateAdminUserCommand extends Command
 
             return Command::FAILURE;
         }
-        $violations = $this->validator->validate($password, new StrongPassword());
+        $violations = $this->validator->validate($password, [new Assert\NotBlank(), new StrongPassword()]);
         if (count($violations) > 0) {
             $io->error((string) $violations->get(0)->getMessage());
 

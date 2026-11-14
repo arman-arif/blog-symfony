@@ -1,0 +1,8 @@
+framework:
+    http_client:
+        scoped_clients:
+            password_breach.client:
+                scope: 'https://api\.pwnedpasswords\.com/'
+                timeout: 3
+                max_duration: 5
+                max_redirects: 0

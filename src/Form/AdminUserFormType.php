@@ -47,7 +47,7 @@ final class AdminUserFormType extends AbstractType
                 'label' => $options['creating'] ? 'Temporary password' : 'New password (leave blank to keep current)',
                 'always_empty' => true,
                 'attr' => ['autocomplete' => 'new-password'],
-                'constraints' => array_merge($options['creating'] ? [new Assert\NotBlank()] : [], [new Assert\Length(min: 12, max: 4096), new StrongPassword()]),
+                'constraints' => array_merge($options['creating'] ? [new Assert\NotBlank()] : [], [new StrongPassword()]),
             ]);
     }
 

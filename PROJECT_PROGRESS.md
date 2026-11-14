@@ -47,7 +47,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M11 analytics scope and export scalability | Fixed; bounded streamed CSV, owner scope and formula safety verified by full QA |
 | M12 advertisement expiry and CSP | Fixed in code; warm-cache date boundaries and fresh scripted-creative nonces verified; live ad networks unverified |
 | M13 settings validation/completeness and menu cycles | Fixed; complete runtime controls, shared validation, rejected-write isolation and typed graph validation verified |
-| M14 password policy and security follow-ups | Pending |
+| M14 password policy and security follow-ups | Fixed in code; real entropy/breach validation, outage rejection and caller-level regressions verified; external security/performance checks remain open |
 | M15 regression consolidation | In progress; previously passing tests did not establish correctness |
 | M16 deployment scripts/configuration/runbooks | Pending |
 
@@ -60,6 +60,12 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, fu
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-14 — M14 password-policy remediation
+- Replaced the small denylist with sequential string/12–4096-character/medium Symfony `PasswordStrength`/real `NotCompromisedPassword` checks. Explicitly required HttpClient via Composer and enabled the real breach validator in every environment; tests supply deterministic HTTP responses rather than disabling it. Production wiring uses the dedicated 3-second inactivity/5-second total/no-redirect HTTPS client.
+- Registration, reset, profile, admin forms/service writes and the bootstrap command enforce the policy. Lookup errors fail closed as validation errors, including an outage between admin form validation and saving. Blank optional admin edits preserve the hash. Service errors keep the scalar password out of exception messages; rejected input is checked before any managed mutation.
+- Verification: focused **33 tests / 223 assertions**; full `composer qa` passed (**356 tests / 22,195 assertions**), both PHPStan analyses, style, lints, audit and tooling. Production/test containers rebuilt; production container lint and validator/client diagnostics passed. Evidence: `/tmp/opencode/blog-m14-qa.log`, `/tmp/opencode/blog-m14-focused.log`, `/tmp/opencode/blog-m14-prod-validator.log`, `/tmp/opencode/blog-m14-prod-client.log`.
+- Limitations: no live password/fixture was sent to the external breach service. Production egress/provider behavior, browser/Lighthouse, Redis, concurrency and scale checks remain independently unverified. M15 evidence consolidation and M16 deployment fixes remain open.
 
 ### 2026-11-14 — M13 settings/menu remediation
 - Exposed all existing runtime defaults, including comment/newsletter controls, additional social links and protected system controls. Shared Symfony constraints validate forms and direct service callers before transactional writes; installed `symfony/intl` through Composer for real locale/timezone validation. Optional blank strings remain clearable and blank SMTP passwords retain ciphertext. Saved retention now drives the scheduler and rollup command.

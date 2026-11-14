@@ -23,7 +23,7 @@ final class ResetPasswordFormType extends AbstractType
             'first_options' => ['label' => 'New password'],
             'second_options' => ['label' => 'Confirm new password'],
             'invalid_message' => 'The password fields must match.',
-            'constraints' => [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096), new StrongPassword()],
+            'constraints' => [new Assert\NotBlank(), new StrongPassword()],
         ]);
     }
 
