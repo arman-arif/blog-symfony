@@ -8,6 +8,7 @@ use App\Entity\Article;
 use App\Entity\Category;
 use App\Entity\Tag;
 use App\Entity\User;
+use App\Repository\ArticleDailyStatRepository;
 use App\Repository\ArticleRepository;
 use App\Repository\ArticleViewRepository;
 use App\Repository\CategoryRepository;
@@ -26,6 +27,7 @@ final readonly class PublicCatalog
         private TagRepository $tags,
         private UserRepository $users,
         private ArticleViewRepository $views,
+        private ArticleDailyStatRepository $stats,
         #[Autowire(service: 'cache.content')]
         private TagAwareCacheInterface $cache,
     ) {
@@ -96,12 +98,12 @@ final readonly class PublicCatalog
     /** @return array{articles: list<Article>, popular: list<Article>, trending: list<Article>, recommended: list<Article>} */
     public function homepage(): array
     {
-        $ids = $this->cache->get('public.homepage.v2', function (ItemInterface $item): array {
+        $ids = $this->cache->get('public.homepage.v3.'.gmdate('Ymd'), function (ItemInterface $item): array {
             $item->expiresAfter(300);
             $item->tag(['articles', 'homepage']);
 
             $latest = $this->articles->paginatePublished([], 1, 18)['items'];
-            $popularIds = $this->views->topArticleIdsSince(new \DateTimeImmutable('-30 days'), 3);
+            $popularIds = $this->stats->popularPublicIds(new \DateTimeImmutable(), 3);
             $trendingIds = $this->views->trendingArticleIds(new \DateTimeImmutable(), 3);
             $recommended = [] === $latest ? [] : array_map(static fn (Article $article): ?int => $article->getId(), $this->articles->findRelated($latest[0], 3));
 

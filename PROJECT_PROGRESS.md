@@ -40,7 +40,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M4 authorization and TOTP | Fixed; full QA and production listener registration verified |
 | M5 atomic article saves, attribution, revisions and taxonomy | Fixed; full QA and injected rollback regressions verified |
 | M6 media references, deletion and decoding limits | Fixed; full QA, migration and production schema/command wiring verified |
-| M7 public visibility, fetch joins and discovery ranking | Fixed; full QA and HTTP/query/cardinality regressions verified |
+| M7 public visibility, fetch joins and discovery ranking | Fixed; popularity uses retained rollups; full QA and HTTP/query/cardinality regressions verified |
 | M8 async view routing | Fixed; full QA, HTTP/queue/worker regressions and production routing verified |
 | M9 sitemap invalidation and page eligibility/editing | Fixed; cached HTTP regressions, full QA and production cache-pool wiring verified |
 | M10 newsletter eligibility, retries, delivery accounting and SMTP | Fixed in code; full QA and production routing/transport wiring verified; development migration blocked |
@@ -60,6 +60,11 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, fu
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-14 — M7 popularity follow-up
+- Popularity now reads retained daily rollups for the last 30 calendar days instead of depending on raw-view retention. Public eligibility is checked before limiting; ties are deterministic. Aggregation invalidates homepage rankings and the homepage cache key changes daily.
+- Verification: `composer qa` passed (**316 tests / 21,712 assertions**), including date boundaries, hidden/future rollups and aggregation-driven cache refresh. Initial HTTP failures were traced to a stale no-debug test container; rebuilt test and production containers rather than weakening tests. Evidence: `/tmp/opencode/blog-remaining-m7-qa-rerun.log`.
+- Limitations: popularity refresh follows the hourly aggregation schedule; trending still requires seven days of raw views. Large-catalog and browser/deployment checks remain open.
 
 ### 2026-11-14 — M10 review remediation
 - Restored the 61 verified reversals of earlier remediation commits after explicit owner authorization, retaining `/tmp/opencode/blog-authorized-reversals-backup.patch`. Baseline QA hit three stale-container references; refreshed the test container rather than weakening coverage.

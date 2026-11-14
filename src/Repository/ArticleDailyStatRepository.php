@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\ArticleDailyStat;
+use App\Enum\ArticleStatus;
+use App\Enum\ArticleVisibility;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -20,6 +22,24 @@ class ArticleDailyStatRepository extends ServiceEntityRepository
     public function findOneForDay(int $articleId, \DateTimeImmutable $day): ?ArticleDailyStat
     {
         return $this->findOneBy(['article' => $articleId, 'statDate' => $day->setTime(0, 0)]);
+    }
+
+    /** @return list<int> Public popularity over the last 30 calendar days, independent of raw-view retention. */
+    public function popularPublicIds(\DateTimeImmutable $now, int $limit = 3): array
+    {
+        if ($limit < 1) {
+            return [];
+        }
+        $rows = $this->scopedRange($now->modify('-29 days'), $now, null)
+            ->select('article.id AS id, SUM(stat.views) AS total')
+            ->andWhere('article.deletedAt IS NULL AND article.status = :published AND article.visibility = :public')
+            ->andWhere('article.isPremium = false AND article.publishedAt <= :now')
+            ->setParameter('published', ArticleStatus::Published)->setParameter('public', ArticleVisibility::Public)->setParameter('now', $now)
+            ->groupBy('article.id')->having('SUM(stat.views) > 0')
+            ->orderBy('total', 'DESC')->addOrderBy('article.id', 'DESC')
+            ->setMaxResults($limit)->getQuery()->getScalarResult();
+
+        return array_map(static fn (array $row): int => (int) $row['id'], $rows);
     }
 
     /** @return array<string, int> Date (Y-m-d) => total views. */

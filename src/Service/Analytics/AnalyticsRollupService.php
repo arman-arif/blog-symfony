@@ -42,7 +42,7 @@ final readonly class AnalyticsRollupService
             );
         }
 
-        $this->cache->invalidateTags(['analytics']);
+        $this->cache->invalidateTags(['analytics', 'homepage']);
 
         return count($rows);
     }

@@ -73,6 +73,7 @@ The article, category and tag administration screens are now server-backed; rema
 - **Queries:** article listings, archives and details eager-load author, categories, tags and featured image; pagination uses Doctrine Paginator. FULLTEXT search (with a LIKE fallback) is indexed by migration `Version20261112130000`.
 - **Caching:** homepage section IDs are stored in the tag-aware `cache.content` pool with `articles`/`homepage` tags; `ArticleService` invalidates them after editorial changes.
 - **Feeds:** `/feed.xml` and category RSS feeds expose only published content.
+- **Rankings:** popular articles use retained daily rollups for the last 30 UTC calendar days (updated hourly); trending uses the most recent 24 hours against a six-day raw-view baseline. Rollups invalidate homepage rankings. Raw-view retention must cover at least seven days for trending.
 
 ## M8 comments and engagement
 

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\Entity\Article;
+use App\Entity\ArticleDailyStat;
 use App\Entity\ArticleView;
 use App\Enum\ArticleStatus;
 use App\Enum\ArticleVisibility;
+use App\Repository\ArticleDailyStatRepository;
 use App\Repository\ArticleRepository;
 use App\Repository\ArticleViewRepository;
+use App\Service\Analytics\AnalyticsRollupService;
 use App\Service\Article\PublicCatalog;
 use App\Tests\Factory\ArticleFactory;
 use App\Tests\Factory\CategoryFactory;
@@ -172,6 +175,7 @@ final class PublicDiscoveryRegressionTest extends AdminTestCase
         $repository = self::getContainer()->get(ArticleViewRepository::class);
         self::assertSame([$steady->getId(), $rising->getId()], $repository->topArticleIdsSince(new \DateTimeImmutable('-30 days'), 2));
         self::assertSame([$rising->getId(), $steady->getId()], $repository->trendingArticleIds(new \DateTimeImmutable(), 2));
+        self::getContainer()->get(AnalyticsRollupService::class)->aggregateRecent(30);
         self::getContainer()->get('cache.content')->invalidateTags(['articles', 'homepage']);
         $homepage = self::getContainer()->get(PublicCatalog::class)->homepage();
         self::assertSame([$steady->getId(), $rising->getId()], array_map(static fn (Article $story): ?int => $story->getId(), $homepage['popular']));
@@ -181,6 +185,28 @@ final class PublicDiscoveryRegressionTest extends AdminTestCase
     private function story(string $title, string $published = '-1 day'): Article
     {
         return ArticleFactory::createOne(['author' => self::authenticatedUser(), 'title' => $title, 'status' => ArticleStatus::Published, 'publishedAt' => new \DateTimeImmutable($published)]);
+    }
+
+    public function testPopularityUsesRetainedRollupsAndRefreshesAfterAggregation(): void
+    {
+        self::createClient();
+        $public = $this->story('Retained public popularity');
+        $old = $this->story('Old rollup');
+        $hidden = $this->story('Hidden rollup')->setVisibility(ArticleVisibility::Private);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        foreach ([[$public, '-29 days', 12], [$old, '-30 days', 900], [$hidden, 'today', 1000], [$old, 'tomorrow', 1000]] as [$article, $day, $views]) {
+            $em->persist((new ArticleDailyStat())->setArticle($article)->setStatDate(new \DateTimeImmutable($day))->setViews($views));
+        }
+        $em->flush();
+        $stats = self::getContainer()->get(ArticleDailyStatRepository::class);
+        self::assertSame([$public->getId()], $stats->popularPublicIds(new \DateTimeImmutable(), 1));
+        self::getContainer()->get('cache.content')->invalidateTags(['homepage']);
+        $catalog = self::getContainer()->get(PublicCatalog::class);
+        self::assertSame($public->getId(), $catalog->homepage()['popular'][0]->getId());
+        $this->views($old, 20, '-1 hour');
+        $em->flush();
+        self::getContainer()->get(AnalyticsRollupService::class)->aggregateRecent();
+        self::assertSame($old->getId(), $catalog->homepage()['popular'][0]->getId());
     }
 
     private function views(Article $article, int $count, string $when): void
