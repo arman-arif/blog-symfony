@@ -49,7 +49,17 @@ Confirmation and unsubscribe emails include `List-Unsubscribe` and `List-Unsubsc
 - Start/restart both workers and inspect `messenger:failed:show` plus application logs. Retrying a failed **batch** is safe for committed recipients; it cannot resend terminal `sent`, `failed`, `skipped` or `uncertain` rows.
 - Investigate `uncertain` rows against SMTP/provider logs; do not reset ledger states or counters to force a resend. There is no automatic or administrative resend workflow for an uncertain recipient. Any deliberately new campaign requires operator review of its audience to avoid duplicates.
 - Generic transactional `SendEmailMessage` jobs retain Messenger's retry behavior; the campaign ledger does not cover password-reset/confirmation/test emails.
-- Before upgrading, stop workers and reconcile database migration history. This workspace's development database contains the unavailable `Version20261113124023` and an older, incompatible `newsletter_delivery` table. **Do not apply the new ledger creation migration there blindly**, mark it executed, or drop the old data to bypass the mismatch. Back up and reconcile that schema/history first.
+- Before upgrading, stop workers and back up the database. `Version20261114132536` creates the ledger on a fresh installation or converts the specifically recognized legacy schema. Unknown shapes or existing archive tables abort before new writes. Never mark migrations executed or drop records to bypass a mismatch.
+
+### Legacy ledger upgrade
+
+The old development ledger associated with unavailable `Version20261113124023` is recognized by its exact columns and unique `(campaign_id, subscriber_id)` index. The pending ledger migration first copies every old row to `newsletter_delivery_legacy_archive` and affected campaign records to `newsletter_campaign_legacy_archive`, without foreign keys/cascade deletion. It preserves recipient/record IDs and timestamps, removes copied email/consent data from the active ledger, permits subscriber deletion, and reconciles campaign counts. Only known terminal states (`sent`, `failed`, `skipped`) are retained; all other outcomes become `uncertain` and affected campaigns finish without automatic resends.
+
+Archives contain personal data and are **not** application tables. Restrict database/export access, encrypt backups and retain them only for an explicitly reviewed reconciliation period. No archive is automatically deleted. The missing migration's historical metadata remains intact and may still produce an unavailable-version warning; its original code has not been recovered and must not be fabricated. Obtain it from the original release backup if historical reversals are required.
+
+MySQL DDL is not atomic. Keep both workers stopped for the entire upgrade. If any step fails, keep them stopped and inspect the archives/current schema before restoring the pre-upgrade backup or preparing a reviewed forward recovery; do not rerun unchanged or remove the archive guard. Automatic `down` refuses a legacy upgrade or any populated ledger. Fresh empty-ledger reversal remains supported.
+
+`Version20261114170000` then fills missing campaign snapshots and removes the five obsolete legacy counter columns from the active table. Existing snapshots are never replaced. Doctrine's narrowly scoped `schema_filter` excludes both archives from generated schema changes; migration safety checks query the database catalog directly so that filter cannot hide archives. Counter cleanup is a no-op on fresh installations.
 
 ## Configuration
 

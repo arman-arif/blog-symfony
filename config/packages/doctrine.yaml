@@ -3,6 +3,8 @@ doctrine:
         url: '%env(resolve:DATABASE_URL)%'
 
         charset: utf8mb4
+        # Immutable reconciliation archives, not application schema. Never propose dropping them.
+        schema_filter: '~^(?!newsletter_(?:delivery|campaign)_legacy_archive$)~'
         profiling_collect_backtrace: '%kernel.debug%'
     orm:
         validate_xml_mapping: true

@@ -43,7 +43,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M7 public visibility, fetch joins and discovery ranking | Fixed; popularity uses retained rollups; full QA and HTTP/query/cardinality regressions verified |
 | M8 async view routing | Fixed; full QA, HTTP/queue/worker regressions and production routing verified |
 | M9 sitemap invalidation and page eligibility/editing | Fixed; cached HTTP regressions, full QA and production cache-pool wiring verified |
-| M10 newsletter eligibility, retries, delivery accounting and SMTP | Fixed in code; full QA and production routing/transport wiring verified; development migration blocked |
+| M10 newsletter eligibility, retries, delivery accounting and SMTP | Fixed in code; development schema reconciled with preserved archives; full QA passed; missing historical migration still limits reversals |
 | M11 analytics scope and export scalability | Owner scope fixed with M4; export scalability pending |
 | M12 advertisement expiry and CSP | Pending |
 | M13 settings validation/completeness and menu cycles | Pending |
@@ -60,6 +60,12 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, fu
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-14 — M10 migration reconciliation
+- Backed up the development database privately to `/tmp/opencode/blog-pre-ledger-upgrade-20261114-165626.sql`. Converted the recognized legacy ledger without losing its rows, identities or timestamps; unknown outcomes become terminal `uncertain`, never automatic SMTP retries. Archived affected campaigns and all obsolete counter values before active-schema cleanup. Archives have no cascade foreign keys and are not automatically deleted.
+- Applied both reconciliation migrations to development; all three campaign records were preserved, the ledger/archive were empty, and production-environment schema validation passed. The missing `Version20261113124023` metadata was retained, not fabricated or marked away. A filtered-schema archive lookup initially failed before writing; inspected state and replaced it with database-catalog safety checks before retrying.
+- Verification: fresh and populated legacy migration regressions, archive-filter guards and unknown-schema rejection; full `composer qa` passed (**320 tests / 21,747 assertions**). Evidence: `/tmp/opencode/blog-m10-reconciliation-qa.log`, `/tmp/opencode/blog-remaining-m10-counter-migrate.log`, `/tmp/opencode/blog-remaining-m10-schema.log`. Migrations are now included in PHPStan analysis.
+- Limitations: original historical reversal code remains unavailable. MySQL DDL recovery requires the reviewed backup and stopped workers; archives contain personal data requiring operator access/retention review. Independent deployment, live SMTP, Redis and concurrency/scale verification remain open.
 
 ### 2026-11-14 — M7 popularity follow-up
 - Popularity now reads retained daily rollups for the last 30 calendar days instead of depending on raw-view retention. Public eligibility is checked before limiting; ties are deterministic. Aggregation invalidates homepage rankings and the homepage cache key changes daily.

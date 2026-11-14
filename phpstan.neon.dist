@@ -8,4 +8,5 @@ parameters:
     paths:
         - src
         - tests
+        - migrations
     tmpDir: var/phpstan
