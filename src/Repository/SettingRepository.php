@@ -20,4 +20,12 @@ class SettingRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['key' => $key]);
     }
+
+    /** @return list<array{key: string, value: array<string, mixed>, isSensitive: bool}> */
+    public function runtimeValues(): array
+    {
+        // Scalar hydration bypasses stale managed settings inside long-running campaign batches.
+        return $this->createQueryBuilder('setting')->select('setting.key', 'setting.value', 'setting.isSensitive')
+            ->getQuery()->getArrayResult();
+    }
 }

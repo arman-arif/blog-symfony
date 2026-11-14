@@ -24,6 +24,8 @@ Retry failed messages:
 sudo -u fieldnotes php bin/console messenger:failed:retry
 ```
 
+Newsletter batch retries consult the recipient ledger and never resend a terminal/started attempt. The scheduler recovers pending dispatches and marks interrupted attempts older than 15 minutes as `uncertain`. Investigate these against provider logs; do not reset ledger/counters to force resends. Transactional email jobs are outside this ledger and retain Messenger retries. See [`newsletter.md`](newsletter.md) for SMTP settings, shared-cache requirements and migration reconciliation.
+
 ## Logs
 
 - Application: `var/log/prod.log` (and `dev.log` locally)

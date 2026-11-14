@@ -22,6 +22,7 @@ final class NewsletterCampaignType extends AbstractType
     {
         $builder
             ->add('subject', TextType::class, [
+                'empty_data' => '',
                 'attr' => ['id' => 'campaign-subject', 'maxlength' => 255],
                 'constraints' => [new Assert\NotBlank(), new Assert\Length(max: 255)],
             ])
@@ -37,6 +38,9 @@ final class NewsletterCampaignType extends AbstractType
                 'attr' => ['id' => 'campaign-status'],
             ])
             ->add('scheduledAt', DateTimeType::class, [
+                'input' => 'datetime_immutable',
+                'model_timezone' => 'UTC',
+                'view_timezone' => 'UTC',
                 'required' => false,
                 'widget' => 'single_text',
                 'html5' => true,

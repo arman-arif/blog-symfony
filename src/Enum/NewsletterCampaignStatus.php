@@ -8,6 +8,7 @@ enum NewsletterCampaignStatus: string
 {
     case Draft = 'draft';
     case Scheduled = 'scheduled';
+    case Queued = 'queued';
     case Sending = 'sending';
     case Sent = 'sent';
     case Failed = 'failed';

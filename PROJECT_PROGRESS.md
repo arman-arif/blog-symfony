@@ -43,7 +43,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M7 public visibility, fetch joins and discovery ranking | Fixed; full QA and HTTP/query/cardinality regressions verified |
 | M8 async view routing | Fixed; full QA, HTTP/queue/worker regressions and production routing verified |
 | M9 sitemap invalidation and page eligibility/editing | Fixed; cached HTTP regressions, full QA and production cache-pool wiring verified |
-| M10 newsletter eligibility, retries, delivery accounting and SMTP | Pending |
+| M10 newsletter eligibility, retries, delivery accounting and SMTP | Fixed in code; full QA and production routing/transport wiring verified; development migration blocked |
 | M11 analytics scope and export scalability | Owner scope fixed with M4; export scalability pending |
 | M12 advertisement expiry and CSP | Pending |
 | M13 settings validation/completeness and menu cycles | Pending |
@@ -51,7 +51,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M15 regression consolidation | In progress; previously passing tests did not establish correctness |
 | M16 deployment scripts/configuration/runbooks | Pending |
 
-Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, migration reversal and large-scale benchmarks have not been independently reverified during remediation.
+Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, full migration-suite reversal and large-scale benchmarks have not been independently reverified during remediation. The M10 ledger migration alone has passed reversal/reapplication on the empty test database.
 
 ## Phase 1 review gate
 
@@ -60,6 +60,14 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, mi
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-14 — M10 review remediation
+- Restored the 61 verified reversals of earlier remediation commits after explicit owner authorization, retaining `/tmp/opencode/blog-authorized-reversals-backup.patch`. Baseline QA hit three stale-container references; refreshed the test container rather than weakening coverage.
+- Added a durable unique campaign-recipient ledger, bounded audience/export reads, true async campaign routing, delivery-time subscriber checks, serialized counters and replay/dispatch recovery. SMTP acceptance and queued mail are no longer conflated; interrupted attempts become uncertain without automatic resend. Forms bind isolated copies and queued/completed content is read-only; blank subject and immutable UTC schedule binding were corrected.
+- Saved SMTP selection now decorates the framework transport, covering its actual email worker and campaign delivery. Added proper TLS options, saved sender display names, scalar settings refresh within long-lived batches and one-click unsubscribe POST support.
+- Verification: full `composer qa` passed (**315 tests / 21,709 assertions**), both PHPStan analyses, container/Twig/YAML lints, style, standalone CSS, dependency audit and tooling check. Focused run: **27 tests / 302 assertions** before the sender/header and one-click additions. Injected audience and post-SMTP persistence failures verify rollback and retained attempt state. New migration down/up succeeded on empty `fieldnotes_test`; mapping validation passed, with only the pre-existing unmanaged Messenger table in the subsequent diff (not dropped). Evidence: `/tmp/opencode/blog-remediation-m10-qa.log`, `/tmp/opencode/blog-remediation-m10-expanded.log`, `/tmp/opencode/blog-remediation-m10-migration-cycle.log`.
+- Production verification: refreshed a stale compiled no-debug container, then verified the generated runtime container and service diagnostics route both the email handler and campaign sender through `SettingsTransport`. Production Messenger routing sends campaign batches to `async`; the unsubscribe route accepts GET/POST. Production container lint passed. Evidence: `/tmp/opencode/blog-remediation-m10-prod-cache.log`, `/tmp/opencode/blog-remediation-m10-prod-transport.log`, `/tmp/opencode/blog-remediation-m10-prod-email-handler.log`, `/tmp/opencode/blog-remediation-m10-prod-routing.log`, `/tmp/opencode/blog-remediation-m10-prod-unsubscribe.log`, `/tmp/opencode/blog-remediation-m10-prod-container.log`. Reviewed the complete tracked/untracked diff and checked whitespace before committing this remediation separately.
+- Limitations: the development database's unavailable `Version20261113124023` and incompatible older ledger remain untouched and require reconciliation before upgrade. Additional test-database creation was denied by database grants. Live SMTP, separate Doctrine/Redis workers, multi-host concurrency, independent deployment/browser checks and large-audience/backlog benchmarks remain unverified. Audience preparation is synchronous database work; scheduler recovery can increase broker traffic during backlogs; multi-host SMTP changes require shared settings-cache invalidation. Existing Flysystem configuration and menu-template deprecation warnings remain outside this pass. Other review areas remain open; production readiness is not claimed.
 
 ### 2026-11-13 — M9 review remediation
 - Moved page saves/deletion into a transactional service with post-success sitemap invalidation. Page forms bind to isolated copies including SEO; invalid submissions cannot become pending writes.

@@ -17,8 +17,8 @@
             <td><span class="badge {{ campaign.status.value == 'sent' ? 'badge-success' : (campaign.status.value == 'scheduled' ? 'badge-warning' : 'badge-neutral') }}">{{ campaign.status.value|title }}</span></td>
             <td class="text-xs text-muted">{{ campaign.scheduledAt ? campaign.scheduledAt|date('M j, Y H:i') : '—' }}</td>
             <td class="text-xs text-muted">{{ campaign.sentAt ? campaign.sentAt|date('M j, Y H:i') : '—' }}</td>
-            <td class="text-xs text-muted">{{ campaign.stats.sent }} sent · {{ campaign.stats.failed }} failed</td>
-            <td><div class="flex justify-end gap-1"><twig:Button href="{{ path('admin_newsletter_edit', {id: campaign.id}) }}" variant="secondary" size="sm">Edit</twig:Button>{% if campaign.status.value != 'sent' %}<form method="post" action="{{ path('admin_newsletter_send', {id: campaign.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('campaign_send') }}"><twig:Button type="submit" size="sm">Send now</twig:Button></form>{% endif %}</div></td>
+            <td class="text-xs text-muted">{{ campaign.stats.sent }} accepted · {{ campaign.stats.failed }} failed · {{ campaign.stats.skipped }} skipped · {{ campaign.stats.uncertain }} uncertain</td>
+            <td><div class="flex justify-end gap-1"><twig:Button href="{{ path('admin_newsletter_edit', {id: campaign.id}) }}" variant="secondary" size="sm">{{ campaign.editable ? 'Edit' : 'View' }}</twig:Button>{% if campaign.editable %}<form method="post" action="{{ path('admin_newsletter_send', {id: campaign.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('campaign_send') }}"><twig:Button type="submit" size="sm">Send now</twig:Button></form>{% endif %}</div></td>
         </tr>
     {% else %}
         <tr><td colspan="6" class="py-10 text-center text-sm text-muted">{{ history ? 'No campaign history yet.' : 'No campaigns yet.' }} {% if not history %}<a class="font-semibold text-brand" href="{{ path('admin_newsletter_create') }}">Write the first letter</a>.{% endif %}</td></tr>

@@ -67,7 +67,7 @@ final class NewsletterController extends AbstractController
         return $this->redirect($this->generateUrl('front_home').'#newsletter');
     }
 
-    #[Route('/newsletter/unsubscribe/{token}', name: 'front_newsletter_unsubscribe', requirements: ['token' => '[a-f0-9]{32,64}'], methods: ['GET'])]
+    #[Route('/newsletter/unsubscribe/{token}', name: 'front_newsletter_unsubscribe', requirements: ['token' => '[a-f0-9]{32,64}'], methods: ['GET', 'POST'])]
     public function unsubscribe(string $token, NewsletterSubscriptionService $subscriptions): Response
     {
         $subscriber = $subscriptions->unsubscribe($token);

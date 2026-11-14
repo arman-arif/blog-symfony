@@ -11,9 +11,14 @@ use App\Message\SendScheduledNewsletterCampaignsMessage;
 use App\Repository\NewsletterCampaignRepository;
 use App\Repository\NewsletterSubscriberRepository;
 use App\Repository\UserRepository;
+use App\Tests\Factory\NewsletterSubscriberFactory;
 use App\Tests\Support\InMemorySettingsService;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 use Symfony\Component\Mime\Email;
 
 final class NewsletterTest extends FrontTestCase
@@ -88,6 +93,20 @@ final class NewsletterTest extends FrontTestCase
         self::assertSame(NewsletterSubscriberStatus::Confirmed, $subscriber?->getStatus());
     }
 
+    public function testListUnsubscribeOneClickPostUsesTheOpaqueToken(): void
+    {
+        $client = self::createClient();
+        $this->seed();
+        $subscriber = self::getContainer()->get(NewsletterSubscriberRepository::class)->findOneBy(['status' => NewsletterSubscriberStatus::Confirmed]);
+        self::assertNotNull($subscriber);
+        $client->request('POST', '/newsletter/unsubscribe/'.$subscriber->getToken(), ['List-Unsubscribe' => 'One-Click']);
+        self::assertResponseRedirects();
+        self::getContainer()->get(EntityManagerInterface::class)->clear();
+        $subscriber = self::getContainer()->get(NewsletterSubscriberRepository::class)->find($subscriber->getId());
+        self::assertSame(NewsletterSubscriberStatus::Unsubscribed, $subscriber?->getStatus());
+        self::assertNotNull($subscriber?->getUnsubscribedAt());
+    }
+
     public function testInvalidEmailIsRejected(): void
     {
         $client = self::createClient();
@@ -123,7 +142,6 @@ final class NewsletterTest extends FrontTestCase
 
         $crawler = $client->request('GET', '/admin/newsletter');
         self::assertResponseIsSuccessful();
-        file_put_contents('/tmp/nl-admin.html', (string) $client->getResponse()->getContent());
         self::assertSelectorTextContains('main', 'reader1@example.test');
 
         $client->request('GET', '/admin/newsletter?q=reader3');
@@ -144,7 +162,8 @@ final class NewsletterTest extends FrontTestCase
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('text/csv', (string) $client->getResponse()->headers->get('Content-Type'));
         self::assertStringContainsString('newsletter-subscribers-', (string) $client->getResponse()->headers->get('Content-Disposition'));
-        self::assertStringContainsString('reader1@example.test', (string) $client->getResponse()->getContent());
+        self::assertInstanceOf(StreamedResponse::class, $client->getResponse());
+        self::assertStringContainsString('reader1@example.test', $client->getInternalResponse()->getContent());
     }
 
     public function testCampaignDraftTestSendAndBatchDelivery(): void
@@ -168,7 +187,6 @@ final class NewsletterTest extends FrontTestCase
         self::assertSame(NewsletterCampaignStatus::Draft, $campaign->getStatus());
 
         $crawler = $client->request('GET', '/admin/newsletter/campaigns/'.$campaign->getId().'/edit');
-        file_put_contents('/tmp/nl-campaign.html', (string) $client->getResponse()->getContent());
         self::assertResponseIsSuccessful('Campaign edit failed: '.$client->getResponse()->getStatusCode());
         $testForm = $crawler->filter('form[action$="/test"]')->form();
         $testForm['email'] = 'tester@example.test';
@@ -182,6 +200,9 @@ final class NewsletterTest extends FrontTestCase
         $crawler = $client->request('GET', '/admin/newsletter/campaigns/'.$campaign->getId().'/edit');
         $client->submit($crawler->filter('form[action$="/send"]')->form());
         self::assertResponseStatusCodeSame(302);
+        self::assertEmailCount(0);
+        self::assertSame(NewsletterCampaignStatus::Queued, self::getContainer()->get(NewsletterCampaignRepository::class)->find($campaign->getId())?->getStatus());
+        $this->consumeBatches();
         self::assertEmailCount($confirmed);
         $em = self::getContainer()->get(EntityManagerInterface::class);
         $em->clear();
@@ -206,8 +227,33 @@ final class NewsletterTest extends FrontTestCase
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new SendScheduledNewsletterCampaignsMessage());
 
         $em->clear();
+        self::assertSame(NewsletterCampaignStatus::Queued, self::getContainer()->get(NewsletterCampaignRepository::class)->find($campaign->getId())?->getStatus());
+        self::assertEmailCount(0);
+        $this->consumeBatches();
+        $em->clear();
         self::assertSame(NewsletterCampaignStatus::Sent, self::getContainer()->get(NewsletterCampaignRepository::class)->find($campaign->getId())?->getStatus());
         self::assertEmailCount(self::getContainer()->get(NewsletterSubscriberRepository::class)->countByStatus(NewsletterSubscriberStatus::Confirmed));
+    }
+
+    public function testExportCrossesChunkBoundariesAndNeutralizesSpreadsheetFormulas(): void
+    {
+        $client = self::createClient();
+        $this->seed();
+        $admin = self::getContainer()->get(UserRepository::class)->findOneByEmail('writer1@example.test');
+        self::assertNotNull($admin);
+        $client->loginUser($admin);
+        NewsletterSubscriberFactory::createMany(501);
+        NewsletterSubscriberFactory::createOne(['email' => '=formula@example.test']);
+        $total = self::getContainer()->get(NewsletterSubscriberRepository::class)->count([]);
+        $client->request('GET', '/admin/newsletter/export');
+        self::assertResponseIsSuccessful();
+        self::assertInstanceOf(StreamedResponse::class, $client->getResponse());
+        $csv = $client->getInternalResponse()->getContent();
+        $rows = array_map(static fn (string $line): array => str_getcsv($line, ',', '"', ''), explode("\n", trim($csv)));
+        self::assertCount($total + 1, $rows);
+        self::assertSame(['id', 'email', 'status', 'created_at', 'confirmed_at', 'unsubscribed_at'], $rows[0]);
+        self::assertCount($total, array_unique(array_column(array_slice($rows, 1), 0)));
+        self::assertStringContainsString("'=formula@example.test", $csv);
     }
 
     private function subscribe(object $client, string $email): void
@@ -216,6 +262,19 @@ final class NewsletterTest extends FrontTestCase
         $form = $crawler->filter('form[action="/newsletter/subscribe"]')->first()->form();
         $form['email'] = $email;
         $client->submit($form);
+    }
+
+    private function consumeBatches(): void
+    {
+        $transport = self::getContainer()->get('messenger.transport.async');
+        self::assertInstanceOf(InMemoryTransport::class, $transport);
+        $command = self::getContainer()->get('console.command.messenger_consume_messages');
+        self::assertInstanceOf(Command::class, $command);
+        self::assertNotEmpty($transport->getSent());
+        self::assertSame(0, (new CommandTester($command))->execute([
+            'receivers' => ['async'], '--limit' => count($transport->getSent()), '--time-limit' => 5, '--no-reset' => null,
+        ], ['interactive' => false]));
+        self::assertCount(count($transport->getSent()), $transport->getAcknowledged());
     }
 
     private function firstMatch(string $body, string $pattern): string

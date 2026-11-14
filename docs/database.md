@@ -13,8 +13,12 @@ Target: **MySQL 8.4** with `utf8mb4`. M16 verified a fresh MySQL 8.4 migration r
 | `Version20261112130000` | Search | FULLTEXT index `ft_article_search` on article title/excerpt/content |
 | `Version20261112174153` | Redirects | Shorten `redirect.source_path` to 512 chars so its unique index fits MySQL 8/InnoDB limits |
 | `Version20261112185703` | Monetization | Ad destination/paragraph targeting and article sponsored/affiliate/premium flags |
+| `Version20261113113808` | Media cleanup remediation | Retained deletion tombstone cleanup-completion timestamp |
+| `Version20261114132536` | Newsletter delivery remediation | Unique campaign/recipient ledger, nullable subscriber relation, attempt and acceptance timestamps |
 
-Every migration was generated from attribute mapping and verified up, down and up again on a fresh empty database. `redirect.source_path` is created as `VARCHAR(512)` from the initial migration so its unique index fits MySQL 8/InnoDB utf8mb4 limits (the later redirect migration remains a no-op for fresh installs).
+The original M3–M16 migrations were generated from attribute mapping and historically verified up, down and up again on a fresh empty database. `redirect.source_path` is created as `VARCHAR(512)` from the initial migration so its unique index fits MySQL 8/InnoDB utf8mb4 limits (the later redirect migration remains a no-op for fresh installs).
+
+The newsletter remediation migration was generated against the reset test database, then reversed/reapplied on the empty `fieldnotes_test` database. Its mapping matches; the only subsequent schema diff is the existing unmapped `messenger_messages` table, which must **not** be dropped. An additional isolated database could not be created with this account's grants. The development database was not changed: it contains unavailable `Version20261113124023` and an incompatible older ledger table. Reconcile that history/schema with backups before upgrading it; do not blindly apply the create-table migration. See [`newsletter.md`](newsletter.md).
 
 ## Conventions
 
@@ -60,6 +64,8 @@ erDiagram
     CATEGORY ||--o{ CATEGORY : children
     MENU ||--o{ MENU_ITEM : contains
     MENU_ITEM ||--o{ MENU_ITEM : children
+    NEWSLETTER_CAMPAIGN ||--o{ NEWSLETTER_DELIVERY : audience
+    NEWSLETTER_SUBSCRIBER |o--o{ NEWSLETTER_DELIVERY : recipient
 
     USER {
         int id PK
@@ -216,6 +222,15 @@ erDiagram
         datetime sent_at
         json stats
     }
+    NEWSLETTER_DELIVERY {
+        int id PK
+        int campaign_id FK
+        int subscriber_id FK "nullable; SET NULL on deletion"
+        int recipient_id "retained subscriber identity"
+        string status
+        datetime attempted_at
+        datetime sent_at
+    }
     ADVERTISEMENT {
         int id PK
         string name
@@ -270,6 +285,7 @@ erDiagram
 - `article_view(article_id, viewed_at)` and `article_view(viewed_at)` support de-duplication, rollups and retention pruning.
 - `article_daily_stat UNIQUE(article_id, stat_day)` prevents duplicate rollup rows.
 - `article_like UNIQUE(article_id, user_id)` and `article_bookmark UNIQUE(article_id, user_id)` make duplicate engagement impossible.
+- `newsletter_delivery UNIQUE(campaign_id, recipient_id)` prevents duplicate audience rows; `(campaign_id, status, recipient_id)` supports bounded delivery/recovery reads. Ledger rows cascade on campaign deletion but survive subscriber deletion with a null subscriber relation.
 - `media.storage_key`, `menu.location`, `setting.setting_key`, `redirect.source_path`, subscriber `email`/`token` and all slugs are unique.
 - `activity_log(created_at)` supports the audit feed.
 - `reset_password_request(user_id)` supports lookup and cascades when a user is removed.

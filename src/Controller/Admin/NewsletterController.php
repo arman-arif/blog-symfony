@@ -10,12 +10,14 @@ use App\Enum\NewsletterSubscriberStatus;
 use App\Form\NewsletterCampaignType;
 use App\Repository\NewsletterCampaignRepository;
 use App\Repository\NewsletterSubscriberRepository;
+use App\Service\Article\ContentProcessor;
 use App\Service\Audit\ActivityLogger;
 use App\Service\Newsletter\NewsletterCampaignService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -32,6 +34,7 @@ final class NewsletterController extends AbstractController
         private readonly NewsletterCampaignService $campaignService,
         private readonly ActivityLogger $activityLogger,
         private readonly EntityManagerInterface $entityManager,
+        private readonly ContentProcessor $contentProcessor,
     ) {
     }
 
@@ -46,7 +49,7 @@ final class NewsletterController extends AbstractController
             'subscribers' => $result['items'], 'total' => $result['total'], 'pages' => $result['pages'], 'page' => $page,
             'filters' => $filters, 'statuses' => NewsletterSubscriberStatus::cases(),
             'counts' => [
-                'all' => count($this->subscribers->findAll()),
+                'all' => $this->subscribers->count([]),
                 'confirmed' => $this->subscribers->countByStatus(NewsletterSubscriberStatus::Confirmed),
                 'pending' => $this->subscribers->countByStatus(NewsletterSubscriberStatus::Pending),
                 'unsubscribed' => $this->subscribers->countByStatus(NewsletterSubscriberStatus::Unsubscribed),
@@ -57,25 +60,28 @@ final class NewsletterController extends AbstractController
     #[Route('/export', name: 'export', methods: ['GET'])]
     public function export(): Response
     {
-        $subscribers = $this->subscribers->findAllForExport();
-        $handle = fopen('php://temp', 'wb');
-        \assert(false !== $handle);
-        fputcsv($handle, ['id', 'email', 'status', 'created_at', 'confirmed_at', 'unsubscribed_at'], ',', '"', '');
-        foreach ($subscribers as $subscriber) {
-            fputcsv($handle, [
-                $subscriber->getId(), $subscriber->getEmail(), $subscriber->getStatus()->value,
-                $subscriber->getCreatedAt()->format(\DateTimeInterface::ATOM),
-                $subscriber->getConfirmedAt()?->format(\DateTimeInterface::ATOM),
-                $subscriber->getUnsubscribedAt()?->format(\DateTimeInterface::ATOM),
-            ], ',', '"', '');
-        }
-        rewind($handle);
-        $csv = (string) stream_get_contents($handle);
-        fclose($handle);
-
-        return new Response($csv, Response::HTTP_OK, [
+        return new StreamedResponse(function (): void {
+            $handle = fopen('php://output', 'wb');
+            \assert(false !== $handle);
+            try {
+                fputcsv($handle, ['id', 'email', 'status', 'created_at', 'confirmed_at', 'unsubscribed_at'], ',', '"', '');
+                foreach ($this->subscribers->iterateForExport() as $subscriber) {
+                    // Prevent spreadsheet formula evaluation of an email local-part.
+                    $email = preg_match('/^[=+@-]/', $subscriber['email']) ? "'".$subscriber['email'] : $subscriber['email'];
+                    fputcsv($handle, [
+                        $subscriber['id'], $email, $subscriber['status']->value,
+                        $subscriber['createdAt']->format(\DateTimeInterface::ATOM),
+                        $subscriber['confirmedAt']?->format(\DateTimeInterface::ATOM),
+                        $subscriber['unsubscribedAt']?->format(\DateTimeInterface::ATOM),
+                    ], ',', '"', '');
+                }
+            } finally {
+                fclose($handle);
+            }
+        }, Response::HTTP_OK, [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="newsletter-subscribers-'.date('Ymd').'.csv"',
+            'X-Accel-Buffering' => 'no',
         ]);
     }
 
@@ -106,7 +112,7 @@ final class NewsletterController extends AbstractController
     public function campaigns(Request $request): Response
     {
         $history = 'admin_newsletter_history' === $request->attributes->get('_route');
-        $items = $this->campaigns->findBy($history ? ['status' => NewsletterCampaignStatus::Sent] : [], ['createdAt' => 'DESC']);
+        $items = $this->campaigns->findBy($history ? ['status' => [NewsletterCampaignStatus::Sent, NewsletterCampaignStatus::Failed]] : [], ['createdAt' => 'DESC']);
 
         return $this->render('admin/newsletter/campaigns.html.twig', ['campaigns' => $items, 'history' => $history]);
     }
@@ -138,7 +144,7 @@ final class NewsletterController extends AbstractController
         } else {
             $this->campaignService->sendTest($campaign, $email);
             $this->activityLogger->log('newsletter.test_sent', 'NewsletterCampaign', $id, ['summary' => 'Sent a test campaign email']);
-            $this->addFlash('success', 'Test email sent.');
+            $this->addFlash('success', 'Test email queued.');
         }
 
         return $this->redirectToRoute('admin_newsletter_edit', ['id' => $id]);
@@ -161,14 +167,26 @@ final class NewsletterController extends AbstractController
 
     private function campaignForm(Request $request, NewsletterCampaign $campaign): Response
     {
-        $form = $this->createForm(NewsletterCampaignType::class, $campaign);
+        if (!$campaign->isEditable()) {
+            if ($request->isMethod('POST')) {
+                return new Response('Queued or completed campaigns cannot be edited.', Response::HTTP_CONFLICT);
+            }
+
+            return $this->render('admin/newsletter/form.html.twig', ['campaign' => $campaign, 'form' => null]);
+        }
+        $details = clone $campaign;
+        $form = $this->createForm(NewsletterCampaignType::class, $details);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if (NewsletterCampaignStatus::Scheduled === $campaign->getStatus() && null === $campaign->getScheduledAt()) {
+            if (NewsletterCampaignStatus::Scheduled === $details->getStatus() && null === $details->getScheduledAt()) {
                 $form->addError(new \Symfony\Component\Form\FormError('Choose a date and time for the scheduled campaign.'));
             } else {
-                $this->campaignService->save($campaign);
+                try {
+                    $this->campaignService->save($campaign, $details);
+                } catch (\DomainException $exception) {
+                    return new Response($exception->getMessage(), Response::HTTP_CONFLICT);
+                }
                 $this->activityLogger->log('newsletter.campaign_saved', 'NewsletterCampaign', $campaign->getId(), ['summary' => 'Saved campaign “'.$campaign->getSubject().'”']);
                 $this->addFlash('success', 'Campaign saved.');
 
@@ -176,7 +194,9 @@ final class NewsletterController extends AbstractController
             }
         }
 
-        return $this->render('admin/newsletter/form.html.twig', ['campaign' => $campaign, 'form' => $form], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+        $details->setHtml($this->contentProcessor->sanitize($details->getHtml()));
+
+        return $this->render('admin/newsletter/form.html.twig', ['campaign' => $details, 'form' => $form], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
     private function findCampaign(int $id): NewsletterCampaign

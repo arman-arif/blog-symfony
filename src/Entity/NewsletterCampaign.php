@@ -33,7 +33,7 @@ class NewsletterCampaign
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $sentAt = null;
 
-    /** @var array{sent: int, failed: int} */
+    /** @var array{sent: int, failed: int, skipped?: int, uncertain?: int, pending?: int, sending?: int, total?: int} */
     #[ORM\Column(type: Types::JSON)]
     private array $stats = ['sent' => 0, 'failed' => 0];
 
@@ -97,13 +97,18 @@ class NewsletterCampaign
         return $this;
     }
 
-    /** @return array{sent: int, failed: int} */
-    public function getStats(): array
+    public function isEditable(): bool
     {
-        return $this->stats;
+        return in_array($this->status, [NewsletterCampaignStatus::Draft, NewsletterCampaignStatus::Scheduled], true);
     }
 
-    /** @param array{sent: int, failed: int} $stats */
+    /** @return array{sent: int, failed: int, skipped: int, uncertain: int, pending: int, sending: int, total: int} */
+    public function getStats(): array
+    {
+        return $this->stats + ['skipped' => 0, 'uncertain' => 0, 'pending' => 0, 'sending' => 0, 'total' => $this->stats['sent'] + $this->stats['failed']];
+    }
+
+    /** @param array{sent: int, failed: int, skipped?: int, uncertain?: int, pending?: int, sending?: int, total?: int} $stats */
     public function setStats(array $stats): self
     {
         $this->stats = $stats;

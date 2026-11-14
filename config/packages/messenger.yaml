@@ -13,6 +13,7 @@ framework:
         routing:
             Symfony\Component\Mailer\Messenger\SendEmailMessage: async
             App\Message\RecordArticleViewMessage: async
+            App\Message\SendNewsletterCampaignMessage: async
 
 when@test:
     framework:
@@ -23,6 +24,5 @@ when@test:
                 sync: 'sync://'
             routing:
                 Symfony\Component\Mailer\Messenger\SendEmailMessage: sync
-                App\Message\SendNewsletterCampaignMessage: sync
                 App\Message\SendScheduledNewsletterCampaignsMessage: sync
                 App\Message\AggregateAnalyticsMessage: sync

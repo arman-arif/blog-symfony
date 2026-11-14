@@ -122,11 +122,10 @@ final readonly class DatabaseSettingsService implements SettingsServiceInterface
             $item->expiresAfter(3600);
             $item->tag(['settings']);
             $rows = [];
-            foreach ($this->settings->findAll() as $setting) {
-                $stored = $setting->getValue();
-                $rows[$setting->getKey()] = [
-                    'value' => $stored['value'] ?? null,
-                    'sensitive' => $setting->isSensitive(),
+            foreach ($this->settings->runtimeValues() as $setting) {
+                $rows[$setting['key']] = [
+                    'value' => $setting['value']['value'] ?? null,
+                    'sensitive' => $setting['isSensitive'],
                 ];
             }
 

@@ -94,6 +94,7 @@ The article, category and tag administration screens are now server-backed; rema
 - **Subscriptions:** CSRF/rate-limited opt-in with opaque confirmation/unsubscribe tokens, double opt-in setting, confirmation/welcome emails and List-Unsubscribe headers.
 - **Admin:** real subscriber management with status actions and CSV export, plus campaign editor, test sends, history and delivery stats.
 - **Delivery:** campaigns are batched through Messenger (50 recipients per message), rendered with inline CSS, and scheduled sends run every minute through the Symfony Scheduler. Failures are recorded per recipient without aborting the batch.
+- **Delivery remediation:** a unique recipient ledger freezes the audience; workers recheck eligibility and count actual transport acceptance, not enqueueing. Row-locked transitions make replay/accounting idempotent; stale interrupted attempts become uncertain rather than being resent. The scheduler recovers pending dispatches. `SettingsTransport` resolves persisted SMTP settings for framework and campaign deliveries at worker time. See [`newsletter.md`](newsletter.md) for recovery limits and deployment prerequisites.
 
 ## M11 analytics and reporting
 

@@ -6,6 +6,7 @@
 {% block intro %}Campaign content is sanitized and rendered with inline CSS. Test sends go to one address; real sends use the async queue.{% endblock %}
 {% block actions %}<twig:Button variant="secondary" href="{{ path('admin_newsletter_campaigns') }}">All campaigns</twig:Button>{% endblock %}
 {% block content %}
+{% if form %}
 {{ form_start(form, {attr: {novalidate: 'novalidate', 'data-component': 'validate campaign-form'}}) }}
 {{ form_errors(form) }}
 <twig:AdminFormLayout sidebarTitle="Delivery">
@@ -19,12 +20,14 @@
             {{ form_row(form.status) }}
             <div data-schedule-panel {% if campaign.status.value != 'scheduled' %}hidden{% endif %}>{{ form_row(form.scheduledAt) }}</div>
             <twig:Button type="submit" class="w-full">Save campaign</twig:Button>
-            {% if campaign.id and campaign.status.value == 'sent' %}<p class="rounded-control bg-canvas p-4 text-xs text-muted">Sent {{ campaign.sentAt|date('M j, Y H:i') }} · {{ campaign.stats.sent }} delivered · {{ campaign.stats.failed }} failed.</p>{% endif %}
         </div>
     </twig:block>
 </twig:AdminFormLayout>
 {{ form_widget(form._token) }}
 {{ form_end(form, {render_rest: false}) }}
+{% else %}
+<section class="card p-6"><h2 class="font-display text-2xl">{{ campaign.subject }}</h2><p class="my-4 text-sm text-muted">{{ campaign.status.value|title }} · {{ campaign.stats.sent }} accepted by transport · {{ campaign.stats.failed }} failed · {{ campaign.stats.skipped }} skipped · {{ campaign.stats.uncertain }} uncertain. Queued content is read-only.</p><div class="prose">{{ campaign.html|raw }}</div></section>
+{% endif %}
 {% if campaign.id %}
 <div class="mt-6 grid gap-5 lg:grid-cols-2">
     <section class="card p-5" aria-labelledby="campaign-test-heading">
@@ -34,11 +37,11 @@
     </section>
     <section class="card p-5" aria-labelledby="campaign-send-heading">
         <h2 id="campaign-send-heading" class="font-display text-2xl">Send campaign</h2>
-        {% if campaign.status.value != 'sent' %}
+        {% if campaign.editable %}
             <p class="mt-1 text-sm text-muted">Queue this letter for every confirmed subscriber. Batches are processed asynchronously.</p>
             <form method="post" action="{{ path('admin_newsletter_send', {id: campaign.id}) }}" class="mt-4"><input type="hidden" name="_token" value="{{ csrf_token('campaign_send') }}"><twig:Button type="submit">Send to confirmed subscribers</twig:Button></form>
         {% else %}
-            <p class="mt-1 text-sm text-muted">This campaign has been sent. Delivery statistics appear on the campaign list.</p>
+            <p class="mt-1 text-sm text-muted">This campaign is queued or completed. Delivery statistics appear on the campaign list. Failed or uncertain attempts are not automatically resent.</p>
         {% endif %}
     </section>
 </div>
