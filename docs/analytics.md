@@ -2,6 +2,8 @@
 
 ## Data pipeline
 
+Analytics CSV uses a streamed output response, retaining the report's maximum 366 dates and top ten articles and its authenticated owner scope. Spreadsheet-formula titles are neutralized, exports are private/no-store, and Nginx buffering is disabled. It is a bounded report export, not a full-catalog dump.
+
 1. `RecordArticleViewMessage` stores de-duplicated raw views (one per visitor hash per 24 hours, bots ignored).
 2. `AnalyticsRollupService::aggregateRecent($days)` reads raw `article_view` rows grouped by article/day and upserts `article_daily_stat` with the **set** daily total, making repeated runs idempotent. It uses MySQL/MariaDB `ON DUPLICATE KEY UPDATE`.
 3. Raw views older than 30 days are pruned. Daily rollups are retained.

@@ -44,7 +44,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M8 async view routing | Fixed; full QA, HTTP/queue/worker regressions and production routing verified |
 | M9 sitemap invalidation and page eligibility/editing | Fixed; cached HTTP regressions, full QA and production cache-pool wiring verified |
 | M10 newsletter eligibility, retries, delivery accounting and SMTP | Fixed in code; development schema reconciled with preserved archives; full QA passed; missing historical migration still limits reversals |
-| M11 analytics scope and export scalability | Owner scope fixed with M4; export scalability pending |
+| M11 analytics scope and export scalability | Fixed; bounded streamed CSV, owner scope and formula safety verified by full QA |
 | M12 advertisement expiry and CSP | Pending |
 | M13 settings validation/completeness and menu cycles | Pending |
 | M14 password policy and security follow-ups | Pending |
@@ -60,6 +60,11 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, fu
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-14 — M11 export remediation
+- Replaced temporary-file/full-string CSV buffering with `StreamedResponse` output. Preserved owner scope, the 366-date/top-ten-article report limits and CSV escaping; neutralized spreadsheet formulas including whitespace prefixes. Exports are private/no-store with Nginx buffering disabled.
+- Verification: `composer qa` passed (**321 tests / 21,742 assertions**), including streamed body capture, report boundaries, formula safety and owner-scoped exports after sitewide cache warmup. Evidence: `/tmp/opencode/blog-m11-qa.log`. Assertion totals vary with generated fixture data.
+- Limitations: this remains a bounded report, not a full-catalog export; production proxy behavior and large-data query benchmarks have not been independently tested.
 
 ### 2026-11-14 — M10 migration reconciliation
 - Backed up the development database privately to `/tmp/opencode/blog-pre-ledger-upgrade-20261114-165626.sql`. Converted the recognized legacy ledger without losing its rows, identities or timestamps; unknown outcomes become terminal `uncertain`, never automatic SMTP retries. Archived affected campaigns and all obsolete counter values before active-schema cleanup. Archives have no cascade foreign keys and are not automatically deleted.

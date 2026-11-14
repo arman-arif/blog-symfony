@@ -4,16 +4,43 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use App\Entity\ArticleDailyStat;
 use App\Entity\ArticleView;
 use App\Repository\ArticleRepository;
 use App\Repository\UserRepository;
 use App\Service\Analytics\AnalyticsRollupService;
 use App\Service\Analytics\AnalyticsService;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final class AnalyticsTest extends FrontTestCase
 {
+    public function testCsvStreamsBoundedReportsAndNeutralizesSpreadsheetFormulas(): void
+    {
+        $client = self::createClient();
+        $this->seed();
+        $article = self::getContainer()->get(ArticleRepository::class)->findOneBy([]);
+        $admin = self::getContainer()->get(UserRepository::class)->findOneByEmail('writer1@example.test');
+        self::assertNotNull($article);
+        self::assertNotNull($admin);
+        $title = " \t=HYPERLINK(\"https://example.test\",\"click\")";
+        $article->setTitle($title);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        $em->persist((new ArticleDailyStat())->setArticle($article)->setStatDate(new \DateTimeImmutable('today'))->setViews(17));
+        $em->flush();
+        $client->loginUser($admin);
+        $client->request('GET', '/admin/analytics/export?from=1900-01-01');
+        self::assertResponseIsSuccessful();
+        self::assertInstanceOf(StreamedResponse::class, $client->getResponse());
+        self::assertFalse($client->getResponse()->getContent());
+        self::assertSame('no', $client->getResponse()->headers->get('X-Accel-Buffering'));
+        self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
+        $lines = explode("\n", trim($client->getInternalResponse()->getContent()));
+        self::assertCount(371, $lines);
+        self::assertSame("'".$title, str_getcsv($lines[370], ',', '"', '')[0]);
+    }
+
     public function testRollupIsIdempotentAndPowersAnalyticsAndDashboard(): void
     {
         $client = self::createClient();
@@ -57,7 +84,8 @@ final class AnalyticsTest extends FrontTestCase
         $client->request('GET', '/admin/analytics/export?from='.$from.'&to='.$to);
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('text/csv', (string) $client->getResponse()->headers->get('Content-Type'));
-        self::assertStringContainsString($first->getTitle(), (string) $client->getResponse()->getContent());
+        self::assertInstanceOf(StreamedResponse::class, $client->getResponse());
+        self::assertStringContainsString($first->getTitle(), $client->getInternalResponse()->getContent());
 
         $client->request('GET', '/admin');
         self::assertResponseIsSuccessful();

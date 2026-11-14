@@ -210,8 +210,8 @@ final class AuthorizationRegressionTest extends FrontTestCase
         foreach (['/admin/analytics', '/admin/analytics/export', '/admin'] as $path) {
             $client->request('GET', $path);
             self::assertResponseIsSuccessful();
-            self::assertStringNotContainsString('Other author confidential analytics', (string) $client->getResponse()->getContent());
-            self::assertStringContainsString('My author analytics', (string) $client->getResponse()->getContent());
+            self::assertStringNotContainsString('Other author confidential analytics', $client->getInternalResponse()->getContent());
+            self::assertStringContainsString('My author analytics', $client->getInternalResponse()->getContent());
         }
     }
 
