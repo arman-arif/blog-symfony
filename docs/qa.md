@@ -2,7 +2,7 @@
 
 ## Test and static-analysis status
 
-- Latest local verification (2026-11-14, M15 consolidation): `composer qa` passed with **356 tests / 22,195 assertions** on PHP 8.5.12 and the local MariaDB test database. Assertion totals vary with generated fixture data. Evidence: `/tmp/opencode/blog-m15-qa.log` (local, not a repository artifact).
+- Latest local verification (2026-11-14, M16 remediation): `composer qa` passed with **376 tests / 22,318 assertions** on PHP 8.5.12 and the local MariaDB test database. Assertion totals vary with generated fixture data. Evidence: `/tmp/opencode/blog-m16-qa-release-review.log` (local, not a repository artifact).
 - The pipeline runs Composer validation, container/Twig/YAML lint, standalone Tailwind, PHPStan (level 6 across `src`/`tests`/`migrations`), max-level PHPStan for `src/Service`/`src/Security`, PHP-CS-Fixer dry run, PHPUnit, dependency audit and the no-Node tooling guard.
 - PHPStan max level is clean on the business/security layer via `phpstan-max.neon`; the full codebase (including intentionally dynamic test container access) remains at level 6.
 
@@ -39,8 +39,13 @@ The historical line results exceeded the ≥70% service/security target, but do 
 | Scoped/streamed CSV and warm-cache advertisement dates/CSP | `AnalyticsTest`, `AdvertisementTest`, `SecurityHardeningTest` |
 | Complete runtime controls and rejected menu graphs | `SettingsMenuValidationRegressionTest`, `SettingsAndMenusTest` |
 | Entropy, breach lookup privacy/outages and all password callers | `PasswordPolicyRegressionTest`, `AuthenticationTest`, `AdminManagementTest` |
+| Non-destructive bootstrap/deploy sync, deployment failure paths and web-server routing/OPcache | `PermissionSyncRegressionTest`, `DeployScriptRegressionTest`, `WebServerDeploymentRegressionTest` |
 
 Injected failures assert persistence/rollback or later-flush isolation, not merely that an exception occurred. Newsletter migration tests execute against isolated suffixed tables on a separate connection; they do not prove a full fresh-host migration run. Mail and queue fixtures exercise the real application validators/services/consumer command while replacing external HTTP/SMTP/broker boundaries.
+
+Deployment regressions run the real Bash entry point with recorded executables, assert mandatory stop/restart ordering and failure exits (including each individual inactive service among otherwise running units), and verify Redis DSN/worker-identity interpolation without connecting to Redis. The Nginx/PHP 8.4 FPM fixture uses isolated loopback sockets and disposable dummy files: it checks resolver precedence, generated-file caching, upload/dotfile guards and warmed OPcache before/after a real isolated FPM restart. It is skipped if those system binaries are absent. Rootless FPM runs as the test user, **not `www-data`**; this does not verify production-user secret access, host systemd execution, a full Symfony/FPM deployment or Apache runtime behavior. `MediaCmsTest` separately exercises real Symfony/Liip image generation.
+
+M16 focused media/permission/deployment checks passed **32 tests / 260 assertions** after final inspection. The isolated deployment suites also passed on PHP **8.4.27** (**17 tests / 78 assertions**); both PHPStan configurations were clean on that minimum-supported runtime. Bash syntax, systemd unit verification and the rebuilt production container lint passed. Changed Markdown links/fences and 28 Bash examples passed static syntax checks; the runbook examples were not executed. Passwordless sudo was unavailable, so actual `www-data` impersonation/host service control was not attempted. Evidence: `/tmp/opencode/blog-m16-focused-final.log`, `/tmp/opencode/blog-m16-php84-isolated-final.log`, `/tmp/opencode/blog-m16-php84-phpstan-final.log`, `/tmp/opencode/blog-m16-systemd.log`, `/tmp/opencode/blog-m16-prod-container.log`.
 
 ## Functional and UI sweeps
 

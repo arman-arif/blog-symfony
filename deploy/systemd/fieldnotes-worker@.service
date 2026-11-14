@@ -1,5 +1,5 @@
 [Unit]
-Description=Fieldnotes Messenger worker (%i)
+Description=Fieldnotes async Messenger worker (instance %i)
 After=network.target mysql.service
 Wants=mysql.service
 
@@ -10,8 +10,10 @@ Group=www-data
 WorkingDirectory=/var/www/fieldnotes
 Environment=APP_ENV=prod
 Environment=APP_DEBUG=0
-EnvironmentFile=-/etc/fieldnotes/fieldnotes.env
-ExecStart=/usr/bin/php /var/www/fieldnotes/bin/console messenger:consume %i --time-limit=3600 --memory-limit=256M
+Environment=MESSENGER_CONSUMER_NAME=fieldnotes-%H-%i
+# Symfony reads the shared, group-readable /var/www/fieldnotes/.env.local.
+# The instance identifies a process, not a transport (async-2 does not exist).
+ExecStart=/usr/bin/php /var/www/fieldnotes/bin/console messenger:consume async --time-limit=3600 --memory-limit=256M
 Restart=always
 RestartSec=5
 KillSignal=SIGTERM

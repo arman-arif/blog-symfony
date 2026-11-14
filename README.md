@@ -4,7 +4,7 @@ A production-oriented editorial blogging platform and CMS built with **Symfony 8
 
 No Node.js or JavaScript package manager is used. Tailwind is compiled by the pinned standalone CLI through TailwindBundle, and AssetMapper serves native ES modules.
 
-**Release status:** review defects are being remediated; production readiness is not yet established. Current verification and open deployment/runtime gates are tracked in [`PROJECT_PROGRESS.md`](PROJECT_PROGRESS.md).
+**Release status:** reviewed code defects have been remediated; production readiness is not yet established. Current verification and open deployment/runtime gates are tracked in [`PROJECT_PROGRESS.md`](PROJECT_PROGRESS.md).
 
 ## Features
 
@@ -21,7 +21,7 @@ No Node.js or JavaScript package manager is used. Tailwind is compiled by the pi
 
 ## Requirements
 
-- PHP **8.4+** with `ctype`, `curl`, `dom`, `fileinfo`, `gd` (or Imagick), `intl`, `mbstring`, `openssl`, `pdo_mysql`, `sodium`, `xml`, `zip`
+- PHP **8.4+** with `ctype`, `curl`, `dom`, `fileinfo`, **`gd`**, `intl`, `mbstring`, `openssl`, `pdo_mysql`, `sodium`, `xml`, `zip`. GD is required in CLI and FPM; Imagick does not replace the upload decoder.
 - MySQL **8.4** (primary target) or MariaDB 12.x
 - Composer 2
 - Nginx or Apache + PHP-FPM
@@ -70,7 +70,7 @@ Deploy with:
 sudo -u fieldnotes ./deploy.sh --restart-workers
 ```
 
-Create the first administrator once with `bin/console app:user:create-admin` (no demo fixtures required).
+This is a maintenance deployment of the active application directory: FPM and all active async worker instances are stopped before changes and restarted on success. Service control requires noninteractive, narrowly scoped sudo permission; FPM/worker restarts cannot be skipped. See the runbook before using release symlinks. Create the first administrator once with `bin/console app:user:create-admin` (no demo fixtures required).
 
 ## Architecture
 
@@ -96,7 +96,7 @@ The permission matrix is data-driven and editable at `/admin/permissions`.
 
 ## Verification
 
-- Latest local QA (2026-11-14, M15 consolidation): **356 tests / 22,195 assertions**. See [`docs/qa.md`](docs/qa.md) for regression coverage and evidence.
+- Latest local QA (2026-11-14, M16 remediation): **376 tests / 22,318 assertions**. See [`docs/qa.md`](docs/qa.md) for regression coverage and evidence.
 - PHPStan max level for `src/Service` and `src/Security`; level 6 for the full tree.
 - The historical MySQL 8.4, coverage and browser results predate remediation. Fresh-host deployment, current coverage/Lighthouse, live SMTP/ads, Redis, concurrency and scale acceptance remain open.
 
