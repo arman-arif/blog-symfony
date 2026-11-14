@@ -7,6 +7,7 @@
 {% block content %}
 <div class="card max-w-2xl p-6">
 {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+{{ form_errors(form) }}
 <div class="space-y-5">{{ form_row(form.label) }}{{ form_row(form.type) }}{{ form_row(form.target) }}{{ form_row(form.parent) }}{{ form_row(form.position) }}</div>
 <div class="mt-6"><twig:Button type="submit">Save item</twig:Button></div>
 {{ form_end(form) }}

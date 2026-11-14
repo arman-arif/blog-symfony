@@ -10,6 +10,7 @@
 <section class="card p-5 sm:p-7">
     <h2 class="text-xl font-semibold">Menu details</h2>
     {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+    {{ form_errors(form) }}
     <div class="mt-5 grid gap-5 sm:grid-cols-2">{{ form_row(form.name) }}{{ form_row(form.location) }}</div>
     <div class="mt-5"><twig:Button type="submit">Save menu</twig:Button></div>
     {{ form_end(form) }}

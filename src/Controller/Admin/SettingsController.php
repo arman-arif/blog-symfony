@@ -61,6 +61,13 @@ final class SettingsController extends AbstractController
         return $this->editGroup($request, 'code');
     }
 
+    #[Route('/admin/settings/system', name: 'admin_settings_system', methods: ['GET', 'POST'])]
+    #[IsGranted('settings.system.manage')]
+    public function system(Request $request): Response
+    {
+        return $this->editGroup($request, 'system');
+    }
+
     #[Route('/admin/settings/smtp/test', name: 'admin_settings_smtp_test', methods: ['POST'])]
     #[IsGranted('settings.smtp.manage')]
     public function testSmtp(Request $request, SettingsMailer $mailer): Response
@@ -100,6 +107,7 @@ final class SettingsController extends AbstractController
                 'seo' => 'admin_seo_index',
                 'smtp' => 'admin_settings_smtp',
                 'code' => 'admin_settings_code',
+                'system' => 'admin_settings_system',
                 default => 'admin_settings_index',
             });
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Menu;
 
+use App\Dto\MenuReorderItem;
 use App\Entity\Menu;
 use App\Entity\MenuItem;
 use App\Enum\MenuLocation;
@@ -40,10 +41,17 @@ final readonly class MenuService
         });
     }
 
-    public function save(Menu $menu): void
+    public function save(Menu $menu, ?Menu $details = null): void
     {
-        $this->entityManager->persist($menu);
-        $this->entityManager->flush();
+        $details ??= $menu;
+        $existing = $this->menus->findOneByLocation($details->getLocation());
+        if (null !== $existing && $existing->getId() !== $menu->getId()) {
+            throw new \DomainException('A menu already exists at that location.');
+        }
+        $this->entityManager->wrapInTransaction(function () use ($menu, $details): void {
+            $menu->setName($details->getName())->setLocation($details->getLocation());
+            $this->entityManager->persist($menu);
+        });
         $this->cache->invalidateTags(['menus']);
     }
 
@@ -56,9 +64,20 @@ final readonly class MenuService
 
     public function addItem(Menu $menu, MenuItem $item): void
     {
+        $this->assertValidParent($menu, $item, $item->getParent());
         $item->setMenu($menu);
         $this->entityManager->persist($item);
         $this->entityManager->flush();
+        $this->cache->invalidateTags(['menus']);
+    }
+
+    public function saveItem(MenuItem $item, MenuItem $details): void
+    {
+        $this->assertValidParent($item->getMenu(), $item, $details->getParent());
+        $this->entityManager->wrapInTransaction(static function () use ($item, $details): void {
+            $item->setLabel($details->getLabel())->setType($details->getType())->setTarget($details->getTarget())
+                ->setParent($details->getParent())->setPosition($details->getPosition());
+        });
         $this->cache->invalidateTags(['menus']);
     }
 
@@ -70,24 +89,56 @@ final readonly class MenuService
     }
 
     /**
-     * @param list<array{id: int, position: int, parentId?: int|null}> $items
+     * @param list<MenuReorderItem> $items
      */
     public function reorder(Menu $menu, array $items): void
     {
         $byId = [];
+        $parents = [];
         foreach ($menu->getItems() as $item) {
             $byId[(int) $item->getId()] = $item;
+            $parents[(int) $item->getId()] = $item->getParent()?->getId();
         }
+        $seen = [];
         foreach ($items as $row) {
-            $item = $byId[(int) $row['id']] ?? null;
-            if (null === $item) {
-                continue;
+            if (!isset($byId[$row->id]) || isset($seen[$row->id]) || $row->position < 0
+                || (null !== $row->parentId && !isset($byId[$row->parentId]))) {
+                throw new \DomainException('Invalid, duplicate or cross-menu item.');
             }
-            $parent = null !== ($row['parentId'] ?? null) ? ($byId[(int) $row['parentId']] ?? null) : null;
-            $item->setParent($parent === $item ? null : $parent)->setPosition((int) $row['position']);
+            $seen[$row->id] = true;
+            $parents[$row->id] = $row->parentId;
         }
-        $this->entityManager->flush();
+        // Validate the complete proposed graph (including unchanged edges) before
+        // touching any managed entity, so a later flush cannot persist rejection.
+        foreach (array_keys($parents) as $id) {
+            $path = [];
+            for ($current = $id; null !== $current; $current = $parents[$current]) {
+                if (!array_key_exists($current, $parents) || isset($path[$current])) {
+                    throw new \DomainException('Menu items cannot form cycles or cross menus.');
+                }
+                $path[$current] = true;
+            }
+        }
+        $this->entityManager->wrapInTransaction(static function () use ($items, $byId): void {
+            foreach ($items as $row) {
+                $byId[$row->id]->setParent(null === $row->parentId ? null : $byId[$row->parentId])->setPosition($row->position);
+            }
+        });
         $this->cache->invalidateTags(['menus']);
+    }
+
+    private function assertValidParent(Menu $menu, MenuItem $item, ?MenuItem $parent): void
+    {
+        $seen = [];
+        while (null !== $parent) {
+            $identity = spl_object_id($parent);
+            if ($parent->getMenu()->getId() !== $menu->getId() || $parent === $item
+                || (null !== $item->getId() && $parent->getId() === $item->getId()) || isset($seen[$identity])) {
+                throw new \DomainException('Menu items cannot form cycles or cross menus.');
+            }
+            $seen[$identity] = true;
+            $parent = $parent->getParent();
+        }
     }
 
     /** @return list<array{label: string, url: string, type: string, children: list<mixed>}> */

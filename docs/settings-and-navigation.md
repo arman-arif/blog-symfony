@@ -19,8 +19,11 @@
 | SEO | `/admin/seo` | `settings.seo.manage` |
 | Email/SMTP | `/admin/settings/smtp` | `settings.smtp.manage` |
 | Custom code | `/admin/settings/code` | `settings.code.manage` |
+| System | `/admin/settings/system` | `settings.system.manage` |
 
-The SMTP and custom-code screens are restricted to Super Administrators by default; authors/editors receive 403.
+SMTP, system and custom-code screens are restricted to Super Administrators by default. System controls include mandatory admin 2FA, upload limits (1 KiB–12 MiB) and raw analytics retention (7–3650 days). Enroll administrators before requiring 2FA. Saved retention drives both scheduled aggregation and the rollup command unless explicitly overridden with `--retention`.
+
+General settings expose all comment controls and newsletter double opt-in. Appearance supports additional social links as a JSON list of `{label, url}` objects with HTTPS URLs; blocked comment words use one entry per line. Shared Symfony constraints validate both forms and direct service writes: scalar types, valid timezones/locales, allowed choices, unique sections/widgets, bounded integers and safe social URLs. Entire submissions are validated before any managed mutation; writes are transactional. Blank SMTP passwords preserve the encrypted value; optional text fields remain clearable.
 
 ### SMTP
 
@@ -51,6 +54,8 @@ Custom CSS/JS is only available through `settings.code.manage` and renders in th
 ## Menus
 
 The menu builder at `/admin/menus` supports header/footer locations, nested items via a parent selector, item editing/removal and drag reorder (`assets/js/menu.js` posts the new order to `admin_menu_reorder` with CSRF). `MenuService` resolves custom paths/URLs, page/category/article slugs and caches trees with the `menus` tag; the public header/footer fall back to static links when no menu exists.
+
+Edit forms bind isolated copies. Typed JSON reorder requests validate positions and the complete proposed graph, including unchanged edges, before modifying managed entities; self-parenting, cycles, duplicate IDs and cross-menu parents are rejected. Location collisions are reported as form errors. Concurrent menu mutations still require independent stress testing.
 
 ## Admin operations
 

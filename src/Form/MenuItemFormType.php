@@ -22,7 +22,7 @@ final class MenuItemFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('label', TextType::class, ['attr' => ['id' => 'menu-item-label'], 'constraints' => [new Assert\NotBlank(), new Assert\Length(max: 150)]])
+            ->add('label', TextType::class, ['empty_data' => '', 'attr' => ['id' => 'menu-item-label'], 'constraints' => [new Assert\NotBlank(), new Assert\Length(max: 150)]])
             ->add('type', EnumType::class, [
                 'class' => MenuItemType::class,
                 'choice_label' => static fn (MenuItemType $type): string => ucfirst($type->value),
@@ -30,6 +30,7 @@ final class MenuItemFormType extends AbstractType
             ])
             ->add('target', TextType::class, [
                 'label' => 'Target path or slug',
+                'empty_data' => '',
                 'attr' => ['id' => 'menu-item-target'],
                 'constraints' => [new Assert\NotBlank(), new Assert\Length(max: 2048)],
                 'help' => 'Use /path for internal links, https:// for external links, or a slug for page/category/article targets.',
@@ -42,7 +43,7 @@ final class MenuItemFormType extends AbstractType
                 'placeholder' => 'Top level',
                 'attr' => ['id' => 'menu-item-parent'],
             ])
-            ->add('position', IntegerType::class, ['attr' => ['id' => 'menu-item-position', 'min' => 0, 'max' => 999]]);
+            ->add('position', IntegerType::class, ['constraints' => [new Assert\NotNull(), new Assert\Range(min: 0, max: 999)], 'attr' => ['id' => 'menu-item-position', 'min' => 0, 'max' => 999]]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

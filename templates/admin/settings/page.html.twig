@@ -6,9 +6,10 @@
 {% block intro %}Changes are persisted, cached for the public site and recorded in the activity log.{% endblock %}
 {% block content %}
 <nav class="mb-6 flex flex-wrap gap-1 border-b border-line" aria-label="Settings sections">
+{% set permissions = {general: 'settings.general.manage', appearance: 'settings.appearance.manage', seo: 'settings.seo.manage', smtp: 'settings.smtp.manage', code: 'settings.code.manage', system: 'settings.system.manage'} %}
+{% set routes = {general: 'admin_settings_index', appearance: 'admin_appearance_index', seo: 'admin_seo_index', smtp: 'admin_settings_smtp', code: 'admin_settings_code', system: 'admin_settings_system'} %}
 {% for key, label in groups %}
-    {% set permitted = key == 'general' ? is_granted('settings.general.manage') : (key == 'appearance' ? is_granted('settings.appearance.manage') : (key == 'seo' ? is_granted('settings.seo.manage') : (key == 'smtp' ? is_granted('settings.smtp.manage') : is_granted('settings.code.manage')))) %}
-    {% if permitted %}<a class="tab" href="{{ path(key == 'appearance' ? 'admin_appearance_index' : (key == 'seo' ? 'admin_seo_index' : (key == 'smtp' ? 'admin_settings_smtp' : (key == 'code' ? 'admin_settings_code' : 'admin_settings_index')))) }}" {% if key == group %}aria-current="page"{% endif %}>{{ label }}</a>{% endif %}
+    {% if is_granted(permissions[key]) %}<a class="tab" href="{{ path(routes[key]) }}" {% if key == group %}aria-current="page"{% endif %}>{{ label }}</a>{% endif %}
 {% endfor %}
 </nav>
 {% if group == 'smtp' %}

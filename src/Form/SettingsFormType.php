@@ -7,6 +7,7 @@ namespace App\Form;
 use App\Service\Settings\SettingsCatalog;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
+use Symfony\Component\Form\Exception\TransformationFailedException;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\ColorType;
@@ -31,7 +32,7 @@ final class SettingsFormType extends AbstractType
                 'choice' => ChoiceType::class,
                 'multiple' => ChoiceType::class,
                 'int' => IntegerType::class,
-                'textarea' => TextareaType::class,
+                'textarea', 'json', 'lines' => TextareaType::class,
                 'code' => TextareaType::class,
                 'email' => EmailType::class,
                 'url' => UrlType::class,
@@ -43,13 +44,14 @@ final class SettingsFormType extends AbstractType
                 'label' => $field['label'],
                 'required' => false,
                 'help' => $field['help'] ?? null,
+                'constraints' => SettingsCatalog::constraints($key),
                 'attr' => array_filter([
                     'id' => 'multiple' === $field['type'] ? null : 'settings-'.$name,
                     'rows' => in_array($field['type'], ['textarea', 'code'], true) ? ('code' === $field['type'] ? 8 : 3) : null,
                     'spellcheck' => 'code' === $field['type'] ? 'false' : null,
                     'autocomplete' => 'password' === $field['type'] ? 'new-password' : null,
-                    'min' => 'mail.port' === $key ? 1 : null,
-                    'max' => 'mail.port' === $key ? 65535 : null,
+                    'min' => SettingsCatalog::LIMITS[$key][0] ?? null,
+                    'max' => SettingsCatalog::LIMITS[$key][1] ?? null,
                 ]),
             ];
             if ('choice' === $field['type'] || 'multiple' === $field['type']) {
@@ -60,12 +62,38 @@ final class SettingsFormType extends AbstractType
             if ('password' === $field['type']) {
                 $config['always_empty'] = true;
             }
+            if (!in_array($field['type'], ['bool', 'int', 'multiple'], true)) {
+                $config['empty_data'] = '';
+            }
             $builder->add($name, $type, $config);
 
             if ('order' === $field['type']) {
                 $builder->get($name)->addModelTransformer(new CallbackTransformer(
                     static fn (mixed $value): string => is_array($value) ? implode(', ', $value) : (string) $value,
                     static fn (mixed $value): array => array_values(array_filter(array_map(trim(...), explode(',', (string) $value)))),
+                ));
+            }
+            if ('lines' === $field['type']) {
+                $builder->get($name)->addModelTransformer(new CallbackTransformer(
+                    static fn (mixed $value): string => is_array($value) ? implode("\n", $value) : '',
+                    static fn (mixed $value): array => array_values(array_filter(array_map(trim(...), explode("\n", (string) $value)), static fn (string $line): bool => '' !== $line)),
+                ));
+            }
+            if ('json' === $field['type']) {
+                $builder->get($name)->addModelTransformer(new CallbackTransformer(
+                    static fn (mixed $value): string => json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+                    static function (mixed $value): array {
+                        try {
+                            $decoded = json_decode('' === $value ? '[]' : (string) $value, true, flags: JSON_THROW_ON_ERROR);
+                        } catch (\JsonException $exception) {
+                            throw new TransformationFailedException('Invalid JSON.', previous: $exception);
+                        }
+                        if (!is_array($decoded) || !array_is_list($decoded)) {
+                            throw new TransformationFailedException('Expected a JSON list.');
+                        }
+
+                        return $decoded;
+                    },
                 ));
             }
         }

@@ -3,7 +3,7 @@
         <div class="lg:col-span-2">
             <a href="{{ path('front_home') }}" class="font-display text-4xl">{{ setting('general.name')|lower }}<span class="text-accent">.</span></a>
             <p class="mt-4 max-w-sm text-sm leading-6 text-muted">{{ setting('appearance.footer_text') }}</p>
-            <div class="mt-5 flex gap-5 text-sm">{% if setting('appearance.instagram_url') %}<a href="{{ setting('appearance.instagram_url') }}" rel="noopener noreferrer" class="text-muted hover:text-brand">Instagram</a>{% endif %}{% if setting('appearance.linkedin_url') %}<a href="{{ setting('appearance.linkedin_url') }}" rel="noopener noreferrer" class="text-muted hover:text-brand">LinkedIn</a>{% endif %}<a href="{{ path('front_page', {slug: 'contact'}) }}" class="text-muted hover:text-brand">Get in touch</a></div>
+            <div class="mt-5 flex gap-5 text-sm">{% if setting('appearance.instagram_url') %}<a href="{{ setting('appearance.instagram_url') }}" rel="noopener noreferrer" class="text-muted hover:text-brand">Instagram</a>{% endif %}{% if setting('appearance.linkedin_url') %}<a href="{{ setting('appearance.linkedin_url') }}" rel="noopener noreferrer" class="text-muted hover:text-brand">LinkedIn</a>{% endif %}{% for link in setting('appearance.social_links') %}<a href="{{ link.url }}" rel="noopener noreferrer" class="text-muted hover:text-brand">{{ link.label }}</a>{% endfor %}<a href="{{ path('front_page', {slug: 'contact'}) }}" class="text-muted hover:text-brand">Get in touch</a></div>
         </div>
         <nav aria-label="Discover Fieldnotes">
             <h2 class="text-sm font-semibold">Explore the journal</h2>

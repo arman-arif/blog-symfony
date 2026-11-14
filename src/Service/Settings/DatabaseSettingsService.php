@@ -8,6 +8,8 @@ use App\Entity\Setting;
 use App\Repository\SettingRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -19,6 +21,7 @@ final readonly class DatabaseSettingsService implements SettingsServiceInterface
         private SettingsEncryption $encryption,
         #[Autowire(service: 'cache.content')]
         private TagAwareCacheInterface $cache,
+        private ValidatorInterface $validator,
     ) {
     }
 
@@ -86,32 +89,45 @@ final readonly class DatabaseSettingsService implements SettingsServiceInterface
     /** @param array<string, mixed> $values */
     public function saveGroup(string $group, array $values): void
     {
+        if (!array_key_exists($group, SettingsCatalog::GROUPS)) {
+            throw new \OutOfBoundsException('Unknown settings group.');
+        }
+        $fields = SettingsCatalog::fieldsForGroup($group);
+        $known = array_map(SettingsCatalog::formName(...), array_keys($fields));
+        if ([] !== array_diff(array_keys($values), $known)) {
+            throw new \InvalidArgumentException('Unknown setting field.');
+        }
+        $pending = [];
         foreach (SettingsCatalog::fieldsForGroup($group) as $key => $field) {
             $formName = SettingsCatalog::formName($key);
             if (!array_key_exists($formName, $values)) {
                 continue;
             }
             $value = $values[$formName];
-            if ('order' === $field['type']) {
-                $value = is_array($value)
-                    ? array_values($value)
-                    : array_values(array_filter(array_map(static fn (mixed $part): string => trim((string) $part), explode(',', is_scalar($value) ? (string) $value : ''))));
-                $allowed = ['hero', 'latest', 'favorites', 'categories', 'stories', 'recommended', 'authors'];
-                $value = array_values(array_filter($value, static fn (mixed $section): bool => is_string($section) && in_array($section, $allowed, true)));
-            }
-            if ('multiple' === $field['type']) {
-                $value = is_array($value) ? array_values($value) : [];
+            if ('order' === $field['type'] && is_string($value)) {
+                $value = array_values(array_filter(array_map(trim(...), explode(',', $value)), static fn (string $part): bool => '' !== $part));
             }
             if (($field['sensitive'] ?? false) && '' === $value) {
                 continue;
             }
-
-            $setting = $this->settings->findOneByKey($key) ?? (new Setting())->setKey($key);
-            $setting->setGroupName($group)->setIsSensitive((bool) ($field['sensitive'] ?? false));
-            $setting->setValue(['value' => ($field['sensitive'] ?? false) ? $this->encryption->encrypt(is_scalar($value) ? (string) $value : '') : $value]);
-            $this->entityManager->persist($setting);
+            $violations = $this->validator->validate($value, SettingsCatalog::constraints($key));
+            if (count($violations) > 0) {
+                throw new ValidationFailedException($value, $violations);
+            }
+            $pending[$key] = $value;
         }
-        $this->entityManager->flush();
+        $this->entityManager->wrapInTransaction(function () use ($pending, $group): void {
+            foreach ($pending as $key => $value) {
+                $sensitive = SettingsCatalog::isSensitive($key);
+                if ($sensitive && !is_string($value)) {
+                    throw new \LogicException('A sensitive setting must be a validated string.');
+                }
+                $setting = $this->settings->findOneByKey($key) ?? (new Setting())->setKey($key);
+                $setting->setGroupName($group)->setIsSensitive($sensitive);
+                $setting->setValue(['value' => $sensitive ? $this->encryption->encrypt($value) : $value]);
+                $this->entityManager->persist($setting);
+            }
+        });
         $this->cache->invalidateTags(['settings']);
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Dto\MenuReorderPayload;
 use App\Entity\Menu;
 use App\Entity\MenuItem;
 use App\Enum\MenuLocation;
@@ -14,9 +15,11 @@ use App\Repository\MenuRepository;
 use App\Service\Audit\ActivityLogger;
 use App\Service\Menu\MenuService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -49,10 +52,17 @@ final class MenuController extends AbstractController
     public function edit(Request $request, ?int $id = null): Response
     {
         $menu = null === $id ? (new Menu())->setName('')->setLocation(MenuLocation::Header) : ($this->menus->find($id) ?? throw $this->createNotFoundException());
-        $form = $this->createForm(MenuFormType::class, $menu);
+        $details = clone $menu;
+        $form = $this->createForm(MenuFormType::class, $details);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->menuService->save($menu);
+            try {
+                $this->menuService->save($menu, $details);
+            } catch (\DomainException $exception) {
+                $form->addError(new FormError($exception->getMessage()));
+            }
+        }
+        if ($form->isSubmitted() && $form->isValid()) {
             $this->activityLogger->log('menu.saved', 'Menu', $menu->getId(), ['summary' => 'Saved menu “'.$menu->getName().'”']);
             $this->addFlash('success', 'Menu saved.');
 
@@ -71,19 +81,23 @@ final class MenuController extends AbstractController
     public function editItem(int $itemId, Request $request): Response
     {
         $item = $this->menuItems->find($itemId) ?? throw $this->createNotFoundException();
-        $form = $this->createForm(MenuItemFormType::class, $item, ['menu' => $item->getMenu()]);
+        $details = clone $item;
+        $form = $this->createForm(MenuItemFormType::class, $details, ['menu' => $item->getMenu()]);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
-            if ($item->getParent() === $item) {
-                $item->setParent(null);
+            try {
+                $this->menuService->saveItem($item, $details);
+            } catch (\DomainException $exception) {
+                $form->addError(new FormError($exception->getMessage()));
             }
-            $this->menuService->save($item->getMenu());
+        }
+        if ($form->isSubmitted() && $form->isValid()) {
             $this->addFlash('success', 'Menu item saved.');
 
             return $this->redirectToRoute('admin_menu_edit', ['id' => $item->getMenu()->getId()]);
         }
 
-        return $this->render('admin/menu/item.html.twig', ['item' => $item, 'form' => $form], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+        return $this->render('admin/menu/item.html.twig', ['item' => $details, 'form' => $form], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
     #[Route('/{id}/items', name: 'item_create', requirements: ['id' => '\d+'], methods: ['POST'])]
@@ -120,17 +134,17 @@ final class MenuController extends AbstractController
     }
 
     #[Route('/{id}/reorder', name: 'reorder', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function reorder(int $id, Request $request): JsonResponse
+    public function reorder(int $id, Request $request, #[MapRequestPayload(acceptFormat: 'json')] MenuReorderPayload $payload): JsonResponse
     {
         $menu = $this->menus->find($id) ?? throw $this->createNotFoundException();
-        $payload = json_decode($request->getContent(), true);
-        if (!$this->isCsrfTokenValid('menu_reorder', (string) ($payload['_token'] ?? $request->headers->get('X-CSRF-Token')))) {
+        if (!$this->isCsrfTokenValid('menu_reorder', (string) ($payload->_token ?? $request->headers->get('X-CSRF-Token')))) {
             return new JsonResponse(['error' => 'Invalid CSRF token.'], Response::HTTP_FORBIDDEN);
         }
-        if (!is_array($payload['items'] ?? null)) {
-            return new JsonResponse(['error' => 'Invalid item payload.'], Response::HTTP_BAD_REQUEST);
+        try {
+            $this->menuService->reorder($menu, $payload->items);
+        } catch (\DomainException $exception) {
+            return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        $this->menuService->reorder($menu, $payload['items']);
 
         return new JsonResponse(['ok' => true]);
     }

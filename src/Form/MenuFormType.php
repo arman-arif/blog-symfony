@@ -19,7 +19,7 @@ final class MenuFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('name', TextType::class, ['attr' => ['id' => 'menu-name'], 'constraints' => [new Assert\NotBlank(), new Assert\Length(max: 150)]])
+            ->add('name', TextType::class, ['empty_data' => '', 'attr' => ['id' => 'menu-name'], 'constraints' => [new Assert\NotBlank(), new Assert\Length(max: 150)]])
             ->add('location', EnumType::class, [
                 'class' => MenuLocation::class,
                 'choice_label' => static fn (MenuLocation $location): string => ucfirst($location->value),

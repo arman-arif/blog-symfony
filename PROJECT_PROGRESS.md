@@ -46,7 +46,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M10 newsletter eligibility, retries, delivery accounting and SMTP | Fixed in code; development schema reconciled with preserved archives; full QA passed; missing historical migration still limits reversals |
 | M11 analytics scope and export scalability | Fixed; bounded streamed CSV, owner scope and formula safety verified by full QA |
 | M12 advertisement expiry and CSP | Fixed in code; warm-cache date boundaries and fresh scripted-creative nonces verified; live ad networks unverified |
-| M13 settings validation/completeness and menu cycles | Pending |
+| M13 settings validation/completeness and menu cycles | Fixed; complete runtime controls, shared validation, rejected-write isolation and typed graph validation verified |
 | M14 password policy and security follow-ups | Pending |
 | M15 regression consolidation | In progress; previously passing tests did not establish correctness |
 | M16 deployment scripts/configuration/runbooks | Pending |
@@ -60,6 +60,12 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, fu
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-14 — M13 settings/menu remediation
+- Exposed all existing runtime defaults, including comment/newsletter controls, additional social links and protected system controls. Shared Symfony constraints validate forms and direct service callers before transactional writes; installed `symfony/intl` through Composer for real locale/timezone validation. Optional blank strings remain clearable and blank SMTP passwords retain ciphertext. Saved retention now drives the scheduler and rollup command.
+- Menu edit forms bind isolated copies; location collisions, cross-menu parents, self-parenting and complete proposed reorder cycles are rejected before managed mutation. Reorder uses typed `MapRequestPayload` DTOs with Symfony validation; root form errors are visible.
+- Verification: focused **22 tests / 147 assertions**; full `composer qa` passed (**341 tests / 22,095 assertions**). Tests exercise HTTP persistence/permissions/validation, typed JSON, unchanged graph edges, later-flush isolation, social rendering and both retention callers. Production container rebuilt and linted. Evidence: `/tmp/opencode/blog-m13-qa.log`.
+- Limitations: simultaneous menu/settings writes, browser layout/accessibility for new controls and multi-host cache invalidation remain independently unverified. Existing Flysystem and menu-macro deprecations remain visible; broader production/runtime gaps above are still open.
 
 ### 2026-11-14 — M12 advertisement remediation
 - Cached schedule-independent enabled candidates and rechecked placement/active/start/end eligibility on selection; warm caches no longer suppress scheduled starts or retain expired ads. Dates use inclusive starts/exclusive ends.
