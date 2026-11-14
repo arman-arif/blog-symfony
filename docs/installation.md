@@ -128,9 +128,7 @@ sudo -u fieldnotes php bin/console messenger:consume async --limit=1
 
 Check `/admin` login, send a test email from **Settings → Email/SMTP**, save an article, and verify the public page.
 
-## 8. Verification performed on this project
+## 8. Verification status
 
-- Migrations `up` from a fresh MySQL 8.4 database.
-- Full PHPUnit suite on MySQL 8.4 (221 tests / 20,420 assertions) and MariaDB 12.3.
-- `composer qa`, CSP/header checks, route crawler and query budgets.
-- See [`qa.md`](qa.md) and [`security.md`](security.md).
+- Historical 2026-11-12 evidence: fresh MySQL 8.4 migrations and 221 tests / 20,420 assertions, before review remediation.
+- Current local remediation QA, regression coverage and remaining fresh-deployment/runtime checks are in [`qa.md`](qa.md), [`security.md`](security.md) and `../PROJECT_PROGRESS.md`. This installation runbook has not been independently followed on a clean Ubuntu VM since remediation; it is not proof of production readiness.

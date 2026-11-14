@@ -4,6 +4,8 @@ A production-oriented editorial blogging platform and CMS built with **Symfony 8
 
 No Node.js or JavaScript package manager is used. Tailwind is compiled by the pinned standalone CLI through TailwindBundle, and AssetMapper serves native ES modules.
 
+**Release status:** review defects are being remediated; production readiness is not yet established. Current verification and open deployment/runtime gates are tracked in [`PROJECT_PROGRESS.md`](PROJECT_PROGRESS.md).
+
 ## Features
 
 - **Publishing:** sanitized rich content, revisions/autosave, workflow transitions, scheduling, categories, tags, duplicate/restore and revision comparison.
@@ -94,10 +96,9 @@ The permission matrix is data-driven and editable at `/admin/permissions`.
 
 ## Verification
 
-- `composer qa` green from the verified workspace.
-- 221 tests / 20,420 assertions; Service line coverage 90.6%, Security 81.3%.
+- Latest local QA (2026-11-14, M15 consolidation): **356 tests / 22,195 assertions**. See [`docs/qa.md`](docs/qa.md) for regression coverage and evidence.
 - PHPStan max level for `src/Service` and `src/Security`; level 6 for the full tree.
-- Database migrations and the full test suite verified on **MySQL 8.4** and MariaDB 12.3.
+- The historical MySQL 8.4, coverage and browser results predate remediation. Fresh-host deployment, current coverage/Lighthouse, live SMTP/ads, Redis, concurrency and scale acceptance remain open.
 
 ## Documentation map
 

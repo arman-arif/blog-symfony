@@ -108,7 +108,7 @@ php bin/console doctrine:migrations:status
 php bin/console doctrine:migrations:migrate --no-interaction
 ```
 
-Always back up before migrating. Do not use `doctrine:schema:update` in production. The migration set has been verified on a fresh MySQL 8.4 database and MariaDB 12.3.
+Always back up before migrating. Do not use `doctrine:schema:update` in production. Historical MySQL 8.4 verification predates remediation; current full fresh-host verification remains open. Consult [`database.md`](database.md) and [`newsletter.md`](newsletter.md) before upgrading legacy newsletter schemas. Retain missing historical migration metadata; never mark an unavailable migration executed to bypass a defect.
 
 ## SMTP
 

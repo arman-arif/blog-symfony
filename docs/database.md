@@ -1,6 +1,6 @@
 # Database design
 
-Target: **MySQL 8.4** with `utf8mb4`. M16 verified a fresh MySQL 8.4 migration run and the full test suite (221 tests / 20,420 assertions); MariaDB 12.3 remains the local development service. Schema changes are applied only through Doctrine migrations.
+Target: **MySQL 8.4** with `utf8mb4`; MariaDB 12.3 is the local development service. The 2026-11-12 MySQL migration/221-test run is historical and predates remediation. Current fresh-host MySQL verification remains open; see [`qa.md`](qa.md). Schema changes are applied only through Doctrine migrations.
 
 ## Migration groups
 
@@ -15,10 +15,13 @@ Target: **MySQL 8.4** with `utf8mb4`. M16 verified a fresh MySQL 8.4 migration r
 | `Version20261112185703` | Monetization | Ad destination/paragraph targeting and article sponsored/affiliate/premium flags |
 | `Version20261113113808` | Media cleanup remediation | Retained deletion tombstone cleanup-completion timestamp |
 | `Version20261114132536` | Newsletter delivery remediation | Unique campaign/recipient ledger, nullable subscriber relation, attempt and acceptance timestamps |
+| `Version20261114170000` | Legacy counter cleanup | Preserve obsolete newsletter counters/campaign snapshots in an archive before removing active-schema columns |
 
 The original M3–M16 migrations were generated from attribute mapping and historically verified up, down and up again on a fresh empty database. `redirect.source_path` is created as `VARCHAR(512)` from the initial migration so its unique index fits MySQL 8/InnoDB utf8mb4 limits (the later redirect migration remains a no-op for fresh installs).
 
-The newsletter remediation migration was generated against the reset test database, then reversed/reapplied on the empty `fieldnotes_test` database. Its mapping matches; the only subsequent schema diff is the existing unmapped `messenger_messages` table, which must **not** be dropped. An additional isolated database could not be created with this account's grants. The development database was not changed: it contains unavailable `Version20261113124023` and an incompatible older ledger table. Reconcile that history/schema with backups before upgrading it; do not blindly apply the create-table migration. See [`newsletter.md`](newsletter.md).
+The newsletter remediation migration passed empty-test-database reversal/reapplication and fresh/populated legacy regressions. Both reconciliation migrations were applied to development on 2026-11-14 after a private backup; active mapping/schema validation passed. Recognized legacy ledger rows, obsolete counters and campaign snapshots are preserved in archive tables; unknown delivery outcomes become terminal `uncertain`, never automatic SMTP retries. Archives contain personal data, have no cascade foreign keys and are not automatically deleted; operator access/retention review is required.
+
+Development still records unavailable `Version20261113124023`: metadata was preserved, not fabricated or marked away. Its authentic historical reversal remains unavailable; archive-backed conversions intentionally reject destructive down-migrations. A complete fresh-host/full-suite rollback has not been reverified and an additional isolated database could not be created with this account's grants. The unmapped `messenger_messages` table must **not** be dropped. See [`newsletter.md`](newsletter.md) for backup, reconciliation and rollback handling.
 
 ## Conventions
 

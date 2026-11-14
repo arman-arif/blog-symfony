@@ -48,7 +48,7 @@ The completion table and earlier logs are historical implementation claims. The 
 | M12 advertisement expiry and CSP | Fixed in code; warm-cache date boundaries and fresh scripted-creative nonces verified; live ad networks unverified |
 | M13 settings validation/completeness and menu cycles | Fixed; complete runtime controls, shared validation, rejected-write isolation and typed graph validation verified |
 | M14 password policy and security follow-ups | Fixed in code; real entropy/breach validation, outage rejection and caller-level regressions verified; external security/performance checks remain open |
-| M15 regression consolidation | In progress; previously passing tests did not establish correctness |
+| M15 regression consolidation | Consolidated; full local QA passed; refreshed coverage and fresh-clone/MySQL/browser acceptance remain open |
 | M16 deployment scripts/configuration/runbooks | Pending |
 
 Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, full migration-suite reversal and large-scale benchmarks have not been independently reverified during remediation. The M10 ledger migration alone has passed reversal/reapplication on the empty test database.
@@ -60,6 +60,11 @@ Fresh Ubuntu deployment, live saved-SMTP delivery, Redis, browser/Lighthouse, fu
 - **M2 started after that instruction.** Persistence, authentication, authorization and business functionality are implemented through M16. Production parity was verified on MySQL 8.4 in M16; MariaDB 12.3 remains the local development service.
 
 ## Log
+
+### 2026-11-14 — M15 regression/evidence consolidation
+- Inventoried the caller-level review regressions in `docs/qa.md`. Corrected README, installation, operations and database verification claims to distinguish current local QA from historical coverage/browser/MySQL evidence. Documented completed newsletter reconciliation, retained personal-data archives and unavailable authentic historical reversals without reducing scope.
+- Verification: `composer qa` passed (**356 tests / 22,195 assertions**), including both PHPStan analyses, container/Twig/YAML lints, style, audit and standalone tooling. Reviewed the full documentation diff. Evidence: `/tmp/opencode/blog-m15-qa.log`.
+- Open acceptance: PCOV/Xdebug is not loaded and the historical PCOV artifact is unavailable; current coverage has not been recalculated. Fresh-clone/fresh-MySQL QA, independent Ubuntu deployment, current browser/Lighthouse, live external services, Redis, concurrency and scale remain unverified. M16 deployment defects are next; local green QA is not production certification.
 
 ### 2026-11-14 — M14 password-policy remediation
 - Replaced the small denylist with sequential string/12–4096-character/medium Symfony `PasswordStrength`/real `NotCompromisedPassword` checks. Explicitly required HttpClient via Composer and enabled the real breach validator in every environment; tests supply deterministic HTTP responses rather than disabling it. Production wiring uses the dedicated 3-second inactivity/5-second total/no-redirect HTTPS client.
